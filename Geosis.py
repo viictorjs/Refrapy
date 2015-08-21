@@ -5,7 +5,6 @@ from obspy import read
 import matplotlib
 matplotlib.use('TkAgg')                                                                  
 from matplotlib import pyplot as plt
-from matplotlib.path import Path
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backend_bases import key_press_handler
 import os                                                                              
