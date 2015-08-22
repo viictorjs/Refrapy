@@ -346,9 +346,9 @@ class Sispick(Tk):
         self.status = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
         self.status.grid(row=0,column=13,sticky=E)
         
-        plt.rcParams['keymap.zoom'] = 'z'
-        plt.rcParams['keymap.back'] = 'v'
-        plt.rcParams['keymap.home'] = 'ctrl+z'
+        plt.rcParams['keymap.zoom'] = 'z,Z'
+        plt.rcParams['keymap.back'] = 'v,V'
+        plt.rcParams['keymap.home'] = 'ctrl+z,ctrl+Z'
         plt.rcParams['keymap.save'] = 'ctrl+i,ctrl+I'
         plt.rcParams['keymap.pan'] = 'm,M'
         self.bind('<Alt-s>', lambda x: self.destroy())
