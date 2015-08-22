@@ -1,6 +1,6 @@
 # Geosis
 Geosis is a Python 3 based program for seismic refraction data processing (PT-BR) tested on Windows.
-Current content: Visualize waveform data (supported: seg2, segy and mseed) and first-break picking.
+Current content: visualize waveform data (supported: seg2, segy and mseed), basic trace processing (normalize, gain, clip, shading) and first-break picking.
 
 Running the program on Windows:
 
@@ -22,12 +22,12 @@ Running the program on Windows:
     - SqlAlchemy
     - ObsPy
     
-- Step 3: Extract the Geosis.py script and the 'imagens' folder to the same directory then double-click Geosis.py to run the program.
+- Step 3: Extract the Geosis.py script and the 'imagens' folder to a directory on your computer then double-click Geosis.py to run the program.
     
 Installing the necessary packages:
 
 - The developer provides a program to make it easier and faster to install all the necessary packages on the following website: https://github.com/viictorjs/Geosis-easy-packages-installer-Windows-. 
-- If you choose to install the packages yourself, a simple way to do it is to download the Python Wheels (.whl files) of the listed packages at http://www.lfd.uci.edu/~gohlke/pythonlibs, then use pip command lines to install them:
+- If you choose to install the packages yourself, a simple way to do it is to download the Python Wheels (.whl files) of the listed packages at http://www.lfd.uci.edu/~gohlke/pythonlibs then use pip command lines to install them.
     
   - Installing a package: Go to run > type cmd > type pip install file-name.whl
     - Note 1: you should install the packages following the order in 'Step 2' (some packages are necessary for the installation of other packages). 
