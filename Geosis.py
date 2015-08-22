@@ -54,8 +54,12 @@ class Launcher(Tk):
         botaosiscon = Button(self.parentLauncher, text='siscon',width=10,height=1,font=("Verdana", 12),
                               bg = 'gray90',fg='black', activebackground = 'gray93',
                         activeforeground = 'black',command = self.chamarSiscon)
-        botaoSispick.grid(row=0,column=0,padx=50,sticky='w')
-        botaosiscon.grid(row=0,column=0,padx=50,sticky='e')
+        botaosisphy = Button(self.parentLauncher, text='sisphy',width=10,height=1,font=("Verdana", 12),
+                              bg = 'gray90',fg='black', activebackground = 'gray93',
+                        activeforeground = 'black',command = self.chamarSisphy)
+        botaoSispick.grid(row=0,column=0,sticky='w')
+        botaosisphy.grid(row=0,column=0,padx=50)
+        botaosiscon.grid(row=0,column=0,sticky='e')
         self.resizable(0,0)
         self.protocol("WM_DELETE_WINDOW", self.fechar)
 
@@ -68,6 +72,10 @@ class Launcher(Tk):
         else:
 
             pass
+
+    def chamarSisphy(self):
+
+        pass
 
     def chamarSispick(self):
 
