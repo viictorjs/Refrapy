@@ -26,7 +26,8 @@ Running the program on Windows:
     
 Installing the necessary packages:
 
-- A simple way to install all the necessary packages on Windows is to download the Python Wheels (.whl files) of the listed packages at http://www.lfd.uci.edu/~gohlke/pythonlibs/ and use pip command lines to install them (when downloading check for system compatibility).
+- The developer provides a program to make it easier and faster to install all the necessary packages on the following website: https://github.com/viictorjs/Geosis-easy-packages-installer-Windows-. 
+- If you choose to install the packages yourself, a simple way to do it is to download the Python Wheels (.whl files) of the listed packages at http://www.lfd.uci.edu/~gohlke/pythonlibs, then use pip command lines to install them:
     
   - Installing a package: Go to run > type cmd > type pip install file-name.whl
     - Note 1: you should install the packages following the order in 'Step 2' (some packages are necessary for the installation of other packages). 
