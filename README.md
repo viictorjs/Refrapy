@@ -6,7 +6,7 @@ Running the program on Windows:
 
  - Step 1: download and install a Python 3 interpreter from the official website (https://www.python.org/).
     - Recommended: Python 3.4.3
-    - Note: don't forget to check for system compability (x32 and x64).
+    - Note: check for system compatibility (32 or 64 bits).
     
  - Step 2: download and install the necessary Python packages listed bellow:
     - NumPy
@@ -26,7 +26,7 @@ Running the program on Windows:
     
 Installing the necessary packages:
 
-- A simple way to install all the necessary packages on Windows is to download the Python Wheels (.whl files) of the listed packages at http://www.lfd.uci.edu/~gohlke/pythonlibs/ and use pip command lines to install them (before downloading don't forget to check which packages are for x64 and x32).
+- A simple way to install all the necessary packages on Windows is to download the Python Wheels (.whl files) of the listed packages at http://www.lfd.uci.edu/~gohlke/pythonlibs/ and use pip command lines to install them (when downloading check for system compatibility).
     
   - Installing a package: Go to run > type cmd > type pip install file-name.whl
     - Note 1: you should install the packages following the order in 'Step 2' (some packages are necessary for the installation of other packages). 
