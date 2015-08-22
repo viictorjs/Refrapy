@@ -1,5 +1,5 @@
 # Geosis
-Geosis is a Python 3 based program for seismic refraction data processing (PT-BR) tested on Windows.
+Geosis is a Python 3 based program for seismic refraction data processing tested on Windows.
 Current content: visualize waveform data (supported: seg2, segy and mseed), basic trace processing (normalize, gain, clip, shading) and first-break picking (current output is a Seisimager .vs traveltime file).
 
 Running the program on Windows:
