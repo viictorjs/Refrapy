@@ -349,8 +349,8 @@ class Sispick(Tk):
         plt.rcParams['keymap.zoom'] = 'z'
         plt.rcParams['keymap.back'] = 'v'
         plt.rcParams['keymap.home'] = 'ctrl+z'
-        plt.rcParams['keymap.save'] = 'ctrl+s'
-        plt.rcParams['keymap.pan'] = 'ctrl+P'
+        plt.rcParams['keymap.save'] = 'ctrl+i,ctrl+I'
+        plt.rcParams['keymap.pan'] = 'm,M'
         self.bind('<Alt-s>', lambda x: self.destroy())
         self.bind('<Alt-S>', lambda x: self.destroy())
         self.bind('<Control-a>', lambda x: self.abrir_pt1())
