@@ -13,6 +13,7 @@ import numpy as np
 liststreams = []                                
 sispickOn = False
 sisconOn = False
+sisphyOn = False
 
 class Launcher(Tk):
     
@@ -34,7 +35,6 @@ class Launcher(Tk):
                                       command= self.chamarSiscon)
         self.menu_ajuda = Menu(self.barraDEmenu)
         self.barraDEmenu.add_cascade(label='Ajuda',menu=self.menu_ajuda)
-        self.menu_ajuda.add_command(label='Módulos',command = self.SobreModulos)
         self.menu_ajuda.add_command(label='Sobre o software',command = self.Sobre)
 
         try:
@@ -75,7 +75,16 @@ class Launcher(Tk):
 
     def chamarSisphy(self):
 
-        pass
+        global sisphyOn
+
+        if sisphyOn == True:
+
+            pass
+
+        else:
+
+            sisphyOn = True
+            Sisphy()
 
     def chamarSispick(self):
 
@@ -109,50 +118,7 @@ class Launcher(Tk):
         root.geometry('630x300')
         root.title('Info')
         titulo = Label(root, text='Sobre o software',fg='green',font=("Helvetica", 14))
-        label1 = Label(root, text='Geosis 1.0 é um pactode de programas de código aberto para visualização e processamento de',
-                      fg='black',font=("Helvetica", 10))
-        label2 = Label(root, text='dados sísmicos, originalmente desenvolvido pelo estudante de geofísica da UnB, Victor José,',
-                      fg='black',font=("Helvetica", 10))
-        label3 = Label(root, text='orientado pelo professor Marcelo Peres Rocha.',fg='black',font=("Helvetica", 10))
-        label4 = Label(root, text='Sendo fruto de um projeto de iniciação científica (PIBIC), o software foi desenvolvido em Python 3.4',
-                       fg='black',font=("Helvetica", 10))
-        label5 = Label(root, text='fazendo uso das seguintes principais bibliotecas livres:',
-                       fg='black',font=("Helvetica", 10))
-        label6 = Label(root, text='ObsPy 0.10.2 (M. Beyreuther, R. Barsch, L. Krischer, T. Megies, Y. Behr and J. Wassermann)',
-                       fg='black',font=("Helvetica", 10))
-        label7 = Label(root, text='Matplotlib 1.4.3 (John D. Hunter)',
-                       fg='black',font=("Helvetica", 10))
-        titulo.grid(row=0, column=0, sticky="w",pady=15,padx=20)
-        label1.grid(row=2, column=0, sticky="w",pady=0,padx=20)
-        label2.grid(row=3, column=0, sticky="w",pady=0,padx=20)
-        label3.grid(row=4, column=0, sticky="w",pady=0,padx=20)
-        label4.grid(row=5, column=0, sticky="w",pady=0,padx=20)
-        label5.grid(row=6, column=0, sticky="w",pady=0,padx=20)
-        label6.grid(row=7, column=0, sticky="w",pady=10,padx=20)
-        label7.grid(row=8, column=0, sticky="w",pady=0,padx=20)
-        root.resizable(0,0)
-        root.mainloop()
-
-    def SobreModulos(self):
-
-        root = Tk()
-        root.geometry('670x300')
-        root.title('Info')
-        titulo = Label(root, text='Sobre os módulos',fg='green',font=("Helvetica", 14))
-        label1 = Label(root, text='Geosis v1.0 possui dois módulos prontos para uso: sispick e siscon.',
-                      fg='black',font=("Helvetica", 10))
-        label2 = Label(root, text='O módulo sispick é uma ferramenta para visualização e processamento de sismogramas formato seg2, segy',
-                      fg='black',font=("Helvetica", 10))
-        label3 = Label(root, text='e mseed. Edições de traço disponíveis: normalização, sombreamento, ganho, clip e pick de primeira chegada.',fg='black',font=("Helvetica", 10))
-        label4 = Label(root, text='O módulo siscon é uma ferramenta para conversão de formatos de arquivos sísmicos. A conversão de',fg='black',font=("Helvetica", 10))
-        label5 = Label(root, text='formatos segue a ordem seg2/segy/mseed para segy/mseed.',
-                       fg='black',font=("Helvetica", 10))
-        titulo.grid(row=0, column=0, sticky="w",pady=15,padx=20)
-        label1.grid(row=2, column=0, sticky="w",pady=0,padx=20)
-        label2.grid(row=3, column=0, sticky="w",pady=0,padx=20)
-        label3.grid(row=4, column=0, sticky="w",pady=0,padx=20)
-        label4.grid(row=5, column=0, sticky="w",pady=0,padx=20)
-        label5.grid(row=6, column=0, sticky="w",pady=0,padx=20)
+        
         root.resizable(0,0)
         root.mainloop()
         
@@ -251,8 +217,10 @@ class Sispick(Tk):
         self.menu_arquivo.add_command(label='Abrir                    Ctrl+A',
                                       command=self.abrir_pt1)
         self.menu_arquivo.add_separator()
-        self.menu_arquivo.add_command(label='Salvar pick .vs           Ctrl+S',
+        self.menu_arquivo.add_command(label='Salvar pick Seisimager (.vs)           Ctrl+S',
                                       command=self.salvarpick)
+        self.menu_arquivo.add_command(label='Salvar pick Geosis (.gp)           Ctrl+S',
+                                      command=self.salvargp)
         self.menu_arquivo.add_separator()
         self.menu_arquivo.add_command(label='Sair                         Alt+S',
                                       command=self.destroy)
@@ -1282,6 +1250,35 @@ class Sispick(Tk):
 
             pass
 
+    def salvargp(self):
+
+        if not self.picks[:]:
+
+            messagebox.showerror('Geosis - Sispick','Nao há picks')
+            
+        else:
+            
+            try:
+                
+                arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Geosis pick', '.gp')])
+                
+                with open(arquivoSaida+'.gp','a') as arqpck:
+
+                    for i in range(len(self.arquivos)):
+                            
+                        for key in sorted(self.picks[i]):
+                            
+                            arqpck.write('%f %f 1\n'%(key,self.picks[i][key]*1000))
+
+                        arqpck.write('0 0 0\n')
+
+                arqpck.close()
+                messagebox.showinfo('Geosis - Sispick','Pick salvo')
+
+            except:
+
+                pass
+
     def salvarpick(self):
 
         if not self.picks[:]:
@@ -1501,7 +1498,248 @@ class Sispick(Tk):
         root.bind('<Return>', lambda x: do())
         root.resizable(0,0)
         root.mainloop()
-   
+
+
+class Sisphy(Tk):
+
+    def __init__(self):
+
+        Tk.__init__(self)
+        self.configure(background='#F3F3F3')
+        self.geometry('800x400+310+150')        
+        self.title('Geosis - Sisphy')
+        self.protocol("WM_DELETE_WINDOW", self.fechar)
+        self.parent = Frame(self,bg='#F3F3F3')
+        self.parent.grid(row=0,column=0,sticky='nsew')
+        self.barraDEmenu = Menu(self)
+        self.configure(menu=self.barraDEmenu)
+        self.menu_arquivo=Menu(self.barraDEmenu)
+        self.barraDEmenu.add_cascade(label='Arquivo',menu=self.menu_arquivo)
+        self.menu_arquivo.add_command(label='Abrir arquivo tempo de percurso (.gp)                    Ctrl+A',
+                                      command=self.abrirgp)
+        self.menu_curva=Menu(self.barraDEmenu)
+        self.barraDEmenu.add_cascade(label='Curvas',menu=self.menu_curva)
+        self.menu_curva.add_command(label='Editar curvas                    Ctrl+E',
+                                      command=self.editarCurva)
+        self.menu_inversao=Menu(self.barraDEmenu)
+        self.barraDEmenu.add_cascade(label='Inversão',menu=self.menu_inversao)
+        self.menu_inversao.add_command(label='Atribuir camadas                    Ctrl+E',
+                                      command=self.camadas)
+        self.frame = Frame(self,bg='#F3F3F3')
+        self.frame.grid(row=1, column=0,sticky='nsew')
+
+        self.xData = {}
+        self.yData = {}
+        self.linhas = []
+        self.bolas = {}
+        self.ngraficos = 0
+        self.count = 1
+
+        self.valorFigx = self.winfo_screenwidth()/170
+
+        if self.winfo_screenheight() == 1080:
+            
+            self.valorFigy = self.winfo_screenheight()/93.10
+
+        elif self.winfo_screenheight() == 768:
+
+            self.valorFigy = self.winfo_screenheight()/99.74
+
+        elif self.winfo_screenheight() == 1024:
+
+            self.valorFigy = self.winfo_screenheight()/94.1
+
+        elif self.winfo_screenheight() == 900:
+
+            self.valorFigy = self.winfo_screenheight()/96.5
+
+        elif self.winfo_screenheight() == 720:
+
+            self.valorFigy = self.winfo_screenheight()/101.5
+
+        else: # 800
+
+            self.valorFigy = self.winfo_screenheight()/99
+
+        plt.rcParams['keymap.zoom'] = 'z,Z'
+        plt.rcParams['keymap.back'] = 'v,V'
+        plt.rcParams['keymap.home'] = 'ctrl+z,ctrl+Z'
+        plt.rcParams['keymap.save'] = 'ctrl+i,ctrl+I'
+        plt.rcParams['keymap.pan'] = 'm,M'
+        self.bind('<Control-a>', lambda x: self.abrirgp())
+        self.bind('<Control-A>', lambda x: self.abrirgp())
+
+        self.curvaExiste = False
+        
+        self.mainloop()
+
+    def fechar(self):
+
+        global sisphyOn
+
+        if messagebox.askyesno("Geosis - Sisphy", "Sair do programa?"):
+
+            sisphyOn = False
+            self.destroy()
+
+        else:
+
+            pass
+
+    def abrirgp(self):
+
+        if self.curvaExiste == True:
+
+            messagebox.showinfo('','Feche a curva atual antes de abrir uma nova')
+
+        else:
+
+            try:
+
+                arquivo = filedialog.askopenfilename(title='Abrir',filetypes=[('Geosis pick','*.gp'),
+                                                                    ('Todos os arquivos','*.*')])
+            except:
+
+                pass
+
+            if len(arquivo) > 0:
+            
+                dados = open(arquivo).readlines()
+                
+                linhas = [i.strip('\n') for i in dados]
+
+                for i in linhas:
+
+                    if i == '0 0 0':
+
+                        self.ngraficos += 1
+
+                    else:
+
+                        pass
+
+                for i in range(self.ngraficos):
+
+                    self.xData[i+1] = []
+                    self.yData[i+1] = []
+
+                for i in linhas:
+
+                    if i == '0 0 0':
+
+                        self.count += 1
+
+                    else:
+
+                        self.xData[self.count].append(i.split()[0])
+                        self.yData[self.count].append(i.split()[1])
+
+                self.fig = plt.figure(figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
+                self.ax = self.fig.add_subplot(111)
+                
+                for i in range(self.ngraficos):
+
+                    linha, = self.ax.plot(self.xData[i+1],self.yData[i+1], picker=5)
+                    self.linhas.append(linha,)
+                    self.bolas[i+1] = []
+
+                    for j in range(len(self.xData[i+1])):
+                        
+                        bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'black', alpha=0.5, picker = 5)
+                        self.bolas[i+1].append(bola)
+
+                plt.title('Curva de tempo de percurso')     
+                plt.xlabel('Distância (m)')
+                plt.ylabel('Tempo (ms)')
+                plt.grid()
+                self.ax.xaxis.grid(linestyle='-', linewidth=.4)
+                self.ax.yaxis.grid(linestyle='-', linewidth=.4)
+                self.tela = FigureCanvasTkAgg(self.fig, self.frame)
+                self.tela.show()
+                self.tela.get_tk_widget().pack(fill='both', expand=True)
+                toolbar = NavigationToolbar2TkAgg(self.tela, self.frame)
+                toolbar.update()
+                self.tela._tkcanvas.pack(fill='both', expand=True)
+
+                def do(event):
+                        
+                    key_press_handler(event, self.tela, toolbar)
+                    
+                self.fig.canvas.mpl_connect('key_press_event', do)
+                self.curvaExiste = True
+                self.apertado = False
+                    
+            else:
+
+                pass
+
+    def editarCurva(self):
+
+        if self.curvaExiste == True:
+
+            def click(event):
+
+                for i in range(self.ngraficos):
+
+                    for j in self.bolas[i+1]:
+
+                        if event.artist == j:
+
+                            self.coordy = float(event.artist.get_offsets()[0][1])
+                            self.apertado = True
+                            
+                        else:
+
+                            pass
+
+            def soltar(event):
+
+                if self.apertado == True:
+
+                    for i in range(self.ngraficos):
+
+                        for j in self.yData[i+1]:
+
+                            if float(j) == self.coordy:
+
+                                self.yData[i+1][self.yData[i+1].index(j)] = event.ydata
+                        
+                            else:
+
+                                pass
+
+                        for j in range(len(self.xData[i+1])):
+
+                            self.bolas[i+1][j].remove()
+                                
+                        del self.bolas[i+1][:]
+
+                        for j in range(len(self.xData[i+1])):
+
+                            bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'black', alpha=0.5, picker = 5)
+                            self.bolas[i+1].append(bola)
+
+                        self.linhas[i].set_ydata(self.yData[i+1])
+
+                    self.tela.show()
+                    self.apertado = False
+              
+
+                else:
+
+                    pass
+
+            cid = self.fig.canvas.mpl_connect('pick_event', click)
+            cid2 = self.fig.canvas.mpl_connect('button_release_event', soltar)
+
+        else:
+
+            pass
+
+    def camadas(self):
+
+        pass
+        
 
 class Siscon(Tk):
     
