@@ -9,11 +9,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.backend_bases import key_press_handler
 import os                                                                              
 import numpy as np
+from scipy import stats
 
 liststreams = []                                
 sispickOn = False
 sisconOn = False
-sisphyOn = False
+sisrefOn = False
 
 class Launcher(Tk):
     
@@ -54,11 +55,11 @@ class Launcher(Tk):
         botaosiscon = Button(self.parentLauncher, text='siscon',width=10,height=1,font=("Verdana", 12),
                               bg = 'gray90',fg='black', activebackground = 'gray93',
                         activeforeground = 'black',command = self.chamarSiscon)
-        botaosisphy = Button(self.parentLauncher, text='sisphy',width=10,height=1,font=("Verdana", 12),
+        botaosisref = Button(self.parentLauncher, text='sisref',width=10,height=1,font=("Verdana", 12),
                               bg = 'gray90',fg='black', activebackground = 'gray93',
-                        activeforeground = 'black',command = self.chamarSisphy)
+                        activeforeground = 'black',command = self.chamarsisref)
         botaoSispick.grid(row=0,column=0,sticky='w')
-        botaosisphy.grid(row=0,column=0,padx=50)
+        botaosisref.grid(row=0,column=0,padx=50)
         botaosiscon.grid(row=0,column=0,sticky='e')
         self.resizable(0,0)
         self.protocol("WM_DELETE_WINDOW", self.fechar)
@@ -73,18 +74,18 @@ class Launcher(Tk):
 
             pass
 
-    def chamarSisphy(self):
+    def chamarsisref(self):
 
-        global sisphyOn
+        global sisrefOn
 
-        if sisphyOn == True:
+        if sisrefOn == True:
 
             pass
 
         else:
 
-            sisphyOn = True
-            Sisphy()
+            sisrefOn = True
+            sisref()
 
     def chamarSispick(self):
 
@@ -475,7 +476,6 @@ class Sispick(Tk):
                                                [self.sts[i][0].stats.delta*k for k in range(len(self.dadosCrus[i][j]))],color='black')
                     self.plotArts[i].append(traco)
                     
-                #plt.figure(i)
                 plt.title(' %s | %d canais'%(self.arquivos[i],int(self.canais)))     
                 plt.xlabel('Distância (m)')
                 plt.ylabel('Tempo (s)')
@@ -509,6 +509,14 @@ class Sispick(Tk):
             self.sombreamento = False
             self.normalizado = False
             self.eixoy = self.recordlen
+
+            if self.seg2 == False:
+
+                messagebox.showinfo('','Fontes de tiros não encontradas no cabeçalho. Antes de salvar o processamento vá em Cabeçalho > Editar cabeçalho')
+
+            else:
+
+                pass
             
         except:
 
@@ -1265,12 +1273,20 @@ class Sispick(Tk):
                 with open(arquivoSaida+'.gp','a') as arqpck:
 
                     for i in range(len(self.arquivos)):
+
+                        if self.seg2 == True:
+
+                            arqpck.write('/ %f %d 0.0\n'%(float(self.listSource[i]), self.canais))
+
+                        else:
+
+                            arqpck.write('0.0 %d 0.0\n'%self.canais)
                             
                         for key in sorted(self.picks[i]):
                             
                             arqpck.write('%f %f 1\n'%(key,self.picks[i][key]*1000))
 
-                        arqpck.write('0 0 0\n')
+                        #arqpck.write('0 0 0\n')
 
                 arqpck.close()
                 messagebox.showinfo('Geosis - Sispick','Pick salvo')
@@ -1500,40 +1516,58 @@ class Sispick(Tk):
         root.mainloop()
 
 
-class Sisphy(Tk):
+class sisref(Tk):
 
     def __init__(self):
 
         Tk.__init__(self)
         self.configure(background='#F3F3F3')
         self.geometry('800x400+310+150')        
-        self.title('Geosis - Sisphy')
+        self.title('Geosis - sisref')
         self.protocol("WM_DELETE_WINDOW", self.fechar)
-        self.parent = Frame(self,bg='#F3F3F3')
-        self.parent.grid(row=0,column=0,sticky='nsew')
-        self.barraDEmenu = Menu(self)
-        self.configure(menu=self.barraDEmenu)
-        self.menu_arquivo=Menu(self.barraDEmenu)
-        self.barraDEmenu.add_cascade(label='Arquivo',menu=self.menu_arquivo)
-        self.menu_arquivo.add_command(label='Abrir arquivo tempo de percurso (.gp)                    Ctrl+A',
+        parent = Frame(self,bg='#F3F3F3')
+        parent.grid(row=0,column=0,sticky='nsew')
+        barraDEmenu = Menu(self)
+        self.configure(menu=barraDEmenu)
+        menu_arquivo=Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Arquivo',menu=menu_arquivo)
+        menu_arquivo.add_command(label='Abrir arquivo tempo de percurso (.gp)                    Ctrl+A',
                                       command=self.abrirgp)
-        self.menu_curva=Menu(self.barraDEmenu)
-        self.barraDEmenu.add_cascade(label='Curvas',menu=self.menu_curva)
-        self.menu_curva.add_command(label='Editar curvas                    Ctrl+E',
+        menu_curva=Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Curvas',menu=menu_curva)
+        menu_curva.add_command(label='Editar curvas                    Ctrl+E',
                                       command=self.editarCurva)
-        self.menu_inversao=Menu(self.barraDEmenu)
-        self.barraDEmenu.add_cascade(label='Inversão',menu=self.menu_inversao)
-        self.menu_inversao.add_command(label='Atribuir camadas                    Ctrl+E',
+        menu_inversao=Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Inversão',menu=menu_inversao)
+        menu_inversao.add_command(label='Atribuir camada 1                    Ctrl+E',
+                                      command=self.camada1)
+        menu_inversao.add_command(label='Atribuir camada 2                    Ctrl+E',
                                       command=self.camadas)
+        menu_inversao.add_command(label='Atribuir camada 3                    Ctrl+E',
+                                      command=self.camadas)
+        menu_inversao.add_command(label='Calcular velocidades                    Ctrl+E',
+                                      command=self.velocidades)
+        botao_editor = Button(parent, text='E',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                              bg = 'gold2',activeforeground='white',
+                         activebackground = 'yellow2', command = self.editarCurva)
+        botao_editor.grid(row=0,column=2,sticky=W)
+        
         self.frame = Frame(self,bg='#F3F3F3')
         self.frame.grid(row=1, column=0,sticky='nsew')
 
         self.xData = {}
         self.yData = {}
         self.linhas = []
+        self.fontes = {}
         self.bolas = {}
+        self.camadas = {}
+        self.xDataCamada1 = {}
+        self.yDataCamada1 = {}
+        self.xDataCamada2 = {}
+        self.yDataCamada2 = {}
         self.ngraficos = 0
-        self.count = 1
+        self.count = 0
+        self.count2 = 0
 
         self.valorFigx = self.winfo_screenwidth()/170
 
@@ -1575,11 +1609,11 @@ class Sisphy(Tk):
 
     def fechar(self):
 
-        global sisphyOn
+        global sisrefOn
 
-        if messagebox.askyesno("Geosis - Sisphy", "Sair do programa?"):
+        if messagebox.askyesno("Geosis - sisref", "Sair do programa?"):
 
-            sisphyOn = False
+            sisrefOn = False
             self.destroy()
 
         else:
@@ -1610,9 +1644,10 @@ class Sisphy(Tk):
 
                 for i in linhas:
 
-                    if i == '0 0 0':
+                    if i.split()[0] == '/':
 
                         self.ngraficos += 1
+                        self.fontes.update({self.ngraficos:float(i.split()[1])})
 
                     else:
 
@@ -1622,10 +1657,14 @@ class Sisphy(Tk):
 
                     self.xData[i+1] = []
                     self.yData[i+1] = []
+                    self.xDataCamada1[i+1] = []
+                    self.yDataCamada1[i+1] = []
+                    self.xDataCamada2[i+1] = []
+                    self.yDataCamada2[i+1] = []
 
                 for i in linhas:
 
-                    if i == '0 0 0':
+                    if i.split()[0] == '/':
 
                         self.count += 1
 
@@ -1639,14 +1678,25 @@ class Sisphy(Tk):
                 
                 for i in range(self.ngraficos):
 
-                    linha, = self.ax.plot(self.xData[i+1],self.yData[i+1], picker=5)
+                    linha, = self.ax.plot(self.xData[i+1],self.yData[i+1], picker=5, color='black')
                     self.linhas.append(linha,)
+                    self.ax.axvline(float(self.fontes[i+1]),color='black',linestyle='--')
                     self.bolas[i+1] = []
 
                     for j in range(len(self.xData[i+1])):
                         
-                        bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'black', alpha=0.5, picker = 5)
+                        bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
                         self.bolas[i+1].append(bola)
+
+                        for k in linhas:
+
+                            if k.split()[0] == '/':
+
+                                pass
+
+                            else:
+                            
+                                self.camadas[bola] = int(k.split()[2])
 
                 plt.title('Curva de tempo de percurso')     
                 plt.xlabel('Distância (m)')
@@ -1668,6 +1718,7 @@ class Sisphy(Tk):
                 self.fig.canvas.mpl_connect('key_press_event', do)
                 self.curvaExiste = True
                 self.apertado = False
+                self.editorOn = False
                     
             else:
 
@@ -1677,60 +1728,71 @@ class Sisphy(Tk):
 
         if self.curvaExiste == True:
 
-            def click(event):
+            if self.editorOn == False:
 
-                for i in range(self.ngraficos):
-
-                    for j in self.bolas[i+1]:
-
-                        if event.artist == j:
-
-                            self.coordy = float(event.artist.get_offsets()[0][1])
-                            self.apertado = True
-                            
-                        else:
-
-                            pass
-
-            def soltar(event):
-
-                if self.apertado == True:
+                def click(event):
 
                     for i in range(self.ngraficos):
 
-                        for j in self.yData[i+1]:
+                        for j in self.bolas[i+1]:
 
-                            if float(j) == self.coordy:
+                            if event.artist == j:
 
-                                self.yData[i+1][self.yData[i+1].index(j)] = event.ydata
-                        
+                                self.coordy = float(event.artist.get_offsets()[0][1])
+                                self.apertado = True
+                                break
+                                
                             else:
 
                                 pass
 
-                        for j in range(len(self.xData[i+1])):
+                def soltar(event):
 
-                            self.bolas[i+1][j].remove()
-                                
-                        del self.bolas[i+1][:]
+                    if self.apertado == True:
 
-                        for j in range(len(self.xData[i+1])):
+                        for i in range(self.ngraficos):
 
-                            bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'black', alpha=0.5, picker = 5)
-                            self.bolas[i+1].append(bola)
+                            for j in self.yData[i+1]:
 
-                        self.linhas[i].set_ydata(self.yData[i+1])
+                                if float(j) == self.coordy:
 
-                    self.tela.show()
-                    self.apertado = False
-              
+                                    self.yData[i+1][self.yData[i+1].index(j)] = event.ydata
+                                    break
+                            
+                                else:
 
-                else:
+                                    pass
 
-                    pass
+                            for j in range(len(self.xData[i+1])):
 
-            cid = self.fig.canvas.mpl_connect('pick_event', click)
-            cid2 = self.fig.canvas.mpl_connect('button_release_event', soltar)
+                                self.bolas[i+1][j].remove()
+                                    
+                            del self.bolas[i+1][:]
+
+                            for j in range(len(self.xData[i+1])):
+
+                                bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
+                                self.bolas[i+1].append(bola)
+
+                            self.linhas[i].set_ydata(self.yData[i+1])
+
+                        self.tela.show()
+                        self.apertado = False
+                  
+
+                    else:
+
+                        pass
+
+                self.conexao1 = self.fig.canvas.mpl_connect('pick_event', click)
+                self.conexao2 = self.fig.canvas.mpl_connect('button_release_event', soltar)
+                self.editorOn = True
+
+            else:
+
+                self.fig.canvas.mpl_disconnect(self.conexao1)
+                self.fig.canvas.mpl_disconnect(self.conexao2)
+                self.editorOn = False
 
         else:
 
@@ -1738,7 +1800,90 @@ class Sisphy(Tk):
 
     def camadas(self):
 
-        pass
+        for i in range(self.ngraficos):
+
+            for j in range(len(self.xData[i+1])):
+
+                self.bolas[i+1][j].set_color('red')
+                
+        self.tela.show()
+
+        def click(event):
+
+            for i in range(self.ngraficos):
+            
+                if event.artist in self.bolas[i+1]:
+
+                    #print(i+1)
+                    for bola in self.bolas[i+1]:
+
+                        if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]):
+
+                            bola.set_color('#1BB270')
+                            self.camadas[event.artist] = 2
+                            #print(self.camadas[event.artist])
+                            self.xDataCamada2[i+1].append(float(bola.get_offsets()[0][0]))
+                            self.yDataCamada2[i+1].append(float(bola.get_offsets()[0][1]))
+
+                        else:
+
+                            self.xDataCamada1[i+1].append(float(bola.get_offsets()[0][0]))
+                            self.yDataCamada1[i+1].append(float(bola.get_offsets()[0][1]))
+
+                                            
+                    self.tela.show()
+                    
+            #print(self.xDataCamada2,self.yDataCamada2,self.xDataCamada1,self.yDataCamada1)
+                    
+
+        self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click)
+
+    def camada1(self):
+
+        def click(event):
+
+            for i in range(self.ngraficos):
+            
+                if event.artist in self.bolas[i+1]:
+
+                    event.artist.set_color('red')
+                    self.camadas[event.artist] = 1
+                    print(self.camadas[event.artist])  
+                    self.tela.show()
+                    break
+                
+        self.fig.canvas.mpl_disconnect(self.conexao3)
+        self.conexao4 = self.fig.canvas.mpl_connect('pick_event', click)
+
+    def velocidades(self):
+
+        #for i in range(self.ngraficos):
+
+        for j in self.xDataCamada1.values():
+
+            #print(j)
+
+            for k in self.yDataCamada1.values():
+
+                #print(k)
+
+                if j == []:
+
+                    pass
+
+                elif k == []:
+
+                    pass
+
+                else:
+
+                    slope, intercept, r_value, p_value, std_err = stats.linregress(j,k)
+                    print(1/slope,intercept)
+                    #print('velocidade = %f'%(1.0/float(slope)))
+            
+        
+
+        
         
 
 class Siscon(Tk):
