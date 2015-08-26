@@ -1273,18 +1273,18 @@ class Sispick(Tk):
                 with open(arquivoSaida+'.gp','a') as arqpck:
 
                     for i in range(len(self.arquivos)):
-
-                        if self.seg2 == True:
-
-                            arqpck.write('/ %f %d 0.0\n'%(float(self.listSource[i]), self.canais))
-
-                        else:
-
-                            arqpck.write('0.0 %d 0.0\n'%self.canais)
                             
                         for key in sorted(self.picks[i]):
                             
                             arqpck.write('%f %f 1\n'%(key,self.picks[i][key]*1000))
+
+                        if self.seg2 == True:
+
+                            arqpck.write('/ %f\n'%(float(self.listSource[i])))
+
+                        else:
+
+                            arqpck.write('0.0 %d 0.0\n'%self.canais)
 
                         #arqpck.write('0 0 0\n')
 
@@ -1565,8 +1565,13 @@ class sisref(Tk):
         self.yDataCamada1 = {}
         self.xDataCamada2 = {}
         self.yDataCamada2 = {}
-        self.ngraficos = 0
-        self.count = 0
+        self.especiais = {}
+        self.retasx = []
+        self.retasy = []
+        self.temp = []
+        self.vels = []
+        self.nlinhas = 0
+        self.count = 1
         self.count2 = 0
 
         self.valorFigx = self.winfo_screenwidth()/170
@@ -1644,39 +1649,66 @@ class sisref(Tk):
 
                 for i in linhas:
 
-                    if i.split()[0] == '/':
+                    if i.split()[0] != '/':
 
-                        self.ngraficos += 1
-                        self.fontes.update({self.ngraficos:float(i.split()[1])})
+                        self.temp.append(float(i.split()[0]))
 
                     else:
+                        
+                        self.nlinhas += 1
+                        self.fontes.update({self.nlinhas:float(i.split()[1])})
+                        
+                        if self.temp[0] < float(i.split()[1]) and self.temp[-1] > float(i.split()[1]):
 
-                        pass
+                            print('%f < %f < %f'%(self.temp[0],float(i.split()[1]),self.temp[-1]))
+                            self.especiais[self.nlinhas] = float(i.split()[1])
+                            print(self.especiais)
 
-                for i in range(self.ngraficos):
+                            del self.temp[:]
 
-                    self.xData[i+1] = []
-                    self.yData[i+1] = []
-                    self.xDataCamada1[i+1] = []
-                    self.yDataCamada1[i+1] = []
-                    self.xDataCamada2[i+1] = []
-                    self.yDataCamada2[i+1] = []
+                for i in range(self.nlinhas):
+
+                    if i+1 in self.especiais:
+
+                        self.xData[i+1] = []
+                        self.yData[i+1] = []
+                        self.xDataCamada1[i+1] = {}
+                        self.yDataCamada1[i+1] = {}
+                        self.xDataCamada2[i+1] = {}
+                        self.yDataCamada2[i+1] = {}
+
+                        for j in range(2):
+
+                            self.xDataCamada1[i+1][j+1] = []
+                            self.yDataCamada1[i+1][j+1] = []
+                            self.xDataCamada2[i+1][j+1] = []
+                            self.yDataCamada2[i+1][j+1] = []
+                            
+                    else:
+                        
+                        self.xData[i+1] = []
+                        self.yData[i+1] = []
+                        self.xDataCamada1[i+1] = []
+                        self.yDataCamada1[i+1] = []
+                        self.xDataCamada2[i+1] = []
+                        self.yDataCamada2[i+1] = []
 
                 for i in linhas:
 
-                    if i.split()[0] == '/':
-
-                        self.count += 1
-
-                    else:
+                    if i.split()[0] != '/':                       
 
                         self.xData[self.count].append(i.split()[0])
                         self.yData[self.count].append(i.split()[1])
 
+                    else:
+
+                        self.count += 1
+
+
                 self.fig = plt.figure(figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
                 self.ax = self.fig.add_subplot(111)
                 
-                for i in range(self.ngraficos):
+                for i in range(self.nlinhas):
 
                     linha, = self.ax.plot(self.xData[i+1],self.yData[i+1], picker=5, color='black')
                     self.linhas.append(linha,)
@@ -1732,7 +1764,7 @@ class sisref(Tk):
 
                 def click(event):
 
-                    for i in range(self.ngraficos):
+                    for i in range(self.nlinhas):
 
                         for j in self.bolas[i+1]:
 
@@ -1750,7 +1782,7 @@ class sisref(Tk):
 
                     if self.apertado == True:
 
-                        for i in range(self.ngraficos):
+                        for i in range(self.nlinhas):
 
                             for j in self.yData[i+1]:
 
@@ -1800,7 +1832,7 @@ class sisref(Tk):
 
     def camadas(self):
 
-        for i in range(self.ngraficos):
+        for i in range(self.nlinhas):
 
             for j in range(len(self.xData[i+1])):
 
@@ -1810,39 +1842,132 @@ class sisref(Tk):
 
         def click(event):
 
-            for i in range(self.ngraficos):
+            for i in range(self.nlinhas):
             
                 if event.artist in self.bolas[i+1]:
 
-                    #print(i+1)
                     for bola in self.bolas[i+1]:
 
-                        if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]):
+                        if i+1 in self.especiais:
 
-                            bola.set_color('#1BB270')
-                            self.camadas[event.artist] = 2
-                            #print(self.camadas[event.artist])
-                            self.xDataCamada2[i+1].append(float(bola.get_offsets()[0][0]))
-                            self.yDataCamada2[i+1].append(float(bola.get_offsets()[0][1]))
+                            if float(event.artist.get_offsets()[0][0]) < float(self.especiais[i+1]):
 
+                                if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[i+1]):
+
+                                    bola.set_color('#1BB270')
+                                    self.camadas[event.artist] = 2
+
+                                    #for j in range(2):
+
+                                    '''if len(self.xDataCamada2[i+1][j+1]) == 0:
+
+                                        pass
+
+                                    else:
+
+                                        del self.xDataCamada2[i+1][j+1][:]
+                                        del self.yDataCamada2[i+1][j+1][:]'''
+                                               
+                                    self.xDataCamada2[i+1][1].append(float(bola.get_offsets()[0][0]))
+                                    self.yDataCamada2[i+1][1].append(float(bola.get_offsets()[0][1]))
+
+                                elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[i+1]):
+                                    
+                                    bola.set_color('red')
+                                    self.camadas[event.artist] = 1
+
+                                    #for j in range(2):
+
+                                    '''if len(self.xDataCamada1[i+1][j+1]) == 0:
+
+                                        pass
+
+                                    else:
+
+                                        del self.xDataCamada1[i+1][j+1][:]
+                                        del self.yDataCamada1[i+1][j+1][:]'''
+                                               
+                                    self.xDataCamada1[i+1][1].append(float(bola.get_offsets()[0][0]))
+                                    self.yDataCamada1[i+1][1].append(float(bola.get_offsets()[0][1]))
+                                
+                            elif float(event.artist.get_offsets()[0][0]) > float(self.especiais[i+1]):
+
+                                if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[i+1]):
+
+                                    bola.set_color('#1BB270')
+                                    self.camadas[event.artist] = 2
+
+                                    #for j in range(2):
+
+                                    '''if len(self.xDataCamada2[i+1][j+1]) == 0:
+
+                                        pass
+
+                                    else:
+
+                                        del self.xDataCamada2[i+1][j+1][:]
+                                        del self.yDataCamada2[i+1][j+1][:]'''
+                                               
+                                    self.xDataCamada2[i+1][2].append(float(bola.get_offsets()[0][0]))
+                                    self.yDataCamada2[i+1][2].append(float(bola.get_offsets()[0][1]))
+                                    
+                                elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[i+1]):
+                                    
+                                    bola.set_color('red')
+                                    self.camadas[event.artist] = 1
+
+                                    #for j in range(2):
+
+                                    '''if len(self.xDataCamada1[i+1][j+1]) == 0:
+
+                                        pass
+
+                                    else:
+
+                                        del self.xDataCamada1[i+1][j+1][:]
+                                        del self.yDataCamada1[i+1][j+1][:]'''
+                                               
+                                    self.xDataCamada1[i+1][2].append(float(bola.get_offsets()[0][0]))
+                                    self.yDataCamada1[i+1][2].append(float(bola.get_offsets()[0][1]))
+                                    
                         else:
+                                 
+                            if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]):
 
-                            self.xDataCamada1[i+1].append(float(bola.get_offsets()[0][0]))
-                            self.yDataCamada1[i+1].append(float(bola.get_offsets()[0][1]))
+                                bola.set_color('#1BB270')
+                                self.camadas[event.artist] = 2
+                                #print(self.camadas[event.artist])
+                                self.xDataCamada2[i+1].append(float(bola.get_offsets()[0][0]))
+                                self.yDataCamada2[i+1].append(float(bola.get_offsets()[0][1]))
+
+                            else:
+
+                                bola.set_color('red')
+                                self.camadas[event.artist] = 1
+                                self.xDataCamada1[i+1].append(float(bola.get_offsets()[0][0]))
+                                self.yDataCamada1[i+1].append(float(bola.get_offsets()[0][1]))
 
                                             
                     self.tela.show()
                     
             #print(self.xDataCamada2,self.yDataCamada2,self.xDataCamada1,self.yDataCamada1)
-                    
 
-        self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click)
+        if self.editorOn == True:
+
+            self.fig.canvas.mpl_disconnect(self.conexao1)
+            self.fig.canvas.mpl_disconnect(self.conexao2)
+            self.editorOn = False
+            self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click)
+            
+        else:
+            
+            self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click)
 
     def camada1(self):
 
         def click(event):
 
-            for i in range(self.ngraficos):
+            for i in range(self.nlinhas):
             
                 if event.artist in self.bolas[i+1]:
 
@@ -1856,32 +1981,39 @@ class sisref(Tk):
         self.conexao4 = self.fig.canvas.mpl_connect('pick_event', click)
 
     def velocidades(self):
-
-        #for i in range(self.ngraficos):
-
+            
         for j in self.xDataCamada1.values():
 
-            #print(j)
+            if type(j) == dict:
 
-            for k in self.yDataCamada1.values():
+                self.retasx.append(j[1])
+                self.retasx.append(j[2])
 
-                #print(k)
+            else:
 
-                if j == []:
+                print(j)
+                self.retasx.append(j)
 
-                    pass
+        for j in self.yDataCamada1.values():
 
-                elif k == []:
+            if type(j) == dict:
 
-                    pass
+                self.retasy.append(j[1])
+                self.retasy.append(j[2])
 
-                else:
+            else:
 
-                    slope, intercept, r_value, p_value, std_err = stats.linregress(j,k)
-                    print(1/slope,intercept)
-                    #print('velocidade = %f'%(1.0/float(slope)))
-            
-        
+                self.retasy.append(j)
+
+        for i in range(len(self.retasx)):
+
+            slope, intercept, r_value, p_value, std_err = stats.linregress(self.retasx[i],self.retasy[i])
+            self.vels.append(1/slope)
+
+        print(self.vels)
+
+        vmed = sum(self.vels) / float(len(self.vels))
+        print(vmed)
 
         
         
