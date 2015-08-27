@@ -10,6 +10,7 @@ from matplotlib.backend_bases import key_press_handler
 import os                                                                              
 import numpy as np
 from scipy import stats
+import ast
 
 liststreams = []                                
 sispickOn = False
@@ -1566,10 +1567,12 @@ class sisref(Tk):
         self.xDataCamada2 = {}
         self.yDataCamada2 = {}
         self.especiais = {}
-        self.retasx = []
-        self.retasy = []
+        self.retas = {}
+        self.retas2 = {}
         self.temp = []
+        self.temp2 = []
         self.vels = []
+        self.vels2 = []
         self.nlinhas = 0
         self.count = 1
         self.count2 = 0
@@ -1715,20 +1718,58 @@ class sisref(Tk):
                     self.ax.axvline(float(self.fontes[i+1]),color='black',linestyle='--')
                     self.bolas[i+1] = []
 
-                    for j in range(len(self.xData[i+1])):
-                        
-                        bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
-                        self.bolas[i+1].append(bola)
+                    if self.fontes[i+1] > float(self.xData[i+1][-1]):
 
-                        for k in linhas:
+                        for j,k in zip(self.xData[i+1][::-1],self.yData[i+1][::-1]):
 
-                            if k.split()[0] == '/':
+                            bola = self.ax.scatter(j, k, s=30,c = 'white', alpha=1, picker = 5)
+                            self.bolas[i+1].append(bola)
 
-                                pass
+                    elif i+1 in self.especiais:
 
-                            else:
+                        for j in self.xData[i+1]:
+
+                            if float(j) < self.fontes[i+1]:
                             
-                                self.camadas[bola] = int(k.split()[2])
+                                self.temp2.append(j)
+                                self.count2 += 1
+
+                        for j,k in zip(self.temp2[::-1],range(self.count2-1,-1,-1)):
+
+                            bola = self.ax.scatter(j, self.yData[i+1][k], s=30,c = 'white', alpha=1, picker = 5)
+                            self.bolas[i+1].append(bola)
+
+                        del self.temp2[:]
+
+                        for j in self.xData[i+1]:
+
+                            if float(j) > self.fontes[i+1]:
+                            
+                                self.temp2.append(j)
+
+                        restantes = len(self.xData[i+1])-self.count2
+
+                        for j,k in zip(self.temp2,range(restantes,len(self.xData[i+1]),1)):
+
+                            bola = self.ax.scatter(j, self.yData[i+1][k], s=30,c = 'white', alpha=1, picker = 5)
+                            self.bolas[i+1].append(bola)
+
+                    else:
+
+                        for j in range(len(self.xData[i+1])):
+                                
+                            bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
+                            self.bolas[i+1].append(bola)
+
+                    for k in linhas:
+
+                        if k.split()[0] == '/':
+
+                            pass
+
+                        else:
+                        
+                            self.camadas[bola] = int(k.split()[2])
 
                 plt.title('Curva de tempo de percurso')     
                 plt.xlabel('Distância (m)')
@@ -1856,18 +1897,6 @@ class sisref(Tk):
 
                                     bola.set_color('#1BB270')
                                     self.camadas[event.artist] = 2
-
-                                    #for j in range(2):
-
-                                    '''if len(self.xDataCamada2[i+1][j+1]) == 0:
-
-                                        pass
-
-                                    else:
-
-                                        del self.xDataCamada2[i+1][j+1][:]
-                                        del self.yDataCamada2[i+1][j+1][:]'''
-                                               
                                     self.xDataCamada2[i+1][1].append(float(bola.get_offsets()[0][0]))
                                     self.yDataCamada2[i+1][1].append(float(bola.get_offsets()[0][1]))
 
@@ -1875,18 +1904,6 @@ class sisref(Tk):
                                     
                                     bola.set_color('red')
                                     self.camadas[event.artist] = 1
-
-                                    #for j in range(2):
-
-                                    '''if len(self.xDataCamada1[i+1][j+1]) == 0:
-
-                                        pass
-
-                                    else:
-
-                                        del self.xDataCamada1[i+1][j+1][:]
-                                        del self.yDataCamada1[i+1][j+1][:]'''
-                                               
                                     self.xDataCamada1[i+1][1].append(float(bola.get_offsets()[0][0]))
                                     self.yDataCamada1[i+1][1].append(float(bola.get_offsets()[0][1]))
                                 
@@ -1895,19 +1912,7 @@ class sisref(Tk):
                                 if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[i+1]):
 
                                     bola.set_color('#1BB270')
-                                    self.camadas[event.artist] = 2
-
-                                    #for j in range(2):
-
-                                    '''if len(self.xDataCamada2[i+1][j+1]) == 0:
-
-                                        pass
-
-                                    else:
-
-                                        del self.xDataCamada2[i+1][j+1][:]
-                                        del self.yDataCamada2[i+1][j+1][:]'''
-                                               
+                                    self.camadas[event.artist] = 2                                              
                                     self.xDataCamada2[i+1][2].append(float(bola.get_offsets()[0][0]))
                                     self.yDataCamada2[i+1][2].append(float(bola.get_offsets()[0][1]))
                                     
@@ -1915,18 +1920,6 @@ class sisref(Tk):
                                     
                                     bola.set_color('red')
                                     self.camadas[event.artist] = 1
-
-                                    #for j in range(2):
-
-                                    '''if len(self.xDataCamada1[i+1][j+1]) == 0:
-
-                                        pass
-
-                                    else:
-
-                                        del self.xDataCamada1[i+1][j+1][:]
-                                        del self.yDataCamada1[i+1][j+1][:]'''
-                                               
                                     self.xDataCamada1[i+1][2].append(float(bola.get_offsets()[0][0]))
                                     self.yDataCamada1[i+1][2].append(float(bola.get_offsets()[0][1]))
                                     
@@ -1936,7 +1929,6 @@ class sisref(Tk):
 
                                 bola.set_color('#1BB270')
                                 self.camadas[event.artist] = 2
-                                #print(self.camadas[event.artist])
                                 self.xDataCamada2[i+1].append(float(bola.get_offsets()[0][0]))
                                 self.yDataCamada2[i+1].append(float(bola.get_offsets()[0][1]))
 
@@ -1982,38 +1974,34 @@ class sisref(Tk):
 
     def velocidades(self):
             
-        for j in self.xDataCamada1.values():
+        for j,k,l,m in zip(self.xDataCamada1.values(),self.yDataCamada1.values(),self.xDataCamada2.values(),self.yDataCamada2.values()):
 
             if type(j) == dict:
 
-                self.retasx.append(j[1])
-                self.retasx.append(j[2])
+                #self.retasx.append(j[1])
+                #self.retasx.append(j[2])
+                self.retas.update({str(j[1]):k[1]})
+                self.retas.update({str(j[2]):k[2]})
+                self.retas2.update({str(l[1]):m[1]})
+                self.retas2.update({str(l[2]):m[2]})
 
             else:
 
-                print(j)
-                self.retasx.append(j)
+                self.retas.update({str(j):k})
+                self.retas2.update({str(l):m})
 
-        for j in self.yDataCamada1.values():
+        for i,j,k,l in zip(self.retas,self.retas.values(),self.retas2,self.retas2.values()):
 
-            if type(j) == dict:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(ast.literal_eval(i),j)
+            self.vels.append(abs(1/slope))
+            slope2, intercept2, r_value2, p_value2, std_err2 = stats.linregress(ast.literal_eval(k),l)
+            self.vels2.append(abs(1/slope2))
+        #print(self.vels)
+        #print(self.vels2)
 
-                self.retasy.append(j[1])
-                self.retasy.append(j[2])
-
-            else:
-
-                self.retasy.append(j)
-
-        for i in range(len(self.retasx)):
-
-            slope, intercept, r_value, p_value, std_err = stats.linregress(self.retasx[i],self.retasy[i])
-            self.vels.append(1/slope)
-
-        print(self.vels)
-
-        vmed = sum(self.vels) / float(len(self.vels))
-        print(vmed)
+        vmed1 = sum(self.vels) / float(len(self.vels))
+        vmed2 = sum(self.vels2) / float(len(self.vels2))
+        messagebox.showinfo('','Velocidades médias: camada 1 = %.2f km/s, camada 2 = %.2f km/s'%(vmed1,vmed2))
 
         
         
