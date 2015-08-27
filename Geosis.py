@@ -1663,9 +1663,7 @@ class sisref(Tk):
                         
                         if self.temp[0] < float(i.split()[1]) and self.temp[-1] > float(i.split()[1]):
 
-                            print('%f < %f < %f'%(self.temp[0],float(i.split()[1]),self.temp[-1]))
                             self.especiais[self.nlinhas] = float(i.split()[1])
-                            print(self.especiais)
 
                             del self.temp[:]
 
@@ -1707,7 +1705,6 @@ class sisref(Tk):
 
                         self.count += 1
 
-
                 self.fig = plt.figure(figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
                 self.ax = self.fig.add_subplot(111)
                 
@@ -1724,6 +1721,7 @@ class sisref(Tk):
 
                             bola = self.ax.scatter(j, k, s=30,c = 'white', alpha=1, picker = 5)
                             self.bolas[i+1].append(bola)
+                            self.camadas[bola] = 1
 
                     elif i+1 in self.especiais:
 
@@ -1738,6 +1736,7 @@ class sisref(Tk):
 
                             bola = self.ax.scatter(j, self.yData[i+1][k], s=30,c = 'white', alpha=1, picker = 5)
                             self.bolas[i+1].append(bola)
+                            self.camadas[bola] = 1
 
                         del self.temp2[:]
 
@@ -1753,6 +1752,7 @@ class sisref(Tk):
 
                             bola = self.ax.scatter(j, self.yData[i+1][k], s=30,c = 'white', alpha=1, picker = 5)
                             self.bolas[i+1].append(bola)
+                            self.camadas[bola] = 1
 
                     else:
 
@@ -1760,16 +1760,7 @@ class sisref(Tk):
                                 
                             bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
                             self.bolas[i+1].append(bola)
-
-                    for k in linhas:
-
-                        if k.split()[0] == '/':
-
-                            pass
-
-                        else:
-                        
-                            self.camadas[bola] = int(k.split()[2])
+                            self.camadas[bola] = 1
 
                 plt.title('Curva de tempo de percurso')     
                 plt.xlabel('Distância (m)')
@@ -1894,14 +1885,14 @@ class sisref(Tk):
                             if float(event.artist.get_offsets()[0][0]) < float(self.especiais[i+1]):
 
                                 if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[i+1]):
-
+            
                                     bola.set_color('#1BB270')
                                     self.camadas[event.artist] = 2
                                     self.xDataCamada2[i+1][1].append(float(bola.get_offsets()[0][0]))
                                     self.yDataCamada2[i+1][1].append(float(bola.get_offsets()[0][1]))
 
                                 elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[i+1]):
-                                    
+
                                     bola.set_color('red')
                                     self.camadas[event.artist] = 1
                                     self.xDataCamada1[i+1][1].append(float(bola.get_offsets()[0][0]))
@@ -1917,7 +1908,7 @@ class sisref(Tk):
                                     self.yDataCamada2[i+1][2].append(float(bola.get_offsets()[0][1]))
                                     
                                 elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[i+1]):
-                                    
+
                                     bola.set_color('red')
                                     self.camadas[event.artist] = 1
                                     self.xDataCamada1[i+1][2].append(float(bola.get_offsets()[0][0]))
@@ -1941,8 +1932,6 @@ class sisref(Tk):
 
                                             
                     self.tela.show()
-                    
-            #print(self.xDataCamada2,self.yDataCamada2,self.xDataCamada1,self.yDataCamada1)
 
         if self.editorOn == True:
 
@@ -2003,8 +1992,6 @@ class sisref(Tk):
         vmed2 = sum(self.vels2) / float(len(self.vels2))
         messagebox.showinfo('','Velocidades médias: camada 1 = %.2f km/s, camada 2 = %.2f km/s'%(vmed1,vmed2))
 
-        
-        
 
 class Siscon(Tk):
     
