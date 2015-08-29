@@ -1547,14 +1547,18 @@ class sisref(Tk):
         menu_inversao.add_command(label='Calcular velocidades                    Ctrl+E',
                                       command=self.velocidades)
         botao_editor = Button(parent, text='E',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                              bg = 'gold2',activeforeground='white',
-                         activebackground = 'yellow2', command = self.editarCurva)
+                              bg = 'floral white',activeforeground='black',
+                         activebackground = 'snow', command = self.editarCurva)
         botao_editor.grid(row=0,column=2,sticky=W)
-        botao_c2 = Button(parent, text='C2',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                              bg = 'gold2',activeforeground='white',
-                         activebackground = 'yellow2', command = self.camadas)
+        botao_c2 = Button(parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                              bg = 'red',activeforeground='white',
+                         activebackground = 'orange red', command = self.camadas)
         botao_c2.grid(row=0,column=3,sticky=W)
-        self.status = Label(parent,text = '', fg='red',font=("Helvetica", 12))
+        botao_v = Button(parent, text='V',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                              bg = 'dodger blue',activeforeground='white',
+                         activebackground = 'sky blue', command = self.velocidades)
+        botao_v.grid(row=0,column=4,sticky=W)
+        self.status = Label(parent,text = '', fg='green',font=("Helvetica", 12))
         self.status.grid(row=0,column=13,sticky=E)
         self.frame = Frame(self,bg='#F3F3F3')
         self.frame.grid(row=1, column=0,sticky='nsew')
@@ -1571,6 +1575,7 @@ class sisref(Tk):
         self.yDataCamada2 = {}
         self.sublinhas = {}
         self.especiais = {}
+        self.cores = {}
         self.retas = {}
         self.retas2 = {}
         self.temp = []
@@ -1581,8 +1586,11 @@ class sisref(Tk):
         self.count = 1
         self.count2 = 0
         self.sublinha = 0
+        self.linha = None
+        self.cor = None
+        self.artista = None
 
-        self.valorFigx = self.winfo_screenwidth()/170
+        self.valorFigx = self.winfo_screenwidth()/161
 
         if self.winfo_screenheight() == 1080:
             
@@ -1703,8 +1711,8 @@ class sisref(Tk):
 
                     if i.split()[0] != '/':                       
 
-                        self.xData[self.count].append(i.split()[0])
-                        self.yData[self.count].append(i.split()[1])
+                        self.xData[self.count].append(float(i.split()[0]))
+                        self.yData[self.count].append(float(i.split()[1]))
 
                     else:
 
@@ -1727,6 +1735,7 @@ class sisref(Tk):
                             bola = self.ax.scatter(j, k, s=30,c = 'white', alpha=1, picker = 5)
                             self.bolas[i+1].append(bola)
                             self.camadas[bola] = 1
+                            self.cores[bola] = 'white'
 
                     elif i+1 in self.especiais:
 
@@ -1743,6 +1752,7 @@ class sisref(Tk):
                             self.bolas[i+1].append(bola)
                             self.camadas[bola] = 1
                             self.sublinhas[bola] = 1
+                            self.cores[bola] = 'white'
 
                         del self.temp2[:]
 
@@ -1760,6 +1770,9 @@ class sisref(Tk):
                             self.bolas[i+1].append(bola)
                             self.camadas[bola] = 1
                             self.sublinhas[bola] = 2
+                            self.cores[bola] = 'white'
+
+                        del self.temp2[:]
 
                     else:
 
@@ -1768,6 +1781,7 @@ class sisref(Tk):
                             bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
                             self.bolas[i+1].append(bola)
                             self.camadas[bola] = 1
+                            self.cores[bola] = 'white'
 
                 plt.title('Curva de tempo de percurso')     
                 plt.xlabel('Distância (m)')
@@ -1791,77 +1805,91 @@ class sisref(Tk):
                 self.apertado = False
                 self.editorOn = False
                 self.layerPick = False
-                self.status.configure(text = ' Editor de traços: Off Editor de camadas: Off')
+                self.status.configure(text = ' Editor de traços: Off   Editor de camadas: Off')
                     
             else:
 
                 pass
 
+    def onoffcheck(self):
+
+        if self.editorOn == True and self.layerPick == True:
+                    
+            self.status.configure(text = ' Editor de traços: On   Editor de camadas: On')
+                    
+        elif self.editorOn == True and self.layerPick == False:
+            
+            self.status.configure(text = ' Editor de traços: On   Editor de camadas: Off')
+
+        elif self.editorOn == False and self.layerPick == True:
+            
+            self.status.configure(text = ' Editor de traços: Off   Editor de camadas: On')
+
+        else:
+
+            self.status.configure(text = ' Editor de traços: Off   Editor de camadas: Off')
+
     def editarCurva(self):
 
         if self.curvaExiste == True:
 
-            if self.editorOn == False:
+            if self.editorOn == True:
 
-                if self.layerPick == True:
-
-                    self.fig.canvas.mpl_disconnect(self.conexao3)
-                    self.layerPick = False
-
-                else:
-
-                    pass
+                self.fig.canvas.mpl_disconnect(self.conexao1)
+                self.fig.canvas.mpl_disconnect(self.conexao2)
+                self.editorOn = False
+                self.onoffcheck()
+                
+            else:
                     
                 def click(event):
 
                     for i in range(self.nlinhas):
 
-                        for j in self.bolas[i+1]:
+                        if event.artist in self.bolas[i+1]:
 
-                            if event.artist == j:
+                            self.coordy = float(event.artist.get_offsets()[0][1])
+                            self.coordx = float(event.artist.get_offsets()[0][0])
+                            self.apertado = True
+                            self.linha = i+1
+                            self.artista = event.artist
+                            break
+                            
+                        else:
 
-                                self.coordy = float(event.artist.get_offsets()[0][1])
-                                self.apertado = True
-                                break
-                                
-                            else:
-
-                                pass
+                            pass
 
                 def soltar(event):
 
                     if self.apertado == True:
 
-                        for i in range(self.nlinhas):
+                        for j in self.yData[self.linha]:
 
-                            for j in self.yData[i+1]:
+                            if float(j) == self.coordy:
+  
+                                self.yData[self.linha][self.yData[self.linha].index(self.coordy)] = float(event.ydata)
+                                self.bolas[self.linha][self.bolas[self.linha].index(self.artista)].remove()
+                                bola = self.ax.scatter(self.coordx,float(event.ydata),
+                                                       s=30,c = self.cores[self.artista], alpha=1, picker = 5)
+                                self.bolas[self.linha][self.bolas[self.linha].index(self.artista)] = bola
 
-                                if float(j) == self.coordy:
+                                for i in self.cores:
 
-                                    self.yData[i+1][self.yData[i+1].index(j)] = event.ydata
-                                    break
-                            
-                                else:
+                                    if i == self.artista:
+                                        
+                                        self.cores[bola] = self.cores[i]
+                                        del self.cores[i]
+                                        break
 
-                                    pass
-
-                            for j in range(len(self.xData[i+1])):
-
-                                self.bolas[i+1][j].remove()
-                                    
-                            del self.bolas[i+1][:]
-
-                            for j in range(len(self.xData[i+1])):
-
-                                bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
-                                self.bolas[i+1].append(bola)
-
-                            self.linhas[i].set_ydata(self.yData[i+1])
-
-                        self.tela.show()
-                        self.apertado = False
+                                self.linhas[self.linha-1].set_ydata(self.yData[self.linha])
+                                self.tela.show()
+                                self.apertado = False
+                                break
+                        
+                            else:
+    
+                                pass
                   
-
                     else:
 
                         pass
@@ -1869,156 +1897,203 @@ class sisref(Tk):
                 self.conexao1 = self.fig.canvas.mpl_connect('pick_event', click)
                 self.conexao2 = self.fig.canvas.mpl_connect('button_release_event', soltar)
                 self.editorOn = True
-                self.status.configure(text = ' Editor de traços: On Editor de camadas: Off')
-
-            else:
-
-                self.fig.canvas.mpl_disconnect(self.conexao1)
-                self.fig.canvas.mpl_disconnect(self.conexao2)
-                self.editorOn = False
+                self.onoffcheck()
 
         else:
 
             pass
 
     def camadas(self):
+
+        if self.curvaExiste == True:
         
-        if self.editorOn == True:
+            if self.layerPick == True:
 
-            self.fig.canvas.mpl_disconnect(self.conexao1)
-            self.fig.canvas.mpl_disconnect(self.conexao2)
-            self.editorOn = False
-
-        else:
-
-            pass
-
-        if self.layerPick == False:
-
-            for i in range(self.nlinhas):
-
-                for j in range(len(self.xData[i+1])):
-
-                    self.bolas[i+1][j].set_color('red')
-                    
-            self.tela.show()
-
-        else:
-
-            pass
-
-        def click2(event):
-
-            for i in range(self.nlinhas):
-
-                if event.artist in self.bolas[i+1]:
-
-                    linha = i+1
-
-                else:
-
-                    pass
-            
-            if linha in self.especiais:
-
-                if event.artist in self.sublinhas:
-
-                    self.sublinha = self.sublinhas[event.artist]
-
-                else:
-
-                    pass
-
-                if self.sublinha == 1:
-
-                    del self.xDataCamada1[linha][1][:]
-                    del self.yDataCamada1[linha][1][:]
-                    del self.xDataCamada2[linha][1][:]
-                    del self.yDataCamada2[linha][1][:]
-
-                elif self.sublinha ==2:
-
-                    del self.xDataCamada1[linha][2][:]
-                    del self.yDataCamada1[linha][2][:]
-                    del self.xDataCamada2[linha][2][:]
-                    del self.yDataCamada2[linha][2][:]
-
-                else:
-
-                    pass
+                self.fig.canvas.mpl_disconnect(self.conexao3)
+                self.layerPick = False
+                self.onoffcheck()
 
             else:
 
-                if len(self.xDataCamada1[linha]) > 0:
-                    
-                    del self.xDataCamada1[linha][:]
-                    del self.yDataCamada1[linha][:]
-                    del self.xDataCamada2[linha][:]
-                    del self.yDataCamada2[linha][:]
+                for i in self.cores:
 
-                else:
+                    if self.cores[i] == 'white':
 
-                    pass
+                        for i in range(self.nlinhas):
 
-            if event.artist in self.bolas[linha]:
+                            for j in range(len(self.xData[i+1])):
 
-                for bola in self.bolas[linha]:
+                                self.bolas[i+1][j].set_color('red')
 
-                    if linha in self.especiais:
+                        for i in self.cores:
 
-                        if float(event.artist.get_offsets()[0][0]) < float(self.especiais[linha]):
-
-                            if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[linha]):
-        
-                                bola.set_color('#1BB270')
-                                self.camadas[event.artist] = 2
-                                self.xDataCamada2[linha][1].append(float(bola.get_offsets()[0][0]))
-                                self.yDataCamada2[linha][1].append(float(bola.get_offsets()[0][1]))
-
-                            elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[linha]):
-
-                                bola.set_color('red')
-                                self.camadas[event.artist] = 1
-                                self.xDataCamada1[linha][1].append(float(bola.get_offsets()[0][0]))
-                                self.yDataCamada1[linha][1].append(float(bola.get_offsets()[0][1]))
-                            
-                        elif float(event.artist.get_offsets()[0][0]) > float(self.especiais[linha]):
-
-                            if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[linha]):
-
-                                bola.set_color('#1BB270')
-                                self.camadas[event.artist] = 2                                              
-                                self.xDataCamada2[linha][2].append(float(bola.get_offsets()[0][0]))
-                                self.yDataCamada2[linha][2].append(float(bola.get_offsets()[0][1]))
+                            self.cores[i] = 'red'
                                 
-                            elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[linha]):
+                        self.tela.show()
+                        break
 
-                                bola.set_color('red')
-                                self.camadas[event.artist] = 1
-                                self.xDataCamada1[linha][2].append(float(bola.get_offsets()[0][0]))
-                                self.yDataCamada1[linha][2].append(float(bola.get_offsets()[0][1]))
-                                
                     else:
-                             
-                        if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]):
 
-                            bola.set_color('#1BB270')
-                            self.camadas[event.artist] = 2
-                            self.xDataCamada2[linha].append(float(bola.get_offsets()[0][0]))
-                            self.yDataCamada2[linha].append(float(bola.get_offsets()[0][1]))
+                        pass
+
+                def click2(event):
+
+                    for i in range(self.nlinhas):
+
+                        if event.artist in self.bolas[i+1]:
+
+                            linha = i+1
 
                         else:
 
-                            bola.set_color('red')
-                            self.camadas[event.artist] = 1
-                            self.xDataCamada1[linha].append(float(bola.get_offsets()[0][0]))
-                            self.yDataCamada1[linha].append(float(bola.get_offsets()[0][1]))
-                         
-                self.tela.show()
+                            pass
+                    
+                    if linha in self.especiais:
+
+                        if event.artist in self.sublinhas:
+
+                            self.sublinha = self.sublinhas[event.artist]
+
+                        else:
+
+                            pass
+
+                        if self.sublinha == 1:
+
+                            del self.xDataCamada1[linha][1][:]
+                            del self.yDataCamada1[linha][1][:]
+                            del self.xDataCamada2[linha][1][:]
+                            del self.yDataCamada2[linha][1][:]
+
+                        elif self.sublinha ==2:
+
+                            del self.xDataCamada1[linha][2][:]
+                            del self.yDataCamada1[linha][2][:]
+                            del self.xDataCamada2[linha][2][:]
+                            del self.yDataCamada2[linha][2][:]
+
+                        else:
+
+                            pass
+
+                    else:
+
+                        if len(self.xDataCamada1[linha]) > 0:
+                            
+                            del self.xDataCamada1[linha][:]
+                            del self.yDataCamada1[linha][:]
+                            del self.xDataCamada2[linha][:]
+                            del self.yDataCamada2[linha][:]
+
+                        else:
+
+                            pass
+
+                    if event.artist in self.bolas[linha]:
+
+                        for bola in self.bolas[linha]:
+
+                            if linha in self.especiais:
+
+                                if float(event.artist.get_offsets()[0][0]) < float(self.especiais[linha]):
+
+                                    if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[linha]):
                 
-        self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click2)
-        self.layerPick = True
-        self.status.configure(text = ' Editor de traços: Off Editor de camadas: On')
+                                        bola.set_color('#1BB270')
+                                        self.camadas[event.artist] = 2
+                                        self.xDataCamada2[linha][1].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada2[linha][1].append(float(bola.get_offsets()[0][1]))
+
+                                        for i in self.cores:
+
+                                            if i == bola:
+
+                                                self.cores[i] = '#1BB270'
+                                                break
+
+                                    elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[linha]):
+
+                                        bola.set_color('red')
+                                        self.camadas[event.artist] = 1
+                                        self.xDataCamada1[linha][1].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada1[linha][1].append(float(bola.get_offsets()[0][1]))
+
+                                        for i in self.cores:
+
+                                            if i == bola:
+
+                                                self.cores[i] = 'red'
+                                                break
+                                    
+                                elif float(event.artist.get_offsets()[0][0]) > float(self.especiais[linha]):
+
+                                    if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[linha]):
+
+                                        bola.set_color('#1BB270')
+                                        self.camadas[event.artist] = 2                                              
+                                        self.xDataCamada2[linha][2].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada2[linha][2].append(float(bola.get_offsets()[0][1]))
+
+                                        for i in self.cores:
+
+                                            if i == bola:
+
+                                                self.cores[i] = '#1BB270'
+                                                break
+                                        
+                                    elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[linha]):
+
+                                        bola.set_color('red')
+                                        self.camadas[event.artist] = 1
+                                        self.xDataCamada1[linha][2].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada1[linha][2].append(float(bola.get_offsets()[0][1]))
+
+                                        for i in self.cores:
+
+                                            if i == bola:
+
+                                                self.cores[i] = 'red'
+                                                break
+                                        
+                            else:
+                                     
+                                if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]):
+
+                                    bola.set_color('#1BB270')
+                                    self.camadas[event.artist] = 2
+                                    self.xDataCamada2[linha].append(float(bola.get_offsets()[0][0]))
+                                    self.yDataCamada2[linha].append(float(bola.get_offsets()[0][1]))
+
+                                    for i in self.cores:
+
+                                            if i == bola:
+
+                                                self.cores[i] = '#1BB270'
+                                                break
+
+                                else:
+
+                                    bola.set_color('red')
+                                    self.camadas[event.artist] = 1
+                                    self.xDataCamada1[linha].append(float(bola.get_offsets()[0][0]))
+                                    self.yDataCamada1[linha].append(float(bola.get_offsets()[0][1]))
+
+                                    for i in self.cores:
+
+                                            if i == bola:
+
+                                                self.cores[i] = 'red'
+                                                break
+                                 
+                        self.tela.show()
+                        
+                self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click2)
+                self.layerPick = True
+                self.onoffcheck()
+
+        else:
+
+            pass
 
     def velocidades(self):
 
