@@ -11,11 +11,11 @@ import os
 import numpy as np
 from scipy import stats
 import ast
-
-liststreams = []                                
+                               
 sispickOn = False
 sisconOn = False
 sisrefOn = False
+
 
 class Launcher(Tk):
     
@@ -1502,8 +1502,6 @@ class Sispick(Tk):
 
             self.frame.destroy()
             root.destroy()
-            self.label.destroy()
-
         
         botaoOK = Button(self.frame, text='   Ok   ', bg = 'gray90',fg='black', activebackground = 'gray93',
                         activeforeground = 'black',width=8, command = do)
@@ -1725,7 +1723,8 @@ class sisref(Tk):
 
                     linha, = self.ax.plot(self.xData[i+1],self.yData[i+1], picker = 0, color='black')
                     self.linhas.append(linha,)
-                    self.ax.axvline(float(self.fontes[i+1]),color='black',linestyle='--')
+                    self.ax.scatter(float(self.fontes[i+1]),0,s=80,alpha=1,marker=(5,1),color='#E5C100')
+                    #self.ax.axvline(float(self.fontes[i+1]),color='black',linestyle='--')
                     self.bolas[i+1] = []
 
                     if self.fontes[i+1] > float(self.xData[i+1][-1]):
@@ -1863,11 +1862,11 @@ class sisref(Tk):
 
                     if self.apertado == True:
 
-                        for j in self.yData[self.linha]:
+                        for j in self.xData[self.linha]:
 
-                            if float(j) == self.coordy:
+                            if float(j) == self.coordx:
   
-                                self.yData[self.linha][self.yData[self.linha].index(self.coordy)] = float(event.ydata)
+                                self.yData[self.linha][self.xData[self.linha].index(self.coordx)] = float(event.ydata)
                                 self.bolas[self.linha][self.bolas[self.linha].index(self.artista)].remove()
                                 bola = self.ax.scatter(self.coordx,float(event.ydata),
                                                        s=30,c = self.cores[self.artista], alpha=1, picker = 5)
@@ -2097,16 +2096,18 @@ class sisref(Tk):
 
     def velocidades(self):
 
-        print(self.xDataCamada1)
+        '''print(self.xDataCamada1)
         print(self.yDataCamada1)
         print('--')
         print(self.xDataCamada2)
-        print(self.yDataCamada2)
+        print(self.yDataCamada2)'''
 
         if len(self.retas)>0:
 
             self.retas.clear()
             self.retas2.clear()
+            del self.vels[:]
+            del self.vels2[:]
 
         else:
 
@@ -2132,6 +2133,11 @@ class sisref(Tk):
             self.vels.append(abs(1/slope))
             slope2, intercept2, r_value2, p_value2, std_err2 = stats.linregress(ast.literal_eval(k),l)
             self.vels2.append(abs(1/slope2))
+            print(slope,slope2)
+
+        print(self.vels)
+        print('---')
+        print(self.vels2)
 
         vmed1 = sum(self.vels) / float(len(self.vels))
         vmed2 = sum(self.vels2) / float(len(self.vels2))
@@ -2178,6 +2184,8 @@ class Siscon(Tk):
         self.warning.grid(row = 6, column = 0, sticky='w',padx=20)
         self.resizable(0,0)
         self.select = False
+        self.Arquivos = ''
+        self.liststreams = []
         self.protocol("WM_DELETE_WINDOW", self.fechar)
         self.mainloop()
 
@@ -2195,8 +2203,6 @@ class Siscon(Tk):
             pass
         
     def entrada(self):
-
-        global liststreams
          
         self.Arquivos = filedialog.askopenfilenames(title='Abrir',filetypes=(('seg2','*.dat'),
                                                 ('segy','*.sgy'),('mseed','*.mseed'),('Todos os arquivos','*.*')))
@@ -2204,7 +2210,7 @@ class Siscon(Tk):
         try:
             
             for i in self.Arquivos:
-                liststreams.append(read(i))
+                self.liststreams.append(read(i))
 
             entradaOK = Label(self.frame, text='OK',fg = 'blue',font=("Helvetica", 11))
             entradaOK.grid(row=0,column=0,sticky='e',padx=150)
@@ -2228,8 +2234,6 @@ class Siscon(Tk):
                 
     def formatar(self):
 
-        global liststreams
-
         if len(self.Arquivos) == 0:
 
             self.warning.configure(text='Nenhum arquivo selecionado')
@@ -2248,7 +2252,7 @@ class Siscon(Tk):
 
                 try:
                     
-                    for i in liststreams:
+                    for i in self.liststreams:
                         
                         i.write(self.arquivoSaida+'.sgy',format=self.nome_formato.get())
 
@@ -2262,7 +2266,7 @@ class Siscon(Tk):
 
                 try:
                      
-                    for i in liststreams:
+                    for i in self.liststreams:
                         
                         i.write(self.arquivoSaida+'.mseed',format=self.nome_formato.get())
                         
@@ -2276,9 +2280,9 @@ class Siscon(Tk):
 
                 pass
             
-            for i in liststreams:
+            for i in self.liststreams:
                 
-                del liststreams[:]
+                del self.liststreams[:]
                 
             self.frame.destroy()
             self.destroy()
@@ -2289,11 +2293,9 @@ class Siscon(Tk):
         
     def cancelar(self):
 
-        global liststreams
-
-        for i in liststreams:
+        for i in self.liststreams:
                 
-            del liststreams[:]
+            del self.liststreams[:]
 
         self.frame.destroy()
         self.destroy()
