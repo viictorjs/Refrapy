@@ -389,141 +389,148 @@ class Sispick(Tk):
             self.arquivos = filedialog.askopenfilenames(title='Abrir',filetypes=[('seg2','*.dat'),('segy','*.sgy'),
                                                                            ('mseed','*.mseed'),('Todos os arquivos','*.*')])
 
-        else:
-        
-            messagebox.showinfo('','Feche a seçao sismica atual para abrir uma nova')
+            if len(self.arquivos) > 0:
 
-        if len(self.arquivos)>0:
-
-            self.configDx()
-
-        else:
-
-            pass
-
-    def abrir_pt2(self):
-
-        self.status.configure(text=' Abrindo %d arquivo(os). Aguarde...'%len(self.arquivos))
-
-        try:
-        
-            for i in range(len(self.arquivos)):
-
-                self.frame = Frame(self,bg='#F3F3F3')
-                self.frame.grid(row=1, column=0,sticky='nsew')
-                self.frames.append(self.frame)
-
-                fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
-                self.figs.append(fig)
-
-                ax = self.figs[i].add_subplot(111)
-                self.axes.append(ax)
-                
-                self.sts.append(read(self.arquivos[i]))
-
-                self.stsNorms.append(self.sts[i].copy())
-
-                self.sts[i].normalize(1)
-                self.stsNorms[i].normalize()
-
-                self.plotArts[i] = []
-                self.sombArts[i] = []
-                self.trClipados[i] = []
-                self.picks.append({})
-                self.picksArts.append({})
-                self.linhasArts.append({})
-                self.dadosCrus.append({})
-                self.dadosNorms.append({})
-                
-                self.canais = len(self.sts[0])                      
-                self.recordlen = self.sts[0][0].stats.endtime-self.sts[0][0].stats.starttime
-                self.lenPerfil = float((self.canais*self.valordx)-self.valordx)
-                self.intervaloAmostragem = self.sts[0][0].stats.delta
+                self.status.configure(text=' Abrindo %d arquivo(os). Aguarde...'%len(self.arquivos))
 
                 try:
-                    
-                    self.listSource.append(self.sts[i][0].stats.seg2['SOURCE_LOCATION'])
-                    self.seg2 = True
+                
+                    for i in range(len(self.arquivos)):
+
+                        self.frame = Frame(self,bg='#F3F3F3')
+                        self.frame.grid(row=1, column=0,sticky='nsew')
+                        self.frames.append(self.frame)
+
+                        fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
+                        self.figs.append(fig)
+
+                        ax = self.figs[i].add_subplot(111)
+                        self.axes.append(ax)
+                        
+                        self.sts.append(read(self.arquivos[i]))
+
+                        self.stsNorms.append(self.sts[i].copy())
+
+                        self.sts[i].normalize(1)
+                        self.stsNorms[i].normalize()
+
+                        self.plotArts[i] = []
+                        self.sombArts[i] = []
+                        self.trClipados[i] = []
+                        self.picks.append({})
+                        self.picksArts.append({})
+                        self.linhasArts.append({})
+                        self.dadosCrus.append({})
+                        self.dadosNorms.append({})
+
+                        try:
+                            
+                            self.listSource.append(self.sts[i][0].stats.seg2['SOURCE_LOCATION'])
+                            self.seg2 = True
+
+                        except:
+
+                            messagebox.showinfo('','Posição de fonte de tiro não encontrada no cabeçalho. Para adicionar vá em Cabeçalho > Fontes')
+                            self.seg2 = False
+                            pass
+
+                        try:
+                            
+                            self.valordx = float(self.sts[0][1].stats.seg2['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.seg2['RECEIVER_LOCATION'])
+                            self.seg2 = True
+
+                        except:
+
+                            messagebox.showinfo('','Espaçamento entre geofones não encontrado no cabeçalho. Selecione OK para inserir manualmente.')
+                            self.seg2 = False
+                            self.configDx()
+
+                    self.abrir_pt2()
 
                 except:
 
-                    self.seg2 = False
-                    pass
-                    
-                self.ganho.append(1)
-                self.clips.append(False)
-                self.sombreamentos.append(False)
-                
-                for j in range(self.canais):
-
-                    self.dadosCrus[i][j] = []
-                    self.dadosNorms[i][j] = []
-
-                    for k in self.sts[i][j]:
-
-                        self.dadosCrus[i][j].append(k)
-
-                    for k in self.stsNorms[i][j]:
-
-                        self.dadosNorms[i][j].append(k)
-
-                    self.trClipados[i].append([])
-
-                    self.okpicks.append(self.valordx*j)
-                    
-                    self.ticksLabel.append(str(int(j*self.valordx)))
-
-                    traco, = self.axes[i].plot([k*1.3+j*self.valordx for k in self.dadosCrus[i][j]],
-                                               [self.sts[i][0].stats.delta*k for k in range(len(self.dadosCrus[i][j]))],color='black')
-                    self.plotArts[i].append(traco)
-                    
-                plt.title(' %s | %d canais'%(self.arquivos[i],int(self.canais)))     
-                plt.xlabel('Distância (m)')
-                plt.ylabel('Tempo (s)')
-                plt.ylim(0,self.recordlen)
-                plt.xlim(-self.valordx,self.lenPerfil+self.valordx)
-                #plt.xticks(int(self.ticksLabel),self.ticksLabel)
-                    
-                tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
-                self.telas.append(tela)
-                self.telas[i].show()
-                self.telas[i].get_tk_widget().pack(fill='both', expand=True)
-                toolbar = NavigationToolbar2TkAgg(self.telas[i], self.frames[i])
-                self.toolbars.append(toolbar)
-                self.toolbars[i].update()
-                self.telas[i]._tkcanvas.pack(fill='both', expand=True)
-
-            self.status.configure(text=' ')
-                
-            self.frames[0].tkraise()
-            self.pagina = 0
-            plt.figure(self.pagina)
-
-            def do(event):
-                    
-                key_press_handler(event, self.telas[self.pagina], self.toolbars[self.pagina])
-                
-            self.figs[-1].canvas.mpl_connect('key_press_event', do)
-            
-            self.plotExiste = True
-            self.yinvertido = False
-            self.sombreamento = False
-            self.normalizado = False
-            self.eixoy = self.recordlen
-
-            if self.seg2 == False:
-
-                messagebox.showinfo('','Fontes de tiros não encontradas no cabeçalho. Antes de salvar o processamento vá em Cabeçalho > Editar cabeçalho')
+                    messagebox.showerror('','Arquivo inválido')
+                    self.status.configure(text='')
 
             else:
 
                 pass
-            
-        except:
 
-            self.status.configure(text=' ')
-            messagebox.showerror('Geosis - Sispick','Aquivo inválido')
-    
+        else:
+        
+            messagebox.showinfo('','Feche a seçao sismica atual para abrir uma nova')
+
+    def abrir_pt2(self):
+
+        for i in range(len(self.arquivos)):
+
+            self.canais = len(self.sts[0])                      
+            self.recordlen = self.sts[0][0].stats.endtime-self.sts[0][0].stats.starttime
+            self.lenPerfil = float((self.canais*self.valordx)-self.valordx)
+            self.intervaloAmostragem = self.sts[0][0].stats.delta
+                    
+            self.ganho.append(1)
+            self.clips.append(False)
+            self.sombreamentos.append(False)
+            
+            for j in range(self.canais):
+
+                self.dadosCrus[i][j] = []
+                self.dadosNorms[i][j] = []
+
+                for k in self.sts[i][j]:
+
+                    self.dadosCrus[i][j].append(k)
+
+                for k in self.stsNorms[i][j]:
+
+                    self.dadosNorms[i][j].append(k)
+
+                self.trClipados[i].append([])
+
+                self.okpicks.append(self.valordx*j)
+                
+                self.ticksLabel.append(str(int(j*self.valordx)))
+
+                traco, = self.axes[i].plot([k*1.3+j*self.valordx for k in self.dadosCrus[i][j]],
+                                           [self.sts[i][0].stats.delta*k for k in range(len(self.dadosCrus[i][j]))],color='black')
+                self.plotArts[i].append(traco)
+
+            plt.figure(i)    
+            plt.title(' %s | %d canais'%(self.arquivos[i],int(self.canais)))     
+            plt.xlabel('Distância (m)')
+            plt.ylabel('Tempo (s)')
+            plt.ylim(0,self.recordlen)
+            plt.xlim(-self.valordx,self.lenPerfil+self.valordx)
+            #plt.xticks(int(self.ticksLabel),self.ticksLabel)
+                
+            tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
+            self.telas.append(tela)
+            self.telas[i].show()
+            self.telas[i].get_tk_widget().pack(fill='both', expand=True)
+            toolbar = NavigationToolbar2TkAgg(self.telas[i], self.frames[i])
+            self.toolbars.append(toolbar)
+            self.toolbars[i].update()
+            self.telas[i]._tkcanvas.pack(fill='both', expand=True)
+
+        self.status.configure(text=' ')
+            
+        self.frames[0].tkraise()
+        self.pagina = 0
+        plt.figure(self.pagina)
+
+        def do(event):
+                
+            key_press_handler(event, self.telas[self.pagina], self.toolbars[self.pagina])
+            
+        self.figs[-1].canvas.mpl_connect('key_press_event', do)
+        
+        self.plotExiste = True
+        self.yinvertido = False
+        self.sombreamento = False
+        self.normalizado = False
+        self.eixoy = self.recordlen
+
 
     def nextpage(self):
         
