@@ -360,8 +360,8 @@ class Sispick(Tk):
         
         if self.plotExiste == False:
                     
-            self.arquivos = filedialog.askopenfilenames(title='Abrir',filetypes=[('seg2','*.dat'),('segy','*.sgy'),
-                                                                           ('mseed','*.mseed'),('Todos os arquivos','*.*')])
+            self.arquivos = sorted(filedialog.askopenfilenames(title='Abrir',filetypes=[('seg2','*.dat'),('segy','*.sgy'),
+                                                                           ('mseed','*.mseed'),('Todos os arquivos','*.*')]))
 
             if len(self.arquivos) > 0:
 
@@ -454,11 +454,11 @@ class Sispick(Tk):
 
                 for k in self.sts[i][j]:
 
-                    self.dadosCrus[i][j].append(k)
+                    self.dadosCrus[i][j].append(k*(-1))
 
                 for k in self.stsNorms[i][j]:
 
-                    self.dadosNorms[i][j].append(k)
+                    self.dadosNorms[i][j].append(k*(-1))
 
                 self.trClipados[i].append([])
 
@@ -466,12 +466,12 @@ class Sispick(Tk):
                 
                 self.ticksLabel.append(str(int(j*self.valordx)))
 
-                traco, = self.axes[i].plot([k*1.3+j*self.valordx for k in self.dadosCrus[i][j]],
+                traco, = self.axes[i].plot([k+j*self.valordx for k in self.dadosCrus[i][j]],
                                            [self.sts[i][0].stats.delta*k for k in range(len(self.dadosCrus[i][j]))],color='black')
                 self.plotArts[i].append(traco)
 
             plt.figure(i)    
-            plt.title(' %s | %d canais'%(self.arquivos[i],int(self.canais)))     
+            plt.title(' %s | %d canais'%(os.path.basename(self.arquivos[i]),int(self.canais)))     
             plt.xlabel('Distância (m)')
             plt.ylabel('Tempo (s)')
             plt.ylim(0,self.recordlen)
@@ -555,8 +555,8 @@ class Sispick(Tk):
 
                             self.picks[self.pagina][nearestMagnetValue] = event.ydata
                             self.picksArts[self.pagina][nearestMagnetValue].remove()
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.5,
-                                                                nearestMagnetValue+0.5,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
                             self.picksArts[self.pagina][nearestMagnetValue] = pickline
                             self.telas[self.pagina].show()
 
@@ -569,14 +569,14 @@ class Sispick(Tk):
                                 else:
 
                                     self.linhasArts[i][nearestMagnetValue].remove()
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.5,
-                                                                nearestMagnetValue+0.5,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
                                     self.linhasArts[i][nearestMagnetValue] = linhasverdes
                                     
                         else:
                             
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.5,
-                                                                nearestMagnetValue+0.5,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
                             self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
                             self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
                             self.telas[self.pagina].show()
@@ -589,8 +589,8 @@ class Sispick(Tk):
 
                                 else:
 
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.5,
-                                                                nearestMagnetValue+0.5,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
                                     self.linhasArts[i].update({nearestMagnetValue:linhasverdes})
                             
                             self.pickHappened = True
@@ -791,13 +791,13 @@ class Sispick(Tk):
 
                 for j in range(self.canais):
                     
-                    self.plotArts[self.pagina][j].set_xdata([(k*130*self.ganho[self.pagina]+j*self.valordx*100)/100 for k in self.dadosNorms[self.pagina][j]])
+                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
 
             else:
 
                 for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([(k*130*self.ganho[self.pagina]+j*self.valordx*100)/100 for k in self.dadosCrus[self.pagina][j]])
+                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
 
             if self.clips[self.pagina] == True:
 
@@ -869,13 +869,13 @@ class Sispick(Tk):
 
                 for j in range(self.canais):
                     
-                    self.plotArts[self.pagina][j].set_xdata([(k*130*self.ganho[self.pagina]+j*self.valordx*100)/100 for k in self.dadosNorms[self.pagina][j]])
+                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
                     
             else:
 
                 for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([(k*130*self.ganho[self.pagina]+j*self.valordx*100)/100 for k in self.dadosCrus[self.pagina][j]])
+                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
 
             if self.clips[self.pagina] == True:
 
@@ -997,7 +997,7 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[i][j].set_xdata([(k*130*self.ganho[i]+j*self.valordx*100)/100 for k in self.dadosNorms[i][j]])
+                        self.plotArts[i][j].set_xdata([k*self.ganho[i]+j*self.valordx for k in self.dadosNorms[i][j]])
 
                 self.normalizado = True
 
@@ -1009,7 +1009,7 @@ class Sispick(Tk):
                     
                     for j in range(self.canais):
 
-                        self.plotArts[i][j].set_xdata([(k*130*self.ganho[i]+j*self.valordx*100)/100 for k in self.dadosCrus[i][j]])
+                        self.plotArts[i][j].set_xdata([k*self.ganho[i]+j*self.valordx for k in self.dadosCrus[i][j]])
 
                 self.normalizado = False
 
@@ -1172,13 +1172,13 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([(k*130*self.ganho[self.pagina]+j*self.valordx*100)/100 for k in self.dadosNorms[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
 
                 else:
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([(k*130*self.ganho[self.pagina]+j*self.valordx*100)/100 for k in self.dadosCrus[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
 
                 self.clips[self.pagina] = False
                 
@@ -1267,8 +1267,6 @@ class Sispick(Tk):
                         else:
 
                             arqpck.write('0.0 %d 0.0\n'%self.canais)
-
-                        #arqpck.write('0 0 0\n')
 
                 arqpck.close()
                 messagebox.showinfo('Geosis - Sispick','Pick salvo')
@@ -1527,16 +1525,13 @@ class sisref(Tk):
                                       command=self.velocidades)
         botao_editor = Button(parent, text='E',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                               bg = 'floral white',activeforeground='black',
-                         activebackground = 'snow', command = self.editarCurva)
-        botao_editor.grid(row=0,column=2,sticky=W)
+                         activebackground = 'snow', command = self.editarCurva).grid(row=0,column=2,sticky=W)
         botao_c2 = Button(parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                               bg = 'red',activeforeground='white',
-                         activebackground = 'orange red', command = self.camadas)
-        botao_c2.grid(row=0,column=3,sticky=W)
+                         activebackground = 'orange red', command = self.camadas).grid(row=0,column=3,sticky=W)
         botao_v = Button(parent, text='V',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                               bg = 'dodger blue',activeforeground='white',
-                         activebackground = 'sky blue', command = self.velocidades)
-        botao_v.grid(row=0,column=4,sticky=W)
+                         activebackground = 'sky blue', command = self.velocidades).grid(row=0,column=4,sticky=W)
         self.status = Label(parent,text = '', fg='green',font=("Helvetica", 12))
         self.status.grid(row=0,column=13,sticky=E)
         self.frame = Frame(self,bg='#F3F3F3')
@@ -1905,6 +1900,28 @@ class sisref(Tk):
 
                                 self.bolas[i+1][j].set_color('red')
 
+                            for j in self.bolas[i+1]:
+
+                                if i+1 in self.especiais:
+
+                                    if float(j.get_offsets()[0][0]) < float(self.especiais[i+1]):
+
+                                        self.camadas[j] = 1
+                                        self.xDataCamada1[i+1][1].append(float(j.get_offsets()[0][0]))
+                                        self.yDataCamada1[i+1][1].append(float(j.get_offsets()[0][1]))
+
+                                    elif float(j.get_offsets()[0][0]) > float(self.especiais[i+1]): 
+
+                                        self.camadas[j] = 1
+                                        self.xDataCamada1[i+1][2].append(float(j.get_offsets()[0][0]))
+                                        self.yDataCamada1[i+1][2].append(float(j.get_offsets()[0][1]))
+
+                                else:
+
+                                    self.camadas[j] = 1
+                                    self.xDataCamada1[i+1].append(float(j.get_offsets()[0][0]))
+                                    self.yDataCamada1[i+1].append(float(j.get_offsets()[0][1]))
+                                
                         for i in self.cores:
 
                             self.cores[i] = 'red'
@@ -1945,7 +1962,7 @@ class sisref(Tk):
                             del self.xDataCamada2[linha][1][:]
                             del self.yDataCamada2[linha][1][:]
 
-                        elif self.sublinha ==2:
+                        elif self.sublinha == 2:
 
                             del self.xDataCamada1[linha][2][:]
                             del self.yDataCamada1[linha][2][:]
@@ -2077,13 +2094,7 @@ class sisref(Tk):
 
     def velocidades(self):
 
-        '''print(self.xDataCamada1)
-        print(self.yDataCamada1)
-        print('--')
-        print(self.xDataCamada2)
-        print(self.yDataCamada2)'''
-
-        if len(self.retas)>0:
+        if len(self.retas) > 0:
 
             self.retas.clear()
             self.retas2.clear()
@@ -2114,11 +2125,6 @@ class sisref(Tk):
             self.vels.append(abs(1/slope))
             slope2, intercept2, r_value2, p_value2, std_err2 = stats.linregress(ast.literal_eval(k),l)
             self.vels2.append(abs(1/slope2))
-            print(slope,slope2)
-
-        print(self.vels)
-        print('---')
-        print(self.vels2)
 
         vmed1 = sum(self.vels) / float(len(self.vels))
         vmed2 = sum(self.vels2) / float(len(self.vels2))
