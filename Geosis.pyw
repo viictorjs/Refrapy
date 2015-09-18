@@ -555,8 +555,8 @@ class Sispick(Tk):
 
                             self.picks[self.pagina][nearestMagnetValue] = event.ydata
                             self.picksArts[self.pagina][nearestMagnetValue].remove()
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.7,
+                                                                nearestMagnetValue+0.7,colors='r',linestyle='solid')
                             self.picksArts[self.pagina][nearestMagnetValue] = pickline
                             self.telas[self.pagina].show()
 
@@ -569,14 +569,14 @@ class Sispick(Tk):
                                 else:
 
                                     self.linhasArts[i][nearestMagnetValue].remove()
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.7,
+                                                                nearestMagnetValue+0.7,colors='green',linestyle='solid')
                                     self.linhasArts[i][nearestMagnetValue] = linhasverdes
                                     
                         else:
                             
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.7,
+                                                                nearestMagnetValue+0.7,colors='r',linestyle='solid')
                             self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
                             self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
                             self.telas[self.pagina].show()
@@ -589,8 +589,8 @@ class Sispick(Tk):
 
                                 else:
 
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.7,
+                                                                nearestMagnetValue+0.7,colors='green',linestyle='solid')
                                     self.linhasArts[i].update({nearestMagnetValue:linhasverdes})
                             
                             self.pickHappened = True
