@@ -140,6 +140,9 @@ class Sispick(Tk):
         self.toolbars = []
         self.stsNorms = []
         self.ganho = []
+        self.filtros = []
+        self.copiasCruas = []
+        self.copiasNorms = []
         self.okpicks = []
         self.clips = []
         self.sombreamentos = []
@@ -148,8 +151,8 @@ class Sispick(Tk):
         self.picksArts = []
         self.linhasArts = []
         self.conexoesPick = []
-        self.dadosCrus = []
-        self.dadosNorms = []
+        #self.sts = []
+        #self.stsNorms = []
                           
         self.plotArts = {}
         self.sombArts = {}
@@ -250,6 +253,14 @@ class Sispick(Tk):
         menu_editar.add_separator()
         menu_editar.add_command(label='Fechar seçao atual                     Ctrl+X',
                                      command=self.fecharPlot)
+        menu_filtros = Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Filtros',menu=menu_filtros)
+        menu_filtros.add_command(label='Passa banda          Ctrl+O',command=self.filtroBP)
+        menu_filtros.add_command(label='Corta banda          Ctrl+O',command=self.filtroBS)
+        menu_filtros.add_command(label='Passa baixa          Ctrl+O',command=self.filtroLP)
+        menu_filtros.add_command(label='Passa alta          Ctrl+O',command=self.filtroHP)
+        menu_filtros.add_separator()
+        menu_filtros.add_command(label='Remover filtros          Ctrl+O',command=self.removerFiltros)
         menu_opcoes = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Opçoes',menu=menu_opcoes)
         menu_opcoes.add_command(label='Opções de plot          Ctrl+O',command=self.configPlot)
@@ -394,8 +405,8 @@ class Sispick(Tk):
                         self.picks.append({})
                         self.picksArts.append({})
                         self.linhasArts.append({})
-                        self.dadosCrus.append({})
-                        self.dadosNorms.append({})
+                        #self.sts.append({})
+                        #self.stsNorms.append({})
 
                         try:
                             
@@ -446,19 +457,22 @@ class Sispick(Tk):
             self.ganho.append(1)
             self.clips.append(False)
             self.sombreamentos.append(False)
+            self.filtros.append(False)
+            self.copiasCruas.append(None)
+            self.copiasNorms.append(None)
             
             for j in range(self.canais):
 
-                self.dadosCrus[i][j] = []
-                self.dadosNorms[i][j] = []
+                #self.sts[i][j] = []
+                #self.stsNorms[i][j] = []
 
-                for k in self.sts[i][j]:
+               # for k in self.sts[i][j]:
 
-                    self.dadosCrus[i][j].append(k*(-1))
+                    #self.sts[i][j].append(k*(-1))
 
-                for k in self.stsNorms[i][j]:
+               # for k in self.stsNorms[i][j]:
 
-                    self.dadosNorms[i][j].append(k*(-1))
+                  #  self.stsNorms[i][j].append(k*(-1))
 
                 self.trClipados[i].append([])
 
@@ -466,8 +480,8 @@ class Sispick(Tk):
                 
                 self.ticksLabel.append(str(int(j*self.valordx)))
 
-                traco, = self.axes[i].plot([k+j*self.valordx for k in self.dadosCrus[i][j]],
-                                           [self.sts[i][0].stats.delta*k for k in range(len(self.dadosCrus[i][j]))],color='black')
+                traco, = self.axes[i].plot([k*(-1)+j*self.valordx for k in self.sts[i][j]],
+                                           [self.sts[i][0].stats.delta*k for k in range(len(self.sts[i][j]))],color='black')
                 self.plotArts[i].append(traco)
 
             plt.figure(i)    
@@ -685,50 +699,34 @@ class Sispick(Tk):
                     i.clf()
                     
                 del self.figs[:]
-
                 del self.telas[:]
-
                 del self.listSource[:]
-
                 del self.sts[:]
-
                 del self.ticksLabel[:]
-
                 del self.toolbars[:]
-
                 del self.stsNorms[:]
-
                 del self.ganho[:]
-
                 del self.okpicks[:]
-
                 del self.clips[:]
-
                 del self.sombreamentos[:]
-
                 del self.picks[:]
-
                 del self.picksArts[:]
-
                 del self.linhasArts[:]
-
                 del self.conexoesPick[:]
-
                 self.plotArts.clear()
                 self.sombArts.clear()
                 self.trClipados.clear()
 
-                for i in self.dadosCrus:
+                for i in self.sts:
 
                     i.clear()
 
-                for i in self.dadosNorms:
+                for i in self.stsNorms:
 
                     i.clear()
 
-                del self.dadosCrus[:]
-                del self.dadosNorms[:]
-
+                del self.sts[:]
+                del self.stsNorms[:]
                 self.plotExiste = False                                 
                 self.pickMode = False                                             
                 self.pickHappened = False               
@@ -768,7 +766,6 @@ class Sispick(Tk):
                                     
                 self.eixoy = None
                 self.normalizado = False
-
                 self.status.configure(text = '',fg='red')
 
             else:
@@ -789,15 +786,32 @@ class Sispick(Tk):
 
             if self.normalizado == True:
 
-                for j in range(self.canais):
-                    
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
+                if self.filtros[self.pagina] != True:
 
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.stsNorms[self.pagina][j]])
+
+                else:
+
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+                
             else:
 
-                for j in range(self.canais):
+                if self.filtros[self.pagina] != True:
+                
+                    for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.sts[self.pagina][j]])
+
+                else:
+
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+                    
 
             if self.clips[self.pagina] == True:
 
@@ -867,15 +881,31 @@ class Sispick(Tk):
 
             if self.normalizado == True:
 
-                for j in range(self.canais):
-                    
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
+                if self.filtros[self.pagina] != True:
+
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.stsNorms[self.pagina][j]])
+
+                else:
+
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
                     
             else:
 
-                for j in range(self.canais):
+                if self.filtros[self.pagina] != True:
 
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
+                    for j in range(self.canais):
+
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.sts[self.pagina][j]])
+
+                else:
+
+                    for j in range(self.canais):
+
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
 
             if self.clips[self.pagina] == True:
 
@@ -993,11 +1023,17 @@ class Sispick(Tk):
 
                 self.status.configure(text=' Normalizando traços...')
 
-                for i in range(len(self.arquivos)):                
+                for i in range(len(self.arquivos)):
 
-                    for j in range(self.canais):
+                    if self.filtros[i] != True:
 
-                        self.plotArts[i][j].set_xdata([k*self.ganho[i]+j*self.valordx for k in self.dadosNorms[i][j]])
+                        for j in range(self.canais):
+
+                            self.plotArts[i][j].set_xdata([k*(-1)*self.ganho[i]+j*self.valordx for k in self.stsNorms[i][j]])
+
+                    else:
+
+                        messagebox.showinfo('','Retire os filtros aplicados no sismograma para normalizar os traços')
 
                 self.normalizado = True
 
@@ -1006,10 +1042,17 @@ class Sispick(Tk):
                 self.status.configure(text=' Removendo normalização de traços...')
 
                 for i in range(len(self.arquivos)):
-                    
-                    for j in range(self.canais):
 
-                        self.plotArts[i][j].set_xdata([k*self.ganho[i]+j*self.valordx for k in self.dadosCrus[i][j]])
+                    if self.filtros[i] != True:
+                    
+                        for j in range(self.canais):
+
+                            self.plotArts[i][j].set_xdata([k*(-1)*self.ganho[i]+j*self.valordx for k in self.sts[i][j]])
+
+                    else:
+
+                        messagebox.showinfo('','Retire os filtros aplicados no sismograma para desnormalizar os traços')
+                        self.status.configure(text=' ')
 
                 self.normalizado = False
 
@@ -1172,13 +1215,13 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.stsNorms[self.pagina][j]])
 
                 else:
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.sts[self.pagina][j]])
 
                 self.clips[self.pagina] = False
                 
@@ -1239,6 +1282,528 @@ class Sispick(Tk):
         else:
 
             pass
+
+    def removerFiltros(self):
+
+        if self.plotExiste == True:
+
+            if self.filtros[self.pagina] == True:
+
+                if self.normalizado == True:
+
+                    for j in range(self.canais):
+
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.stsNorms[self.pagina][j]])
+
+                    self.copiasNorms[self.pagina] = None
+
+                else:
+
+                    for j in range(self.canais):
+
+                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.sts[self.pagina][j]])
+
+                    self.copiasCruas[self.pagina] = None
+
+                if self.clips[self.pagina] == True:
+
+                    for j in range(self.canais):
+
+                        if len(self.trClipados[self.pagina][j]) > 0:
+
+                            del self.trClipados[self.pagina][j][:]                      
+
+                        for i in self.plotArts[self.pagina][j].get_xdata():
+
+                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
+
+                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
+
+                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
+                                
+                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
+
+                            else:
+
+                                self.trClipados[self.pagina][j].append(i)
+
+                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+
+                else:
+
+                    pass
+                    
+                if self.sombreamentos[self.pagina] == True:
+
+                    for j in range(self.canais):
+                        
+                        self.sombArts[self.pagina][:].pop(j).remove()
+                        
+                    del self.sombArts[self.pagina][:]
+
+                    self.sombreamentos[self.pagina] = False
+                    self.fill()
+
+                else:
+
+                    pass
+
+                self.filtros[self.pagina] = False
+                self.telas[self.pagina].show()
+
+            else:
+
+                pass        
+
+        else:
+
+            pass
+
+    def filtroBP(self):
+
+        if self.plotExiste == True:
+
+            root = Tk()
+            root.geometry('250x200')
+            root.title('Geosis - Sispick')
+            fmin = StringVar()
+            fmax = StringVar()
+            titulo = Label(root, text = 'Passa banda em %s'%(os.path.basename(self.arquivos[self.pagina])), fg = 'red',
+                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 35)
+            fmin_label = Label(root, text='Frequência mínima:',
+                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
+            fmax_label = Label(root, text='Frequência máxima:',
+                        font=("Helvetica", 12),fg='black').grid(row=2, column=0, sticky="w", pady = 10,padx = 10)
+            entrymin = Entry(root, textvariable = fmin,width=10)
+            entrymin.grid(row=1, column=0, sticky="w", padx = 165)
+            entrymax = Entry(root, textvariable = fmax, width=10)
+            entrymax.grid(row=2, column=0, sticky="w", padx = 165)
+            root.resizable(0,0)
+
+            def do():
+
+                if self.normalizado == True:
+
+                    if self.filtros[self.pagina] == True:
+
+                        messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
+                        self.copiasNorms[self.pagina].filter("bandpass", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+
+                else:
+
+                    if self.filtros[self.pagina] == True:
+
+                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
+                        self.copiasCruas[self.pagina].filter("bandpass", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))    
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+
+                if self.clips[self.pagina] == True:
+
+                    for j in range(self.canais):
+
+                        if len(self.trClipados[self.pagina][j]) > 0:
+
+                            del self.trClipados[self.pagina][j][:]                      
+
+                        for i in self.plotArts[self.pagina][j].get_xdata():
+
+                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
+
+                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
+
+                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
+                                
+                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
+
+                            else:
+
+                                self.trClipados[self.pagina][j].append(i)
+
+                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+
+                else:
+
+                    pass
+                        
+                if self.sombreamentos[self.pagina] == True:
+
+                    for j in range(self.canais):
+                        
+                        self.sombArts[self.pagina][:].pop(j).remove()
+                        
+                    del self.sombArts[self.pagina][:]
+
+                    self.sombreamentos[self.pagina] = False
+                    self.fill()
+
+                else:
+
+                    pass
+
+                self.filtros[self.pagina] = True
+                self.telas[self.pagina].show()
+                        
+            def cancelar():
+
+                root.destroy()
+
+            bfiltrar = Button(root, text = 'Filtrar', width = 6,
+                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
+            bcancelar = Button(root, text = 'Cancelar', width = 6,
+                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
+            
+            root.mainloop()
+
+        else:
+
+            pass
+
+    def filtroBS(self):
+
+        if self.plotExiste == True:
+
+            root = Tk()
+            root.geometry('250x200')
+            root.title('Geosis - Sispick')
+            fmin = StringVar()
+            fmax = StringVar()
+            titulo = Label(root, text = 'Filtro: Corta banda', fg = 'red',
+                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 60)
+            fmin_label = Label(root, text='Frequência mínima:',
+                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
+            fmax_label = Label(root, text='Frequência máxima:',
+                        font=("Helvetica", 12),fg='black').grid(row=2, column=0, sticky="w", pady = 10,padx = 10)
+            entrymin = Entry(root, textvariable = fmin,width=10)
+            entrymin.grid(row=1, column=0, sticky="w", padx = 165)
+            entrymax = Entry(root, textvariable = fmax, width=10)
+            entrymax.grid(row=2, column=0, sticky="w", padx = 165)
+            root.resizable(0,0)
+
+            def do():
+
+                if self.normalizado == True:
+
+                    if self.filtros[self.pagina] == True:
+
+                        messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
+                        self.copiasNorms[self.pagina].filter("bandstop", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+
+                else:
+
+                    if self.filtros[self.pagina] == True:
+
+                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
+                        self.copiasCruas[self.pagina].filter("bandstop", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))    
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+
+                if self.clips[self.pagina] == True:
+
+                    for j in range(self.canais):
+
+                        if len(self.trClipados[self.pagina][j]) > 0:
+
+                            del self.trClipados[self.pagina][j][:]                      
+
+                        for i in self.plotArts[self.pagina][j].get_xdata():
+
+                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
+
+                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
+
+                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
+                                
+                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
+
+                            else:
+
+                                self.trClipados[self.pagina][j].append(i)
+
+                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+
+                else:
+
+                    pass
+                        
+                if self.sombreamentos[self.pagina] == True:
+
+                    for j in range(self.canais):
+                        
+                        self.sombArts[self.pagina][:].pop(j).remove()
+                        
+                    del self.sombArts[self.pagina][:]
+
+                    self.sombreamentos[self.pagina] = False
+                    self.fill()
+
+                else:
+
+                    pass
+
+                self.filtros[self.pagina] = True
+                self.telas[self.pagina].show()
+                
+            def cancelar():
+
+                root.destroy()
+
+            bfiltrar = Button(root, text = 'Filtrar', width = 6,
+                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
+            bcancelar = Button(root, text = 'Cancelar', width = 6,
+                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
+            
+            root.mainloop()
+
+        else:
+
+            pass
+
+    def filtroLP(self):
+
+        if self.plotExiste == True:
+
+            root = Tk()
+            root.geometry('250x200')
+            root.title('Geosis - Sispick')
+            flim = StringVar()
+            titulo = Label(root, text = 'Filtro: Passa baixa', fg = 'red',
+                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 60)
+            flim_label = Label(root, text='Frequência limite:',
+                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
+            entryflim = Entry(root, textvariable = flim, width=10)
+            entryflim.grid(row=1, column=0, sticky="w", padx = 165)
+            root.resizable(0,0)
+
+            def do():
+
+                if self.normalizado == True:
+
+                    if self.filtros[self.pagina] == True:
+
+                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
+                        self.copiasNorms[self.pagina].filter("lowpass", freq=float(entryflim.get()))
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+
+                else:
+
+                    if self.filtros[self.pagina] == True:
+
+                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
+                        self.copiasCruas[self.pagina].filter("lowpass", freq=float(entryflim.get()))  
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+
+                if self.clips[self.pagina] == True:
+
+                    for j in range(self.canais):
+
+                        if len(self.trClipados[self.pagina][j]) > 0:
+
+                            del self.trClipados[self.pagina][j][:]                      
+
+                        for i in self.plotArts[self.pagina][j].get_xdata():
+
+                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
+
+                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
+
+                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
+                                
+                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
+
+                            else:
+
+                                self.trClipados[self.pagina][j].append(i)
+
+                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+
+                else:
+
+                    pass
+                        
+                if self.sombreamentos[self.pagina] == True:
+
+                    for j in range(self.canais):
+                        
+                        self.sombArts[self.pagina][:].pop(j).remove()
+                        
+                    del self.sombArts[self.pagina][:]
+
+                    self.sombreamentos[self.pagina] = False
+                    self.fill()
+
+                else:
+
+                    pass
+
+                self.filtros[self.pagina] = True
+                self.telas[self.pagina].show()
+                
+            def cancelar():
+
+                root.destroy()
+
+            bfiltrar = Button(root, text = 'Filtrar', width = 6,
+                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
+            bcancelar = Button(root, text = 'Cancelar', width = 6,
+                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
+            
+            root.mainloop()
+
+        else:
+
+            pass
+
+    def filtroHP(self):
+
+        if self.plotExiste == True:
+
+            root = Tk()
+            root.geometry('250x200')
+            root.title('Geosis - Sispick')
+            flim = StringVar()
+            titulo = Label(root, text = 'Filtro: Passa alta', fg = 'red',
+                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 60)
+            flim_label = Label(root, text='Frequência limite:',
+                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
+            entryflim = Entry(root, textvariable = flim, width=10)
+            entryflim.grid(row=1, column=0, sticky="w", padx = 165)
+            root.resizable(0,0)
+
+            def do():
+
+                if self.normalizado == True:
+
+                    if self.filtros[self.pagina] == True:
+
+                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
+                        self.copiasNorms[self.pagina].filter("highpass", freq=float(entryflim.get()))
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+
+                else:
+
+                    if self.filtros[self.pagina] == True:
+
+                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                            
+                    else:
+
+                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
+                        self.copiasCruas[self.pagina].filter("highpass", freq=float(entryflim.get()))  
+                
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+
+                if self.clips[self.pagina] == True:
+
+                    for j in range(self.canais):
+
+                        if len(self.trClipados[self.pagina][j]) > 0:
+
+                            del self.trClipados[self.pagina][j][:]                      
+
+                        for i in self.plotArts[self.pagina][j].get_xdata():
+
+                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
+
+                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
+
+                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
+                                
+                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
+
+                            else:
+
+                                self.trClipados[self.pagina][j].append(i)
+
+                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+
+                else:
+
+                    pass
+                        
+                if self.sombreamentos[self.pagina] == True:
+
+                    for j in range(self.canais):
+                        
+                        self.sombArts[self.pagina][:].pop(j).remove()
+                        
+                    del self.sombArts[self.pagina][:]
+
+                    self.sombreamentos[self.pagina] = False
+                    self.fill()
+
+                else:
+
+                    pass
+
+                self.filtros[self.pagina] = True
+                self.telas[self.pagina].show()
+                        
+            def cancelar():
+
+                root.destroy()
+
+            bfiltrar = Button(root, text = 'Filtrar', width = 6,
+                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
+            bcancelar = Button(root, text = 'Cancelar', width = 6,
+                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
+            
+            root.mainloop()
+
+        else:
+
+            pass 
 
     def salvargp(self):
 
