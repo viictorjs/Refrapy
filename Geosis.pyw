@@ -2155,7 +2155,7 @@ class sisref(Tk):
                             self.camadas[bola] = 1
                             self.cores[bola] = 'white'
 
-                    elif i+1 in self.especiais:
+                    if i+1 in self.especiais:
 
                         for j in self.xData[i+1]:
 
@@ -2173,12 +2173,14 @@ class sisref(Tk):
                             self.cores[bola] = 'white'
 
                         del self.temp2[:]
+                        self.count2 = 0
 
                         for j in self.xData[i+1]:
 
                             if float(j) > self.fontes[i+1]:
                             
                                 self.temp2.append(j)
+                                self.count2 += 1
 
                         restantes = len(self.xData[i+1])-self.count2
 
@@ -2191,6 +2193,7 @@ class sisref(Tk):
                             self.cores[bola] = 'white'
 
                         del self.temp2[:]
+                        self.count2 = 0
 
                     else:
 
