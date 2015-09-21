@@ -170,8 +170,12 @@ class Sispick(Tk):
         self.pagina = None
         self.recordlen = None                   
         self.valordx = None                                  
-        self.valorY = 0.4
-        self.valorGanho = 1.2
+        self.valorY = 0.3
+        self.valorGanho = 1.5
+        self.fatorLP = 0.8
+        self.fatorHP = 1.5
+        self.freqLP = 1000
+        self.freqHP = 5
         
         self.valorFigx = self.winfo_screenwidth()/80.50
 
@@ -255,59 +259,73 @@ class Sispick(Tk):
                                      command=self.fecharPlot)
         menu_filtros = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Filtros',menu=menu_filtros)
-        menu_filtros.add_command(label='Passa banda          Ctrl+O',command=self.filtroBP)
-        menu_filtros.add_command(label='Corta banda          Ctrl+O',command=self.filtroBS)
         menu_filtros.add_command(label='Passa baixa          Ctrl+O',command=self.filtroLP)
         menu_filtros.add_command(label='Passa alta          Ctrl+O',command=self.filtroHP)
         menu_filtros.add_separator()
         menu_filtros.add_command(label='Remover filtros          Ctrl+O',command=self.removerFiltros)
+        menu_cabecalho = Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Cabeçalho',menu = menu_cabecalho)
+        menu_cabecalho.add_command(label='Editar valores          Ctrl+O',command = self.cabecalho)
         menu_opcoes = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Opçoes',menu=menu_opcoes)
         menu_opcoes.add_command(label='Opções de plot          Ctrl+O',command=self.configPlot)
         menu_ajuda = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Ajuda',menu=menu_ajuda)
         menu_ajuda.add_command(label='Atalhos de teclado',command = lambda: print('oi'))
-        self.Back = Button(self.parent, text='<',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        Back = Button(self.parent, text='<',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = 'chartreuse3',activeforeground='white',
                       activebackground = 'chartreuse2', command = self.backpage).grid(row=0,column=0,sticky=W)
-        self.Next = Button(self.parent, text='>',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        Next = Button(self.parent, text='>',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = 'chartreuse3',activeforeground='white',
                       activebackground = 'chartreuse2', command = self.nextpage).grid(row=0,column=1,sticky=W)
-        self.ampDown = Button(self.parent, text='-',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        ampDown = Button(self.parent, text='-',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                               bg = 'gold2',activeforeground='white',
                          activebackground = 'yellow2', command = self.ampdown).grid(row=0,column=2,sticky=W)
-        self.ampUp = Button(self.parent, text='+',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        ampUp = Button(self.parent, text='+',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                             bg = 'gold2',activeforeground='white',
                        activebackground = 'yellow2', command = self.ampup).grid(row=0,column=3,sticky=W)
-        self.menosY = Button(self.parent, text='- T',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        menosY = Button(self.parent, text='- Y',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                              bg = 'DarkOrange2',activeforeground='white',
                             activebackground = 'orange2', command = self.menosy).grid(row=0,column=4,sticky=W)
-        self.maisY = Button(self.parent, text='+T',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        maisY = Button(self.parent, text='+Y',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                             bg = 'DarkOrange2',activeforeground='white',
                             activebackground = 'orange2', command = self.maisy).grid(row=0,column=5,sticky=W)
-        self.Pick = Button(self.parent, text='P', bg = 'red3',font=("Arial", 10,'bold'),width = 4,
+        Pick = Button(self.parent, text='P', bg = 'red3',font=("Arial", 10,'bold'),width = 4,
                            activebackground = 'red2',
                       activeforeground = 'white', command = self.ativarPick).grid(row=0,column=6,sticky=W)
-        self.limpar = Button(self.parent, text='L', bg = 'snow2',font=("Arial", 10,'bold'),width = 4,
+        limpar = Button(self.parent, text='L', bg = 'snow2',font=("Arial", 10,'bold'),width = 4,
                            activebackground = 'snow',
                       activeforeground = 'black', command = self.limparplot).grid(row=0,column=7,sticky=W)
-        self.inverttime = Button(self.parent, text='I',width = 4,font=("Arial", 10,'bold'),
+        inverttime = Button(self.parent, text='I',width = 4,font=("Arial", 10,'bold'),
                                  fg= 'black', bg = 'goldenrod4',activeforeground='white',
                             activebackground = 'gold3', command = self.invert).grid(row=0,column=8,sticky=W)
-        self.normal = Button(self.parent, text='N',fg= 'black',font=("Arial", 10,'bold'),
+        normal = Button(self.parent, text='N',fg= 'black',font=("Arial", 10,'bold'),
                              width = 4, bg = 'purple2',activeforeground='white',
                             activebackground = 'DarkOrchid1', command = self.normalizar).grid(row=0,column=9,sticky=W)
-        self.FILL = Button(self.parent, text='S',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = 'blue2',activeforeground='white',
-                            activebackground = 'royal blue', command = self.fill).grid(row=0,column=10,sticky=W)
-        self.clipar = Button(self.parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        FILL = Button(self.parent, text='S',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#3065CE',activeforeground='white',
+                            activebackground = '#5983D7', command = self.fill).grid(row=0,column=10,sticky=W)
+        clipar = Button(self.parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = 'bisque4',activeforeground='white',
                             activebackground = 'bisque3', command = self.clip).grid(row=0,column=11,sticky=W)
-        self.FecharPlot = Button(self.parent, text='x', bg = 'gray3',font=("Arial", 10,'bold'),
+        PA = Button(self.parent, text='PA',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#8CA9E4',activeforeground='white',
+                            activebackground = '#C5D4F1', command = self.filtroHP).grid(row=0,column=12,sticky=W)
+        PB = Button(self.parent, text='PB',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#FFACAA',activeforeground='white',
+                            activebackground = '#FFD5D4', command = self.filtroLP).grid(row=0,column=13,sticky=W)
+        RF = Button(self.parent, text='RF',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#6E7E40',activeforeground='white',
+                            activebackground = '#8B9766', command = self.removerFiltros).grid(row=0,column=14,sticky=W)
+        FecharPlot = Button(self.parent, text='x', bg = 'gray3',font=("Arial", 10,'bold'),
                                  width = 4,fg='white', activebackground = 'gray30',
-                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=12,sticky=W)
+                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=15,sticky=W)
         self.status = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
-        self.status.grid(row=0,column=13,sticky=E)
+        self.status.grid(row=0,column=16,sticky=E)
+        self.statusPA = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
+        self.statusPA.grid(row=0,column=18,sticky=E)
+        self.statusPB = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
+        self.statusPB.grid(row=0,column=20,sticky=E)
         
         plt.rcParams['keymap.zoom'] = 'z,Z'
         plt.rcParams['keymap.back'] = 'v,V'
@@ -416,6 +434,7 @@ class Sispick(Tk):
                         except:
 
                             messagebox.showinfo('','Posição de fonte de tiro não encontrada no cabeçalho. Para adicionar vá em Cabeçalho > Fontes')
+                            self.listSource.append(999)
                             self.seg2 = False
                             pass
 
@@ -992,7 +1011,7 @@ class Sispick(Tk):
 
     def maisy(self):
 
-        if self.plotExiste == True and self.eixoy + 0.4 < self.recordlen:
+        if self.plotExiste == True and self.eixoy + 0.3 < self.recordlen:
 
             self.eixoy += self.valorY
 
@@ -1305,6 +1324,12 @@ class Sispick(Tk):
 
                     self.copiasCruas[self.pagina] = None
 
+                self.statusPA.configure(text = '')
+                self.statusPB.configure(text = '')
+                self.filtros[self.pagina] = False
+                self.freqLP = 1000
+                self.freqHP = 5
+
                 if self.clips[self.pagina] == True:
 
                     for j in range(self.canais):
@@ -1348,7 +1373,6 @@ class Sispick(Tk):
 
                     pass
 
-                self.filtros[self.pagina] = False
                 self.telas[self.pagina].show()
 
             else:
@@ -1359,338 +1383,97 @@ class Sispick(Tk):
 
             pass
 
-    def filtroBP(self):
-
-        if self.plotExiste == True:
-
-            root = Tk()
-            root.geometry('250x200')
-            root.title('Geosis - Sispick')
-            fmin = StringVar()
-            fmax = StringVar()
-            titulo = Label(root, text = 'Passa banda em %s'%(os.path.basename(self.arquivos[self.pagina])), fg = 'red',
-                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 35)
-            fmin_label = Label(root, text='Frequência mínima:',
-                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
-            fmax_label = Label(root, text='Frequência máxima:',
-                        font=("Helvetica", 12),fg='black').grid(row=2, column=0, sticky="w", pady = 10,padx = 10)
-            entrymin = Entry(root, textvariable = fmin,width=10)
-            entrymin.grid(row=1, column=0, sticky="w", padx = 165)
-            entrymax = Entry(root, textvariable = fmax, width=10)
-            entrymax.grid(row=2, column=0, sticky="w", padx = 165)
-            root.resizable(0,0)
-
-            def do():
-
-                if self.normalizado == True:
-
-                    if self.filtros[self.pagina] == True:
-
-                        messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
-                            
-                    else:
-
-                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
-                        self.copiasNorms[self.pagina].filter("bandpass", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))
-                
-                        for j in range(self.canais):
-
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
-
-                else:
-
-                    if self.filtros[self.pagina] == True:
-
-                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
-                            
-                    else:
-
-                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
-                        self.copiasCruas[self.pagina].filter("bandpass", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))    
-                
-                        for j in range(self.canais):
-
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
-
-                if self.clips[self.pagina] == True:
-
-                    for j in range(self.canais):
-
-                        if len(self.trClipados[self.pagina][j]) > 0:
-
-                            del self.trClipados[self.pagina][j][:]                      
-
-                        for i in self.plotArts[self.pagina][j].get_xdata():
-
-                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
-
-                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
-
-                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
-                                
-                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
-
-                            else:
-
-                                self.trClipados[self.pagina][j].append(i)
-
-                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
-
-                else:
-
-                    pass
-                        
-                if self.sombreamentos[self.pagina] == True:
-
-                    for j in range(self.canais):
-                        
-                        self.sombArts[self.pagina][:].pop(j).remove()
-                        
-                    del self.sombArts[self.pagina][:]
-
-                    self.sombreamentos[self.pagina] = False
-                    self.fill()
-
-                else:
-
-                    pass
-
-                self.filtros[self.pagina] = True
-                self.telas[self.pagina].show()
-                        
-            def cancelar():
-
-                root.destroy()
-
-            bfiltrar = Button(root, text = 'Filtrar', width = 6,
-                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
-            bcancelar = Button(root, text = 'Cancelar', width = 6,
-                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
-            
-            root.mainloop()
-
-        else:
-
-            pass
-
-    def filtroBS(self):
-
-        if self.plotExiste == True:
-
-            root = Tk()
-            root.geometry('250x200')
-            root.title('Geosis - Sispick')
-            fmin = StringVar()
-            fmax = StringVar()
-            titulo = Label(root, text = 'Filtro: Corta banda', fg = 'red',
-                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 60)
-            fmin_label = Label(root, text='Frequência mínima:',
-                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
-            fmax_label = Label(root, text='Frequência máxima:',
-                        font=("Helvetica", 12),fg='black').grid(row=2, column=0, sticky="w", pady = 10,padx = 10)
-            entrymin = Entry(root, textvariable = fmin,width=10)
-            entrymin.grid(row=1, column=0, sticky="w", padx = 165)
-            entrymax = Entry(root, textvariable = fmax, width=10)
-            entrymax.grid(row=2, column=0, sticky="w", padx = 165)
-            root.resizable(0,0)
-
-            def do():
-
-                if self.normalizado == True:
-
-                    if self.filtros[self.pagina] == True:
-
-                        messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
-                            
-                    else:
-
-                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
-                        self.copiasNorms[self.pagina].filter("bandstop", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))
-                
-                        for j in range(self.canais):
-
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
-
-                else:
-
-                    if self.filtros[self.pagina] == True:
-
-                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
-                            
-                    else:
-
-                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
-                        self.copiasCruas[self.pagina].filter("bandstop", freqmin=float(entrymin.get()), freqmax=float(entrymax.get()))    
-                
-                        for j in range(self.canais):
-
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
-
-                if self.clips[self.pagina] == True:
-
-                    for j in range(self.canais):
-
-                        if len(self.trClipados[self.pagina][j]) > 0:
-
-                            del self.trClipados[self.pagina][j][:]                      
-
-                        for i in self.plotArts[self.pagina][j].get_xdata():
-
-                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
-
-                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
-
-                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
-                                
-                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
-
-                            else:
-
-                                self.trClipados[self.pagina][j].append(i)
-
-                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
-
-                else:
-
-                    pass
-                        
-                if self.sombreamentos[self.pagina] == True:
-
-                    for j in range(self.canais):
-                        
-                        self.sombArts[self.pagina][:].pop(j).remove()
-                        
-                    del self.sombArts[self.pagina][:]
-
-                    self.sombreamentos[self.pagina] = False
-                    self.fill()
-
-                else:
-
-                    pass
-
-                self.filtros[self.pagina] = True
-                self.telas[self.pagina].show()
-                
-            def cancelar():
-
-                root.destroy()
-
-            bfiltrar = Button(root, text = 'Filtrar', width = 6,
-                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
-            bcancelar = Button(root, text = 'Cancelar', width = 6,
-                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
-            
-            root.mainloop()
-
-        else:
-
-            pass
-
     def filtroLP(self):
 
         if self.plotExiste == True:
 
-            root = Tk()
-            root.geometry('250x200')
-            root.title('Geosis - Sispick')
-            flim = StringVar()
-            titulo = Label(root, text = 'Filtro: Passa baixa', fg = 'red',
-                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 60)
-            flim_label = Label(root, text='Frequência limite:',
-                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
-            entryflim = Entry(root, textvariable = flim, width=10)
-            entryflim.grid(row=1, column=0, sticky="w", padx = 165)
-            root.resizable(0,0)
+            if self.normalizado == True:
 
-            def do():
+                if self.filtros[self.pagina] != True:
 
-                if self.normalizado == True:
+                    self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
+                    self.copiasNorms[self.pagina].filter("lowpass", freq = self.freqLP)
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP)
+                    self.freqLP = self.freqLP*self.fatorLP
+                    self.filtros[self.pagina] = True
 
-                    if self.filtros[self.pagina] == True:
+                else:
 
-                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                    self.copiasNorms[self.pagina].filter("lowpass", freq = self.freqLP)
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP)
+                    self.freqLP = self.freqLP*self.fatorLP
+                    self.filtros[self.pagina] = True
                             
-                    else:
+                for j in range(self.canais):
 
-                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
-                        self.copiasNorms[self.pagina].filter("lowpass", freq=float(entryflim.get()))
-                
-                        for j in range(self.canais):
+                    self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
 
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+            else:
+
+                if self.filtros[self.pagina] != True:
+
+                    self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
+                    self.copiasCruas[self.pagina].filter("lowpass", freq = self.freqLP)
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP)
+                    self.freqLP = self.freqLP*self.fatorLP
+                    self.filtros[self.pagina] = True
 
                 else:
 
-                    if self.filtros[self.pagina] == True:
-
-                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                    self.copiasCruas[self.pagina].filter("lowpass", freq = self.freqLP)
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP)
+                    self.freqLP = self.freqLP*self.fatorLP
+                    self.filtros[self.pagina] = True
                             
-                    else:
+                for j in range(self.canais):
 
-                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
-                        self.copiasCruas[self.pagina].filter("lowpass", freq=float(entryflim.get()))  
-                
-                        for j in range(self.canais):
+                    self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
 
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+            if self.clips[self.pagina] == True:
 
-                if self.clips[self.pagina] == True:
+                for j in range(self.canais):
 
-                    for j in range(self.canais):
+                    if len(self.trClipados[self.pagina][j]) > 0:
 
-                        if len(self.trClipados[self.pagina][j]) > 0:
+                        del self.trClipados[self.pagina][j][:]                      
 
-                            del self.trClipados[self.pagina][j][:]                      
+                    for i in self.plotArts[self.pagina][j].get_xdata():
 
-                        for i in self.plotArts[self.pagina][j].get_xdata():
+                        if i < (j*self.valordx)-((self.valordx/2)*0.9):
 
-                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
+                            self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
 
-                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
+                        elif i > (j*self.valordx)+((self.valordx/2)*0.9):
+                            
+                            self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
 
-                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
-                                
-                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
+                        else:
 
-                            else:
+                            self.trClipados[self.pagina][j].append(i)
 
-                                self.trClipados[self.pagina][j].append(i)
+                    self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
 
-                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+            else:
 
-                else:
+                pass
+                    
+            if self.sombreamentos[self.pagina] == True:
 
-                    pass
-                        
-                if self.sombreamentos[self.pagina] == True:
+                for j in range(self.canais):
+                    
+                    self.sombArts[self.pagina][:].pop(j).remove()
+                    
+                del self.sombArts[self.pagina][:]
 
-                    for j in range(self.canais):
-                        
-                        self.sombArts[self.pagina][:].pop(j).remove()
-                        
-                    del self.sombArts[self.pagina][:]
+                self.sombreamentos[self.pagina] = False
+                self.fill()
 
-                    self.sombreamentos[self.pagina] = False
-                    self.fill()
+            else:
 
-                else:
+                pass
 
-                    pass
-
-                self.filtros[self.pagina] = True
-                self.telas[self.pagina].show()
-                
-            def cancelar():
-
-                root.destroy()
-
-            bfiltrar = Button(root, text = 'Filtrar', width = 6,
-                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
-            bcancelar = Button(root, text = 'Cancelar', width = 6,
-                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
-            
-            root.mainloop()
+            self.filtros[self.pagina] = True
+            self.telas[self.pagina].show()
 
         else:
 
@@ -1700,110 +1483,97 @@ class Sispick(Tk):
 
         if self.plotExiste == True:
 
-            root = Tk()
-            root.geometry('250x200')
-            root.title('Geosis - Sispick')
-            flim = StringVar()
-            titulo = Label(root, text = 'Filtro: Passa alta', fg = 'red',
-                           font=("Helvetica", 12)).grid(row = 0, column = 0, sticky = 'w', pady = 10, padx = 60)
-            flim_label = Label(root, text='Frequência limite:',
-                        font=("Helvetica", 12),fg='black').grid(row=1, column=0, sticky="w", pady = 10,padx = 10)
-            entryflim = Entry(root, textvariable = flim, width=10)
-            entryflim.grid(row=1, column=0, sticky="w", padx = 165)
-            root.resizable(0,0)
+            if self.normalizado == True:
 
-            def do():
+                if self.filtros[self.pagina] != True:
 
-                if self.normalizado == True:
+                    self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
+                    self.copiasNorms[self.pagina].filter("highpass", freq = self.freqHP)
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP)
+                    self.freqHP = self.freqHP*self.fatorHP
+                    self.filtros[self.pagina] = True
 
-                    if self.filtros[self.pagina] == True:
+                else:
 
-                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                    self.copiasNorms[self.pagina].filter("highpass", freq = self.freqHP)
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP)
+                    self.freqHP = self.freqHP*self.fatorHP
+                    self.filtros[self.pagina] = True
                             
-                    else:
+                for j in range(self.canais):
 
-                        self.copiasNorms[self.pagina] = self.stsNorms[self.pagina].copy()
-                        self.copiasNorms[self.pagina].filter("highpass", freq=float(entryflim.get()))
-                
-                        for j in range(self.canais):
+                    self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
 
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+            else:
+
+                if self.filtros[self.pagina] != True:
+
+                    self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
+                    self.copiasCruas[self.pagina].filter("highpass", freq = self.freqHP)
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP)
+                    self.freqHP = self.freqHP*self.fatorHP
+                    self.filtros[self.pagina] = True
 
                 else:
 
-                    if self.filtros[self.pagina] == True:
-
-                         messagebox.showinfo('','Remova o filtro anterior para adicionar um novo')
+                    self.copiasCruas[self.pagina].filter("highpass", freq = self.freqHP)
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP)
+                    self.freqHP = self.freqHP*self.fatorHP
+                    self.filtros[self.pagina] = True
                             
-                    else:
+                for j in range(self.canais):
 
-                        self.copiasCruas[self.pagina] = self.sts[self.pagina].copy()
-                        self.copiasCruas[self.pagina].filter("highpass", freq=float(entryflim.get()))  
-                
-                        for j in range(self.canais):
+                    self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
 
-                            self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+            if self.clips[self.pagina] == True:
 
-                if self.clips[self.pagina] == True:
+                for j in range(self.canais):
 
-                    for j in range(self.canais):
+                    if len(self.trClipados[self.pagina][j]) > 0:
 
-                        if len(self.trClipados[self.pagina][j]) > 0:
+                        del self.trClipados[self.pagina][j][:]                      
 
-                            del self.trClipados[self.pagina][j][:]                      
+                    for i in self.plotArts[self.pagina][j].get_xdata():
 
-                        for i in self.plotArts[self.pagina][j].get_xdata():
+                        if i < (j*self.valordx)-((self.valordx/2)*0.9):
 
-                            if i < (j*self.valordx)-((self.valordx/2)*0.9):
+                            self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
 
-                                self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
+                        elif i > (j*self.valordx)+((self.valordx/2)*0.9):
+                            
+                            self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
 
-                            elif i > (j*self.valordx)+((self.valordx/2)*0.9):
-                                
-                                self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
+                        else:
 
-                            else:
+                            self.trClipados[self.pagina][j].append(i)
 
-                                self.trClipados[self.pagina][j].append(i)
+                    self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
 
-                        self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+            else:
 
-                else:
+                pass
+                    
+            if self.sombreamentos[self.pagina] == True:
 
-                    pass
-                        
-                if self.sombreamentos[self.pagina] == True:
+                for j in range(self.canais):
+                    
+                    self.sombArts[self.pagina][:].pop(j).remove()
+                    
+                del self.sombArts[self.pagina][:]
 
-                    for j in range(self.canais):
-                        
-                        self.sombArts[self.pagina][:].pop(j).remove()
-                        
-                    del self.sombArts[self.pagina][:]
+                self.sombreamentos[self.pagina] = False
+                self.fill()
 
-                    self.sombreamentos[self.pagina] = False
-                    self.fill()
+            else:
 
-                else:
+                pass
 
-                    pass
-
-                self.filtros[self.pagina] = True
-                self.telas[self.pagina].show()
-                        
-            def cancelar():
-
-                root.destroy()
-
-            bfiltrar = Button(root, text = 'Filtrar', width = 6,
-                        command = do).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 70)
-            bcancelar = Button(root, text = 'Cancelar', width = 6,
-                        command = cancelar).grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 130)
-            
-            root.mainloop()
+            self.filtros[self.pagina] = True
+            self.telas[self.pagina].show()
 
         else:
 
-            pass 
+            pass
 
     def salvargp(self):
 
@@ -1879,6 +1649,113 @@ class Sispick(Tk):
 
                 pass
 
+    def cabecalho (self):
+
+        if self.plotExiste == True:
+
+            root = Tk()
+            root.geometry('430x280')
+            root.title('Geosis - Sispick')
+            root.resizable(0,0)
+            fonte = StringVar()
+            dx = StringVar()
+            comp = StringVar()
+            main = Label(root, text = 'Dados do cabeçalho (%s)'%os.path.basename(self.arquivos[self.pagina]),font=("Helvetica", 14),
+                         fg='green').grid(row = 0, column = 0, sticky='w', padx = 10, pady = 10)
+            fonte = Label(root, text = 'Posição da fonte (atual: %.1f m):'%float(self.listSource[self.pagina]),font=("Helvetica", 12),
+                         fg='black').grid(row = 1, column = 0, sticky='w', padx = 10, pady = 10)
+            espacamento = Label(root, text = 'Espaçamento entre geofones (atual: %.1f m):'%float(self.valordx),font=("Helvetica", 12),
+                         fg='black').grid(row = 2, column = 0, sticky='w', padx = 10, pady = 10)
+            comp = Label(root, text = 'Comprimento do perfil (atual: %.1f m):'%float(self.lenPerfil),font=("Helvetica", 12),
+                         fg='black').grid(row = 3, column = 0, sticky='w', padx = 10, pady = 10)
+            entryf = Entry(root, textvariable = fonte, width=10)
+            entryf.grid(row = 1, column = 0, sticky = 'w', pady = 10, padx = 250)
+            entrydx = Entry(root, textvariable = dx, width=10)
+            entrydx.grid(row = 2, column = 0, sticky = 'w', pady = 10, padx = 330)
+            entrycomp = Entry(root, textvariable = comp, width=10)
+            entrycomp.grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 290)
+            warning = Label(root, text = ' ', fg = 'red',font=("Helvetica", 12))
+            warning.grid(row = 5, column = 0, sticky = 'w', padx = 100, pady= 10)
+            
+            def salvar():
+
+                if len(entryf.get()) > 0:
+                    
+                    try:
+
+                        self.listSource[self.pagina] = float(entryf.get())
+                        warning.configure(text = 'Dados salvos', fg = 'blue')
+                        
+                    except:
+
+                        warning.configure(text = 'Posição de fonte inválida', fg = 'red')
+
+                else:
+
+                    pass
+
+                if len(entrydx.get()) > 0:
+                    
+                    try:
+
+                        self.valordx = float(entrydx.get())
+                        warning.configure(text = 'Dados salvos', fg = 'blue')
+
+                        for i in range(len(self.arquivos)):
+
+                            if self.normalizado == True:
+
+                                for j in range(self.canais):
+                        
+                                    self.plotArts[i][j].set_xdata([k*(-1)*self.ganho[i]+j*self.valordx for k in self.stsNorms[i][j]])
+
+                            else:
+
+                                for j in range(self.canais):
+                        
+                                    self.plotArts[i][j].set_xdata([k*(-1)*self.ganho[i]+j*self.valordx for k in self.sts[i][j]])
+
+                            self.telas[i].show()
+                            
+                    except:
+
+                        warning.configure(text = 'Espaçamento entre geofones inválido', fg = 'red')
+
+                if len(entrycomp.get()) > 0:
+                    
+                    try:
+
+                        self.lenPerfil = float(entrycomp.get())
+                        warning.configure(text = 'Dados salvos', fg = 'blue')
+
+                        for i in range(len(self.arquivos)):
+
+                            plt.figure(i)
+                            plt.xlim(-self.valordx,self.lenPerfil+self.valordx)
+                            self.telas[i].show()
+                            
+                    except:
+
+                        warning.configure(text = 'Comprimento de perfil inválido', fg = 'red')
+
+                else:
+
+                    pass
+
+            def fechar():
+
+                root.destroy()
+
+            save = Button(root, text = 'Salvar',font=("Helvetica", 12), width = 6,
+                    command = salvar).grid(row = 4, column = 0, sticky = 'w', padx = 80, pady = 10)
+            fechar = Button(root, text = 'Fechar',font=("Helvetica", 12), width = 6,
+                    command = fechar).grid(row = 4, column = 0, sticky = 'w', padx = 220, pady = 10)
+            root.mainloop()
+
+        else:
+
+            pass
+
     def configPlot(self):
 
         if self.plotExiste == True and self.optAberto == False:
@@ -1897,22 +1774,23 @@ class Sispick(Tk):
             
             mainLabel = Label(frame, text='Configurações de plot',font=("Helvetica", 14),fg='green')
             mainLabel.grid(row=0, column=0, sticky="w",pady=15,padx=110)
-            labelY = Label(frame, text='Corte temporal (atual: %.1f s): '%self.valorY,font=("Helvetica", 12))
+            labelY = Label(frame, text='Corte temporal (atual: %.1f s): '%self.valorY,
+                           font=("Helvetica", 12)).grid(row=1, column=0, sticky="w",padx=20,pady=10)
             entryY = Entry(frame, textvariable = varY,width=10)
-            labelY.grid(row=1, column=0, sticky="w",padx=20,pady=10)
             entryY.grid(row=1, column=0, sticky="w",padx=310,pady=10)
-            labelGain = Label(frame, text='Fator de ganho (atual: %.1f): '%self.valorGanho,font=("Helvetica", 12))
+            labelGain = Label(frame, text='Fator de ganho (atual: %.1f): '%self.valorGanho,
+                              font=("Helvetica", 12)).grid(row=2, column=0, sticky="w",padx=20,pady=10)
             entryGain = Entry(frame, textvariable = varGain,width=10)
-            labelGain.grid(row=2, column=0, sticky="w",padx=20,pady=10)
             entryGain.grid(row=2, column=0, sticky="w",padx=310,pady=10)
-            labelFigx = Label(frame, text='Tamanho x do plot (atual: %.1f): '%self.valorFigx,font=("Helvetica", 12))
+            labelFigx = Label(frame, text='Tamanho x do plot (atual: %.1f): '%self.valorFigx,
+                              font=("Helvetica", 12)).grid(row=3, column=0, sticky="w",padx=20,pady=10)
             entryFigx = Entry(frame, textvariable = varFigx,width=10)
-            labelFigx.grid(row=3, column=0, sticky="w",padx=20,pady=10)
             entryFigx.grid(row=3, column=0, sticky="w",padx=310,pady=10)
-            labelFigy = Label(frame, text='Tamanho y do plot (atual: %.1f): '%self.valorFigy,font=("Helvetica", 12))
+            labelFigy = Label(frame, text='Tamanho y do plot (atual: %.1f): '%self.valorFigy,
+                              font=("Helvetica", 12)).grid(row=4, column=0, sticky="w",padx=20,pady=10)
             entryFigy = Entry(frame, textvariable = varFigy,width=10)
-            labelFigy.grid(row=4, column=0, sticky="w",padx=20,pady=10)
             entryFigy.grid(row=4, column=0, sticky="w",padx=310,pady=10)
+            
             warning = Label(frame, text='',font=("Helvetica", 12),fg = 'red')
             warning.grid(row=6, column=0, sticky="w",pady=0,padx=140)
 
