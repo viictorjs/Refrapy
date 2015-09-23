@@ -155,6 +155,7 @@ class Sispick(Tk):
         self.picksArts = []
         self.linhasArts = []
         self.conexoesPick = []
+        self.ndados = []
         #self.sts = []
         #self.stsNorms = []
                           
@@ -169,6 +170,7 @@ class Sispick(Tk):
         self.seg2 = False
         self.normalizado = False
         self.optAberto = False
+        self.pickAmostraAtivado = False
 
         self.eventCon = None                                          
         self.pagina = None
@@ -177,10 +179,10 @@ class Sispick(Tk):
         self.decisaoPontos = None
         self.eixoy = None
         self.ladoFill = 'positivo'
-        self.valorY = 0.3
-        self.valorGanho = 1.5
+        self.valorY = 0.2
+        self.valorGanho = 3
         self.fatorLP = 0.8
-        self.fatorHP = 2
+        self.fatorHP = 3
         self.freqLP = []
         self.freqHP = []
         
@@ -240,25 +242,32 @@ class Sispick(Tk):
                                          command=self.menosy)
         menu_visualizar.add_command(label='Aumentar eixo y    Cima',
                                          command=self.maisy)
+        menu_tracos = Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Traços',menu=menu_tracos)
+        menu_tracos.add_command(label='Dar ganho                                 Shift + Direita',
+                                     command=self.ampup)
+        menu_tracos.add_command(label='Retirar ganho                            Shift + Esquerda',
+                                     command=self.ampdown)
+        menu_tracos.add_separator()
+        menu_tracos.add_command(label='Aplicar/Retirar normalizaçao       N',
+                                     command=self.normalizar)
+        menu_tracos.add_separator()
+        menu_tracos.add_command(label='Aplicar/Retirar sombreamento    S',
+                                     command=self.fill)
+        menu_tracos.add_separator()
+        menu_tracos.add_command(label='Clipar         C',
+                                     command=self.clip)
         menu_editar = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Editar',menu=menu_editar)
         menu_editar.add_command(label='Ativar/Desativar pick                  P',
                                      command=self.ativarPick)
-        menu_editar.add_separator()
-        menu_editar.add_command(label='Dar ganho                                 Shift + Direita',
-                                     command=self.ampup)
-        menu_editar.add_command(label='Retirar ganho                            Shift + Esquerda',
-                                     command=self.ampdown)
-        menu_editar.add_separator()
-        menu_editar.add_command(label='Aplicar/Retirar normalizaçao       N',
-                                     command=self.normalizar)
-        menu_editar.add_command(label='Aplicar/Retirar sombreamento    S',
-                                     command=self.fill)
-        menu_editar.add_command(label='Clipar         C',
-                                     command=self.clip)
-        menu_editar.add_separator()
         menu_editar.add_command(label='Limpar plot                                L',
                                      command=self.limparplot)
+        menu_editar.add_separator()
+        menu_editar.add_command(label='Redefinir amostras      A',
+                                 command=self.pickAmostra)
+        menu_editar.add_command(label='Restaurar amostras originais      Alt + A',
+                                         command=self.amostrasDefault)
         menu_editar.add_separator()
         menu_editar.add_command(label='Fechar seçao atual                     Ctrl+X',
                                      command=self.fecharPlot)
@@ -268,15 +277,14 @@ class Sispick(Tk):
         menu_filtros.add_command(label='Passa alta          Ctrl+O',command=self.filtroHP)
         menu_filtros.add_separator()
         menu_filtros.add_command(label='Remover filtros          Ctrl+O',command=self.removerFiltros)
-        menu_cabecalho = Menu(barraDEmenu)
-        barraDEmenu.add_cascade(label='Cabeçalho',menu = menu_cabecalho)
-        menu_cabecalho.add_command(label='Editar valores          Ctrl+O',command = self.cabecalho)
         menu_opcoes = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Opçoes',menu=menu_opcoes)
         menu_opcoes.add_command(label='Opções de plot          Ctrl+O',command=self.configPlot)
+        menu_opcoes.add_separator()
+        menu_opcoes.add_command(label='Editar cabeçalho          Ctrl+O',command = self.cabecalho)
         menu_ajuda = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Ajuda',menu=menu_ajuda)
-        menu_ajuda.add_command(label='Atalhos de teclado',command = lambda: print('oi'))
+        menu_ajuda.add_command(label='Atalhos de teclado',command = lambda: print(''))
         Back = Button(self.parent, text='<',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = 'chartreuse3',activeforeground='white',
                       activebackground = 'chartreuse2', command = self.backpage).grid(row=0,column=0,sticky=W)
@@ -323,23 +331,18 @@ class Sispick(Tk):
                            bg = '#6E7E40',activeforeground='white',
                             activebackground = '#8B9766', command = self.removerFiltros).grid(row=0,column=14,sticky=W)
 
-        menosPts = Button(self.parent, text='- A',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        pickAmostras = Button(self.parent, text='A',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = '#999999',activeforeground='white',
-                            activebackground = '#CCCCCC', command = self.menosAmostras).grid(row=0,column=15,sticky=W)
-        maisPts = Button(self.parent, text='+A',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = '#999999',activeforeground='white',
-                            activebackground = '#CCCCCC', command = self.maisAmostras).grid(row=0,column=16,sticky=W)
-
-        
+                            activebackground = '#CCCCCC', command = self.pickAmostra).grid(row=0,column=15,sticky=W)
         FecharPlot = Button(self.parent, text='x', bg = 'gray3',font=("Arial", 10,'bold'),
                                  width = 4,fg='white', activebackground = 'gray30',
-                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=17,sticky=W)
+                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=16,sticky=W)
         self.status = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
-        self.status.grid(row=0,column=18,sticky=E)
+        self.status.grid(row=0,column=17,sticky=E)
         self.statusPA = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
-        self.statusPA.grid(row=0,column=19,sticky=E)
+        self.statusPA.grid(row=0,column=18,sticky=E)
         self.statusPB = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
-        self.statusPB.grid(row=0,column=20,sticky=E)
+        self.statusPB.grid(row=0,column=19,sticky=E)
         
         plt.rcParams['keymap.zoom'] = 'z,Z'
         plt.rcParams['keymap.back'] = 'v,V'
@@ -433,7 +436,7 @@ class Sispick(Tk):
                         self.linhasArts.append({})
                         #self.sts.append({})
                         #self.stsNorms.append({})
-                        self.ndados = len(self.sts[i][0])
+                        self.ndados.append(len(self.sts[i][0]))
 
                         try:
                             
@@ -474,7 +477,7 @@ class Sispick(Tk):
 
     def abrir_pt2(self):
 
-        if self.ndados > 6000 and self.decisaoPontos == None:
+        if self.ndados[0] > 4000 and self.decisaoPontos == None:
 
             self.configPontos()
 
@@ -516,15 +519,15 @@ class Sispick(Tk):
                     
                     self.ticksLabel.append(str(int(j*self.valordx)))
 
-                    traco, = self.axes[i].plot([self.sts[i][j][k]*(-1)+j*self.valordx for k in range(int(self.ndados))],
-                                               [self.sts[i][0].stats.delta*k for k in range(int(self.ndados))],color='black')
+                    traco, = self.axes[i].plot([self.sts[i][j][k]*(-1)+j*self.valordx for k in range(int(self.ndados[i]))],
+                                               [self.sts[i][0].stats.delta*k for k in range(int(self.ndados[i]))],color='black')
                     self.plotArts[i].append(traco)
 
                 plt.figure(i)    
                 plt.title(' %s | %d canais'%(os.path.basename(self.arquivos[i]),int(self.canais)))     
                 plt.xlabel('Distância (m)')
                 plt.ylabel('Tempo (s)')
-                plt.ylim(0,self.sts[i][0].stats.delta*self.ndados)
+                plt.ylim(0,self.sts[i][0].stats.delta*self.ndados[i])
                 plt.xlim(-self.valordx,self.lenPerfil+self.valordx)
                 #plt.xticks(int(self.ticksLabel),self.ticksLabel)     
                 tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
@@ -551,8 +554,7 @@ class Sispick(Tk):
             self.yinvertido = False
             self.sombreamento = False
             self.normalizado = False
-            self.eixoy = self.sts[i][0].stats.delta*self.ndados
-
+            self.eixoy = self.sts[i][0].stats.delta*self.ndados[0]
 
     def nextpage(self):
         
@@ -635,8 +637,8 @@ class Sispick(Tk):
 
                             self.picks[self.pagina][nearestMagnetValue] = event.ydata
                             self.picksArts[self.pagina][nearestMagnetValue].remove()
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
                             self.picksArts[self.pagina][nearestMagnetValue] = pickline
                             self.telas[self.pagina].show()
 
@@ -649,14 +651,14 @@ class Sispick(Tk):
                                 else:
 
                                     self.linhasArts[i][nearestMagnetValue].remove()
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
                                     self.linhasArts[i][nearestMagnetValue] = linhasverdes
                                     
                         else:
                             
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
                             self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
                             self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
                             self.telas[self.pagina].show()
@@ -669,8 +671,8 @@ class Sispick(Tk):
 
                                 else:
 
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
                                     self.linhasArts[i].update({nearestMagnetValue:linhasverdes})
                             
                             self.pickHappened = True
@@ -962,14 +964,14 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
                         
-                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
 
                 else:
 
                     for j in range(self.canais):
                         
-                        self.plotArts[self.pagina][j].set_xdata([self.sts[i][j][k]*(-1)+j*self.valordx for k in range(int(len(self.sts[i][j])/4))])
+                        self.plotArts[self.pagina][j].set_xdata([self.copiasNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
                 
             else:
 
@@ -977,13 +979,13 @@ class Sispick(Tk):
                 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
                 else:
 
                     for j in range(self.canais):
                         
-                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([self.copiasCruas[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
                     
             self.conferidorIndividual()
             
@@ -1005,13 +1007,13 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
                         
-                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
                 else:
 
                     for j in range(self.canais):
                         
-                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasNorms[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([self.copiasNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
                     
             else:
 
@@ -1019,13 +1021,13 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
                 else:
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([k*(-1)*self.ganho[self.pagina]+j*self.valordx for k in self.copiasCruas[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata([self.copiasCruas[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
             self.conferidorIndividual()
         
@@ -1033,6 +1035,54 @@ class Sispick(Tk):
 
             pass
 
+    def amostrasDefault(self):
+
+        if self.plotExiste == True:
+
+            if int(self.ndados[self.pagina]) != int(len(self.sts[0][0])):
+                
+                if messagebox.askyesno('Geosis - Sispick', 'Atualizar os plots para número de amostras original (%d)?'%int(len(self.sts[0][0]))):
+
+                    self.ndados[self.pagina] = int(len(self.sts[0][0]))
+
+                    if self.normalizado == True:
+
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_data([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                         [self.stsNorms[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                    else:
+
+                        for j in range(self.canais):
+                    
+                            self.plotArts[self.pagina][j].set_data([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                    plt.figure(self.pagina)
+                    plt.ylim(0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])
+                    self.eixoy = self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]
+
+                    if self.yinvertido == True:
+                        
+                        plt.figure(self.pagina)
+                        plt.gca().invert_yaxis()
+                        self.figs[self.pagina].canvas.draw()
+
+                    else:
+
+                        pass
+
+                    self.conferidorIndividual()
+
+                else:
+
+                    pass
+
+        else:
+
+            pass
+                    
     def menosy(self):
 
         if self.plotExiste == True and self.eixoy - self.valorY > 0:
@@ -1097,7 +1147,7 @@ class Sispick(Tk):
 
                         for j in range(self.canais):
 
-                            self.plotArts[i][j].set_xdata([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)])
+                            self.plotArts[i][j].set_xdata([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
 
                     else:
 
@@ -1115,7 +1165,7 @@ class Sispick(Tk):
                     
                         for j in range(self.canais):
 
-                            self.plotArts[i][j].set_xdata([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)])
+                            self.plotArts[i][j].set_xdata([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
 
                     else:
 
@@ -1235,13 +1285,13 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
                 else:
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
                 self.clips[self.pagina] = False
                 
@@ -1313,7 +1363,7 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
                     self.copiasNorms[self.pagina] = None
 
@@ -1321,7 +1371,7 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                        self.plotArts[self.pagina][j].set_xdata([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
                     self.copiasCruas[self.pagina] = None
 
@@ -1364,7 +1414,7 @@ class Sispick(Tk):
                             
                 for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([self.copiasNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                    self.plotArts[self.pagina][j].set_xdata([self.copiasNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
             else:
 
@@ -1383,7 +1433,7 @@ class Sispick(Tk):
                             
                 for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([self.copiasCruas[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                    self.plotArts[self.pagina][j].set_xdata([self.copiasCruas[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
             self.filtrosLP[self.pagina] = True
             self.filtros[self.pagina] = True
@@ -1416,7 +1466,7 @@ class Sispick(Tk):
                             
                 for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([self.copiasNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                    self.plotArts[self.pagina][j].set_xdata([self.copiasNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
             else:
 
@@ -1435,7 +1485,7 @@ class Sispick(Tk):
                             
                 for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([self.copiasCruas[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados)])
+                    self.plotArts[self.pagina][j].set_xdata([self.copiasCruas[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])])
 
             self.filtrosHP[self.pagina] = True
             self.filtros[self.pagina] = True
@@ -1520,92 +1570,75 @@ class Sispick(Tk):
 
                 pass
 
-    def menosAmostras(self):
+    def pickAmostra(self):
 
         if self.plotExiste == True:
 
-            self.ndados = int(self.ndados*0.5)
+            def pick(event):
+
+                marcador = self.axes[self.pagina].hlines(event.ydata,float(self.axes[0].get_xlim()[0]),
+                                        float(self.axes[0].get_xlim()[1]),colors='r',linestyle='--',
+                                        alpha = 1,linewidth = 2)
+                self.figs[self.pagina].canvas.draw()
             
-            for i in range(len(self.arquivos)):
+                if messagebox.askyesno('Geosis - Sispick', 'Atualizar os plots para %d amostras?'%int(event.ydata/self.sts[0][0].stats.delta)):
 
-                if self.normalizado == True:
-
-                    for j in range(self.canais):
-
-                        self.plotArts[i][j].set_data([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)],
-                                                     [self.stsNorms[i][0].stats.delta*k for k in range(int(self.ndados))])
-
-                else:
-
-                    for j in range(self.canais):
-                
-                        self.plotArts[i][j].set_data([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)],
-                                                     [self.sts[i][0].stats.delta*k for k in range(int(self.ndados))])
-
-                plt.figure(i)
-                plt.ylim(0,self.sts[i][0].stats.delta*self.ndados)
-                self.eixoy = self.sts[i][0].stats.delta*self.ndados
-
-                if self.yinvertido == True:
-                    
-                    plt.figure(i)
-                    plt.gca().invert_yaxis()
-                    self.figs[i].canvas.draw()
-
-                else:
-
-                    pass
-                    
-                self.conferidorGeral()
-
-        else:
-
-            pass
-
-    def maisAmostras(self):
-
-        if self.plotExiste == True:
-
-            if int(self.ndados/0.5) <= len(self.sts[self.pagina][0]):
-
-                self.ndados = int(self.ndados/0.7)
-
-                for i in range(len(self.arquivos)):
+                    marcador.remove()
+                    self.ndados[self.pagina] = int(event.ydata/self.sts[0][0].stats.delta)
 
                     if self.normalizado == True:
 
                         for j in range(self.canais):
 
-                            self.plotArts[i][j].set_data([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)],
-                                                         [self.stsNorms[i][0].stats.delta*k for k in range(int(self.ndados))])
+                            self.plotArts[self.pagina][j].set_data([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                         [self.stsNorms[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
                     else:
 
                         for j in range(self.canais):
                     
-                            self.plotArts[i][j].set_data([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)],
-                                                         [self.sts[i][0].stats.delta*k for k in range(int(self.ndados))])
+                            self.plotArts[self.pagina][j].set_data([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
-                    plt.figure(i)
-                    plt.ylim(0,self.sts[i][0].stats.delta*self.ndados)
-                    self.eixoy = self.sts[i][0].stats.delta*self.ndados
+                    plt.figure(self.pagina)
+                    plt.ylim(0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])
+                    self.eixoy = self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]
 
                     if self.yinvertido == True:
-                    
-                        plt.figure(i)
+                        
+                        plt.figure(self.pagina)
                         plt.gca().invert_yaxis()
-                        self.figs[i].canvas.draw()
+                        self.figs[self.pagina].canvas.draw()
 
                     else:
 
                         pass
+
+                    self.figs[self.pagina].canvas.mpl_disconnect(cid)
+                    self.pickAmostraAtivado = False
+
+                    self.status.configure(text='',fg='red')      
+                    self.conferidorIndividual()
                     
-                    self.conferidorGeral()
+                else:
+                        
+                    self.figs[self.pagina].canvas.mpl_disconnect(cid)
+                    self.status.configure(text='',fg='red')
+                    self.pickAmostraAtivado = False
+                    marcador.remove()
+
+            if self.pickAmostraAtivado == False:
+
+                cid = self.figs[self.pagina].canvas.mpl_connect('button_press_event', pick)
+                self.status.configure(text='Editor de amostras ON', fg='blue')                    
+                self.pickAmostraAtivado = True
 
             else:
 
-                pass
-
+                self.figs[self.pagina].canvas.mpl_disconnect(cid)
+                self.status.configure(text='', fg='red')
+                self.pickAmostraAtivado = False
+                    
         else:
 
             pass
@@ -1630,7 +1663,7 @@ class Sispick(Tk):
                          fg='black').grid(row = 2, column = 0, sticky='w', padx = 10, pady = 10)
             comp = Label(root, text = 'Comprimento do perfil (atual: %.1f m):'%float(self.lenPerfil),font=("Helvetica", 12),
                          fg='black').grid(row = 3, column = 0, sticky='w', padx = 10, pady = 10)
-            pontos = Label(root, text = 'Quantidade de amostras (atual: %d):'%int(self.ndados),font=("Helvetica", 12),
+            pontos = Label(root, text = 'Quantidade de amostras (atual: %d):'%int(self.ndados[self.pagina]),font=("Helvetica", 12),
                          fg='black').grid(row = 4, column = 0, sticky='w', padx = 10, pady = 10)
             entryf = Entry(root, textvariable = fonte, width=10)
             entryf.grid(row = 1, column = 0, sticky = 'w', pady = 10, padx = 250)
@@ -1673,13 +1706,13 @@ class Sispick(Tk):
 
                                 for j in range(self.canais):
                         
-                                    self.plotArts[i][j].set_xdata([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)])
+                                    self.plotArts[i][j].set_xdata([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
 
                             else:
 
                                 for j in range(self.canais):
                         
-                                    self.plotArts[i][j].set_xdata([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)])
+                                    self.plotArts[i][j].set_xdata([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
                 
                             self.conferidorGeral()
                             
@@ -1706,27 +1739,26 @@ class Sispick(Tk):
 
                 if len(entrypontos.get()) > 0 and int(entrypontos.get()) <= len(self.sts[self.pagina][0]):
 
-                    self.ndados = int(entrypontos.get())
+                    self.ndados[self.pagina] = int(entrypontos.get())
 
-                    for i in range(len(self.arquivos)):
+                    if self.normalizado == True:
 
-                        if self.normalizado == True:
+                        for j in range(self.canais):
 
-                            for j in range(self.canais):
+                            self.plotArts[self.pagina][j].set_data([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                         [self.stsNorms[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
-                                self.plotArts[i][j].set_data([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)],
-                                                             [self.stsNorms[i][0].stats.delta*k for k in range(int(self.ndados))])
+                    else:
 
-                        else:
+                        for j in range(self.canais):
+                    
+                            self.plotArts[self.pagina][j].set_data([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
-                            for j in range(self.canais):
-                        
-                                self.plotArts[i][j].set_data([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados)],
-                                                             [self.sts[i][0].stats.delta*k for k in range(int(self.ndados))])
-
-                        plt.figure(i)
-                        plt.ylim(0,self.sts[i][0].stats.delta*self.ndados)
-                        self.conferidorGeral()
+                        plt.figure(self.pagina)
+                        plt.ylim(0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])
+                        self.telas[self.pagina].show()
+                        self.conferidorIndividual()
 
                 else:
 
@@ -1886,9 +1918,9 @@ class Sispick(Tk):
         root.geometry('540x210+500+250')
         root.title('Geosis - Sispick')
         pts = StringVar()
-        mainLabel = Label(root, text='Número de amostras em cada traço: %d\nSugere-se trabalhar com menos de 4000 amostras para um bom desempenho\nno processamento. Clique em Ignorar para usar a quantidade original.'%self.ndados,
+        mainLabel = Label(root, text='Número de amostras em cada traço: %d\nSugere-se trabalhar com menos de 4000 amostras para um bom desempenho\nno processamento. Clique em Ignorar para usar a quantidade original.'%self.ndados[0],
                     font=("Helvetica", 11),fg='red').grid(row=0, column=0, sticky="w",pady=10,padx=0)
-        labelpts = Label(root, text='Quantidade de amostras a serem utilizadas (original: %d):'%self.ndados,
+        labelpts = Label(root, text='Quantidade de amostras a serem utilizadas (original: %d):'%self.ndados[0],
                     font=("Helvetica", 11)).grid(row=2, column=0, sticky="w",padx=5,pady=10)
         entrydados = Entry(root, textvariable = pts,width=10)
         entrydados.grid(row=2, column=0, sticky="w",padx=415,pady=10)
@@ -1900,8 +1932,11 @@ class Sispick(Tk):
             if len(entrydados.get()) > 0:
 
                 try:
-                
-                    self.ndados = int(entrydados.get())
+
+                    for i in range(len(self.arquivos)):
+                        
+                        self.ndados[i] = int(entrydados.get())
+                        
                     root.destroy()
                     self.decisaoPontos = True
                     self.abrir_pt2()
