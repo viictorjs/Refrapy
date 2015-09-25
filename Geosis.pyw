@@ -10,6 +10,7 @@ from matplotlib.backend_bases import key_press_handler
 import os                                                                              
 import numpy as np
 from scipy import stats
+import sys
 import ast
                                
 sispickOn = False
@@ -83,6 +84,7 @@ class Launcher(Tk):
         else:
 
             sisrefOn = True
+            self.destroy()
             sisref()
 
     def chamarSispick(self):
@@ -96,6 +98,7 @@ class Launcher(Tk):
         else:
 
             sispickOn = True
+            self.destroy()
             Sispick()
 
     def chamarSiscon(self):
@@ -109,6 +112,7 @@ class Launcher(Tk):
         else:
 
             sisconOn = True
+            self.destroy()
             Siscon()
 
     def Sobre(self):
@@ -177,9 +181,8 @@ class Sispick(Tk):
         self.recordlen = None                   
         self.valordx = None
         self.decisaoPontos = None
-        self.eixoy = None
         self.ladoFill = 'positivo'
-        self.valorY = 0.2
+        self.fatorY = 0.8
         self.valorGanho = 3
         self.fatorLP = 0.8
         self.fatorHP = 3
@@ -387,15 +390,6 @@ class Sispick(Tk):
         if messagebox.askyesno("Geosis - Sispick", "Sair do programa?"):
 
             sispickOn = False
-
-            if self.plotExiste == True:
-
-                self.fecharPlot()
-
-            else:
-
-                pass
-            
             self.destroy()
 
         else:
@@ -554,7 +548,6 @@ class Sispick(Tk):
             self.yinvertido = False
             self.sombreamento = False
             self.normalizado = False
-            self.eixoy = self.sts[i][0].stats.delta*self.ndados[0]
 
     def nextpage(self):
         
@@ -802,7 +795,7 @@ class Sispick(Tk):
                 self.valordx = None
                 self.decisaoPontos = None
                 self.ladoFill = 'positivo'
-                self.valorY = 0.3
+                self.fatorY = 0.3
                 self.valorGanho = 1.5
                 self.fatorLP = 0.8
                 self.fatorHP = 1.5
@@ -1059,9 +1052,7 @@ class Sispick(Tk):
                             self.plotArts[self.pagina][j].set_data([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
                                                          [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
-                    plt.figure(self.pagina)
-                    plt.ylim(0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])
-                    self.eixoy = self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]
+                    self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
 
                     if self.yinvertido == True:
                         
@@ -1085,24 +1076,19 @@ class Sispick(Tk):
                     
     def menosy(self):
 
-        if self.plotExiste == True and self.eixoy - self.valorY > 0:
+        if self.plotExiste == True:
 
-            self.eixoy -= self.valorY
+            if self.yinvertido == True:
 
-            for i in range(len(self.arquivos)):
-                
-                plt.figure(i)
-                plt.ylim(0,self.eixoy)
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[0])*self.fatorY])
+                plt.figure(self.pagina)
+                plt.gca().invert_yaxis()
 
-                if self.yinvertido == True:
+            else:
 
-                    plt.gca().invert_yaxis()
-
-                else:
-
-                    pass
-                
-                self.figs[i].canvas.draw()
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[1])*self.fatorY])
+            
+            self.figs[self.pagina].canvas.draw()
      
         else:
 
@@ -1112,22 +1098,17 @@ class Sispick(Tk):
 
         if self.plotExiste == True:
 
-            self.eixoy += self.valorY
+            if self.yinvertido == True:
 
-            for i in range(len(self.arquivos)):
-                
-                plt.figure(i)
-                plt.ylim(0,self.eixoy)
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[0])/self.fatorY])
+                plt.figure(self.pagina)
+                plt.gca().invert_yaxis()
 
-                if self.yinvertido == True:
+            else:
 
-                    plt.gca().invert_yaxis()
-
-                else:
-
-                    pass
-                
-                self.figs[i].canvas.draw()
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[1])/self.fatorY])
+            
+            self.figs[self.pagina].canvas.draw()
 
         else:
 
@@ -1576,66 +1557,66 @@ class Sispick(Tk):
 
             def pick(event):
 
-                marcador = self.axes[self.pagina].hlines(event.ydata,float(self.axes[0].get_xlim()[0]),
-                                        float(self.axes[0].get_xlim()[1]),colors='r',linestyle='--',
-                                        alpha = 1,linewidth = 2)
-                self.figs[self.pagina].canvas.draw()
-            
-                if messagebox.askyesno('Geosis - Sispick', 'Atualizar os plots para %d amostras?'%int(event.ydata/self.sts[0][0].stats.delta)):
+                if int(event.ydata/self.sts[0][0].stats.delta) <= int(len(self.sts[0][0])):
 
-                    marcador.remove()
-                    self.ndados[self.pagina] = int(event.ydata/self.sts[0][0].stats.delta)
+                    marcador = self.axes[self.pagina].hlines(event.ydata,float(self.axes[0].get_xlim()[0]),
+                                            float(self.axes[0].get_xlim()[1]),colors='r',linestyle='--',
+                                            alpha = 1,linewidth = 2)
+                    self.figs[self.pagina].canvas.draw()
+                
+                    if messagebox.askyesno('Geosis - Sispick', 'Atualizar os plots para %d amostras?'%int(event.ydata/self.sts[0][0].stats.delta)):
 
-                    if self.normalizado == True:
+                        marcador.remove()
+                        self.ndados[self.pagina] = int(event.ydata/self.sts[0][0].stats.delta)
 
-                        for j in range(self.canais):
+                        if self.normalizado == True:
 
-                            self.plotArts[self.pagina][j].set_data([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
-                                                         [self.stsNorms[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                            for j in range(self.canais):
 
-                    else:
+                                self.plotArts[self.pagina][j].set_data([self.stsNorms[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                             [self.stsNorms[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
-                        for j in range(self.canais):
-                    
-                            self.plotArts[self.pagina][j].set_data([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
-                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                        else:
 
-                    plt.figure(self.pagina)
-                    plt.ylim(0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])
-                    self.eixoy = self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]
-
-                    if self.yinvertido == True:
+                            for j in range(self.canais):
                         
-                        plt.figure(self.pagina)
-                        plt.gca().invert_yaxis()
-                        self.figs[self.pagina].canvas.draw()
+                                self.plotArts[self.pagina][j].set_data([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
+                                                             [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
-                    else:
+                        self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
 
-                        pass
+                        if self.yinvertido == True:
+                            
+                            plt.figure(self.pagina)
+                            plt.gca().invert_yaxis()
+                            self.figs[self.pagina].canvas.draw()
 
-                    self.figs[self.pagina].canvas.mpl_disconnect(cid)
-                    self.pickAmostraAtivado = False
+                        else:
 
-                    self.status.configure(text='',fg='red')      
-                    self.conferidorIndividual()
-                    
-                else:
+                            pass
+
+                        self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
+                        self.pickAmostraAtivado = False
+
+                        self.status.configure(text='',fg='red')      
+                        self.conferidorIndividual()
                         
-                    self.figs[self.pagina].canvas.mpl_disconnect(cid)
-                    self.status.configure(text='',fg='red')
-                    self.pickAmostraAtivado = False
-                    marcador.remove()
+                    else:
+                            
+                        self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
+                        self.status.configure(text='',fg='red')
+                        self.pickAmostraAtivado = False
+                        marcador.remove()
 
             if self.pickAmostraAtivado == False:
 
-                cid = self.figs[self.pagina].canvas.mpl_connect('button_press_event', pick)
+                self.cid = self.figs[self.pagina].canvas.mpl_connect('button_press_event', pick)
                 self.status.configure(text='Editor de amostras ON', fg='blue')                    
                 self.pickAmostraAtivado = True
 
             else:
 
-                self.figs[self.pagina].canvas.mpl_disconnect(cid)
+                self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
                 self.status.configure(text='', fg='red')
                 self.pickAmostraAtivado = False
                     
@@ -1755,10 +1736,20 @@ class Sispick(Tk):
                             self.plotArts[self.pagina][j].set_data([self.sts[self.pagina][j][k]*(-1)*self.ganho[self.pagina]+j*self.valordx for k in range(self.ndados[self.pagina])],
                                                          [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
 
+                    self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
+
+                    if self.yinvertido == True:
+                        
                         plt.figure(self.pagina)
-                        plt.ylim(0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])
-                        self.telas[self.pagina].show()
-                        self.conferidorIndividual()
+                        plt.gca().invert_yaxis()
+                        self.figs[self.pagina].canvas.draw()
+
+                    else:
+
+                        pass
+                        
+                    self.telas[self.pagina].show()
+                    self.conferidorIndividual()
 
                 else:
 
@@ -1792,7 +1783,7 @@ class Sispick(Tk):
             varFigy = StringVar()
             mainLabel = Label(root, text='Configurações de plot',
                         font=("Helvetica", 14),fg='green').grid(row=0, column=0, sticky="w",pady=15,padx=110)
-            labelY = Label(root, text='Corte temporal (atual: %.1f s): '%self.valorY,
+            labelY = Label(root, text='Corte temporal (atual: %.1f s): '%self.fatorY,
                            font=("Helvetica", 12)).grid(row=1, column=0, sticky="w",padx=20,pady=10)
             entryY = Entry(root, textvariable = varY,width=10)
             entryY.grid(row=1, column=0, sticky="w",padx=235,pady=10)
@@ -1825,7 +1816,7 @@ class Sispick(Tk):
 
                     try:
 
-                        self.valorY = float(entryY.get())
+                        self.fatorY = float(entryY.get())
                         warning.configure(text='Configurações aplicadas',fg = 'blue')
 
                     except:
@@ -2240,7 +2231,7 @@ class sisref(Tk):
                             self.camadas[bola] = 1
                             self.cores[bola] = 'white'
 
-                    if i+1 in self.especiais:
+                    elif i+1 in self.especiais:
 
                         for j in self.xData[i+1]:
 
@@ -2425,40 +2416,36 @@ class sisref(Tk):
 
                     if self.cores[i] == 'white':
 
-                        for i in range(self.nlinhas):
+                        for k in range(self.nlinhas):
 
-                            for j in range(len(self.xData[i+1])):
+                            for j in range(len(self.xData[k+1])):
 
-                                self.bolas[i+1][j].set_color('red')
+                                self.bolas[k+1][j].set_color('red')
 
-                            for j in self.bolas[i+1]:
+                            for j in self.bolas[k+1]:
 
-                                if i+1 in self.especiais:
+                                if k+1 in self.especiais:
 
-                                    if float(j.get_offsets()[0][0]) < float(self.especiais[i+1]):
-
-                                        self.camadas[j] = 1
-                                        self.xDataCamada1[i+1][1].append(float(j.get_offsets()[0][0]))
-                                        self.yDataCamada1[i+1][1].append(float(j.get_offsets()[0][1]))
-
-                                    elif float(j.get_offsets()[0][0]) > float(self.especiais[i+1]): 
+                                    if float(j.get_offsets()[0][0]) < float(self.especiais[k+1]):
 
                                         self.camadas[j] = 1
-                                        self.xDataCamada1[i+1][2].append(float(j.get_offsets()[0][0]))
-                                        self.yDataCamada1[i+1][2].append(float(j.get_offsets()[0][1]))
+                                        self.xDataCamada1[k+1][1].append(float(j.get_offsets()[0][0]))
+                                        self.yDataCamada1[k+1][1].append(float(j.get_offsets()[0][1]))
+
+                                    elif float(j.get_offsets()[0][0]) > float(self.especiais[k+1]): 
+
+                                        self.camadas[j] = 1
+                                        self.xDataCamada1[k+1][2].append(float(j.get_offsets()[0][0]))
+                                        self.yDataCamada1[k+1][2].append(float(j.get_offsets()[0][1]))
 
                                 else:
 
                                     self.camadas[j] = 1
-                                    self.xDataCamada1[i+1].append(float(j.get_offsets()[0][0]))
-                                    self.yDataCamada1[i+1].append(float(j.get_offsets()[0][1]))
-                                
-                        for i in self.cores:
+                                    self.xDataCamada1[k+1].append(float(j.get_offsets()[0][0]))
+                                    self.yDataCamada1[k+1].append(float(j.get_offsets()[0][1]))
 
-                            self.cores[i] = 'red'
-                                
+                        self.cores[i] = 'red'
                         self.tela.show()
-                        break
 
                     else:
 
@@ -2649,6 +2636,24 @@ class sisref(Tk):
 
                 self.retas.update({str(j):k})
                 self.retas2.update({str(l):m})
+
+        self.xretaCamada1 = []
+        self.yretaCamada1 = []
+
+        for i in self.retas:
+
+            lista = ast.literal_eval(i)
+
+            for j in lista:
+                
+                self.xretaCamada1.append(j)
+
+            for j in self.retas[i]:
+                    
+                self.yretaCamada1.append(j)
+                    
+        slope, intercept, r_value, p_value, std_err = stats.linregress(sorted(self.xretaCamada1),sorted(self.yretaCamada1))
+        print(1/slope)
 
         for i,j,k,l in zip(self.retas,self.retas.values(),self.retas2,self.retas2.values()):
 
