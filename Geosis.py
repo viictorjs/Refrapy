@@ -10,17 +10,15 @@ from matplotlib.backend_bases import key_press_handler
 import os                                                                              
 import numpy as np
 from scipy import stats
+import sys
 import ast
-                               
-sispickOn = False
-sisconOn = False
-sisrefOn = False
-
+                            
 
 class Launcher(Tk):
     
     def __init__(self):
 
+        print('Geosis v1.0 em execução.\n\nFECHAR ESTA JANELA ENCERRARÁ O PROGRAMA.')
         Tk.__init__(self)
         self.geometry('640x400')
         self.title('Geosis v1.0')
@@ -41,6 +39,7 @@ class Launcher(Tk):
         try:
             
             photo = PhotoImage(file="%s/imagens/unb_geof.gif"%os.getcwd())
+            self.iconbitmap("%s/imagens/terra1.ico"%os.getcwd())
 
         except:
 
@@ -51,7 +50,7 @@ class Launcher(Tk):
         label.grid(row=0,column=0,sticky='nsew')
         botaoSispick = Button(parentLauncher, text='sispick',width=10,height=1,font=("Verdana", 12),
                               bg = 'gray90',fg='black', activebackground = 'gray93',
-                        activeforeground = 'black',command = self.chamarSispick).grid(row=0,column=0,sticky='w')
+                        activeforeground = 'black',command = self.chamarSispick).grid(row=0,column=0,sticky='w')   
         botaosiscon = Button(parentLauncher, text='siscon',width=10,height=1,font=("Verdana", 12),
                               bg = 'gray90',fg='black', activebackground = 'gray93',
                         activeforeground = 'black',command = self.chamarSiscon).grid(row=0,column=0,sticky='e')
@@ -73,42 +72,18 @@ class Launcher(Tk):
 
     def chamarsisref(self):
 
-        global sisrefOn
-
-        if sisrefOn == True:
-
-            pass
-
-        else:
-
-            sisrefOn = True
-            sisref()
+        self.destroy()
+        sisref()
 
     def chamarSispick(self):
 
-        global sispickOn
-        
-        if sispickOn == True:
-
-            pass
-
-        else:
-
-            sispickOn = True
-            Sispick()
+        self.destroy()
+        Sispick()
 
     def chamarSiscon(self):
 
-        global sisconOn
-
-        if sisconOn == True:
-
-            pass
-
-        else:
-
-            sisconOn = True
-            Siscon()
+        self.destroy()
+        Siscon()
 
     def Sobre(self):
 
@@ -116,7 +91,6 @@ class Launcher(Tk):
         root.geometry('630x300')
         root.title('Info')
         titulo = Label(root, text='Sobre o software',fg='green',font=("Helvetica", 14))
-        
         root.resizable(0,0)
         root.mainloop()
         
@@ -127,9 +101,11 @@ class Sispick(Tk):
 
         Tk.__init__(self)                       
         self.configure(background='#F3F3F3')
-        self.geometry('800x400+310+150')        
+        self.geometry('800x600')
+        self.wm_state('zoomed')
         self.title('Geosis - Sispick')               
-
+        self.iconbitmap("%s/imagens/terra1.ico"%os.getcwd())
+        
         self.frames = []                        
         self.figs = []                          
         self.axes = []                      
@@ -138,18 +114,24 @@ class Sispick(Tk):
         self.sts = []                        
         self.ticksLabel = []                    
         self.toolbars = []
-        self.stsNorms = []
+        self.dadosNorms = []
+        self.dadosCrus = []
         self.ganho = []
+        self.filtros = []
+        self.filtrosHP = []
+        self.filtrosLP = []
+        self.copiasCruas = []
+        self.copiasNorms = []
         self.okpicks = []
         self.clips = []
         self.sombreamentos = []
-        self.listSource = []
         self.picks = []
         self.picksArts = []
         self.linhasArts = []
         self.conexoesPick = []
-        self.dadosCrus = []
-        self.dadosNorms = []
+        self.ndados = []
+        self.tracosMax = []
+        self.temp = []
                           
         self.plotArts = {}
         self.sombArts = {}
@@ -162,13 +144,20 @@ class Sispick(Tk):
         self.seg2 = False
         self.normalizado = False
         self.optAberto = False
+        self.pickAmostraAtivado = False
 
         self.eventCon = None                                          
         self.pagina = None
         self.recordlen = None                   
-        self.valordx = None                                  
-        self.valorY = 0.4
-        self.valorGanho = 1.2
+        self.valordx = None
+        self.decisaoPontos = None
+        self.ladoFill = 'positivo'
+        self.fatorY = 0.8
+        self.valorGanho = 2
+        self.fatorLP = 0.8
+        self.fatorHP = 3
+        self.freqLP = []
+        self.freqHP = []
         
         self.valorFigx = self.winfo_screenwidth()/80.50
 
@@ -195,8 +184,6 @@ class Sispick(Tk):
         else: # 800
 
             self.valorFigy = self.winfo_screenheight()/99
-                                     
-        self.eixoy = None
         
         self.parent = Frame(self,bg='#F3F3F3')
         self.parent.grid(row=0,column=0,sticky='nsew')
@@ -228,75 +215,107 @@ class Sispick(Tk):
                                          command=self.menosy)
         menu_visualizar.add_command(label='Aumentar eixo y    Cima',
                                          command=self.maisy)
+        menu_tracos = Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Traços',menu=menu_tracos)
+        menu_tracos.add_command(label='Dar ganho                                 Shift + Direita',
+                                     command=self.ampup)
+        menu_tracos.add_command(label='Retirar ganho                            Shift + Esquerda',
+                                     command=self.ampdown)
+        menu_tracos.add_separator()
+        menu_tracos.add_command(label='Aplicar/Retirar normalizaçao       N',
+                                     command=self.normalizar)
+        menu_tracos.add_separator()
+        menu_tracos.add_command(label='Aplicar/Retirar sombreamento    S',
+                                     command=self.fill)
+        menu_tracos.add_separator()
+        menu_tracos.add_command(label='Clipar         C',
+                                     command=self.clip)
         menu_editar = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Editar',menu=menu_editar)
         menu_editar.add_command(label='Ativar/Desativar pick                  P',
                                      command=self.ativarPick)
-        menu_editar.add_separator()
-        menu_editar.add_command(label='Dar ganho                                 Shift + Direita',
-                                     command=self.ampup)
-        menu_editar.add_command(label='Retirar ganho                            Shift + Esquerda',
-                                     command=self.ampdown)
-        menu_editar.add_separator()
-        menu_editar.add_command(label='Aplicar/Retirar normalizaçao       N',
-                                     command=self.normalizar)
-        menu_editar.add_command(label='Aplicar/Retirar sombreamento    S',
-                                     command=self.fill)
-        menu_editar.add_command(label='Clipar         C',
-                                     command=self.clip)
-        menu_editar.add_separator()
         menu_editar.add_command(label='Limpar plot                                L',
                                      command=self.limparplot)
         menu_editar.add_separator()
+        menu_editar.add_command(label='Redefinir amostras      A',
+                                 command=self.pickAmostra)
+        menu_editar.add_command(label='Restaurar amostras originais      Alt + A',
+                                         command=self.amostrasDefault)
+        menu_editar.add_separator()
         menu_editar.add_command(label='Fechar seçao atual                     Ctrl+X',
                                      command=self.fecharPlot)
+        menu_filtros = Menu(barraDEmenu)
+        barraDEmenu.add_cascade(label='Filtros',menu=menu_filtros)
+        menu_filtros.add_command(label='Passa baixa          Ctrl+O',command=self.filtroLP)
+        menu_filtros.add_command(label='Passa alta          Ctrl+O',command=self.filtroHP)
+        menu_filtros.add_separator()
+        menu_filtros.add_command(label='Remover filtros          Ctrl+O',command=self.removerFiltros)
         menu_opcoes = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Opçoes',menu=menu_opcoes)
         menu_opcoes.add_command(label='Opções de plot          Ctrl+O',command=self.configPlot)
+        menu_opcoes.add_separator()
+        menu_opcoes.add_command(label='Editar cabeçalho          Ctrl+O',command = self.cabecalho)
         menu_ajuda = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Ajuda',menu=menu_ajuda)
-        menu_ajuda.add_command(label='Atalhos de teclado',command = lambda: print('oi'))
-        self.Back = Button(self.parent, text='<',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        menu_ajuda.add_command(label='Atalhos de teclado',command = lambda: print(''))
+        Back = Button(self.parent, text='<',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = 'chartreuse3',activeforeground='white',
                       activebackground = 'chartreuse2', command = self.backpage).grid(row=0,column=0,sticky=W)
-        self.Next = Button(self.parent, text='>',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        Next = Button(self.parent, text='>',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = 'chartreuse3',activeforeground='white',
                       activebackground = 'chartreuse2', command = self.nextpage).grid(row=0,column=1,sticky=W)
-        self.ampDown = Button(self.parent, text='-',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        ampDown = Button(self.parent, text='-',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                               bg = 'gold2',activeforeground='white',
                          activebackground = 'yellow2', command = self.ampdown).grid(row=0,column=2,sticky=W)
-        self.ampUp = Button(self.parent, text='+',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        ampUp = Button(self.parent, text='+',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                             bg = 'gold2',activeforeground='white',
                        activebackground = 'yellow2', command = self.ampup).grid(row=0,column=3,sticky=W)
-        self.menosY = Button(self.parent, text='- T',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        menosY = Button(self.parent, text='- Y',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                              bg = 'DarkOrange2',activeforeground='white',
                             activebackground = 'orange2', command = self.menosy).grid(row=0,column=4,sticky=W)
-        self.maisY = Button(self.parent, text='+T',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        maisY = Button(self.parent, text='+Y',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                             bg = 'DarkOrange2',activeforeground='white',
                             activebackground = 'orange2', command = self.maisy).grid(row=0,column=5,sticky=W)
-        self.Pick = Button(self.parent, text='P', bg = 'red3',font=("Arial", 10,'bold'),width = 4,
+        Pick = Button(self.parent, text='P', bg = 'red3',font=("Arial", 10,'bold'),width = 4,
                            activebackground = 'red2',
                       activeforeground = 'white', command = self.ativarPick).grid(row=0,column=6,sticky=W)
-        self.limpar = Button(self.parent, text='L', bg = 'snow2',font=("Arial", 10,'bold'),width = 4,
+        limpar = Button(self.parent, text='L', bg = 'snow2',font=("Arial", 10,'bold'),width = 4,
                            activebackground = 'snow',
                       activeforeground = 'black', command = self.limparplot).grid(row=0,column=7,sticky=W)
-        self.inverttime = Button(self.parent, text='I',width = 4,font=("Arial", 10,'bold'),
+        inverttime = Button(self.parent, text='I',width = 4,font=("Arial", 10,'bold'),
                                  fg= 'black', bg = 'goldenrod4',activeforeground='white',
                             activebackground = 'gold3', command = self.invert).grid(row=0,column=8,sticky=W)
-        self.normal = Button(self.parent, text='N',fg= 'black',font=("Arial", 10,'bold'),
+        normal = Button(self.parent, text='N',fg= 'black',font=("Arial", 10,'bold'),
                              width = 4, bg = 'purple2',activeforeground='white',
                             activebackground = 'DarkOrchid1', command = self.normalizar).grid(row=0,column=9,sticky=W)
-        self.FILL = Button(self.parent, text='S',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = 'blue2',activeforeground='white',
-                            activebackground = 'royal blue', command = self.fill).grid(row=0,column=10,sticky=W)
-        self.clipar = Button(self.parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        FILL = Button(self.parent, text='S',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#3065CE',activeforeground='white',
+                            activebackground = '#5983D7', command = self.fill).grid(row=0,column=10,sticky=W)
+        clipar = Button(self.parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = 'bisque4',activeforeground='white',
                             activebackground = 'bisque3', command = self.clip).grid(row=0,column=11,sticky=W)
-        self.FecharPlot = Button(self.parent, text='x', bg = 'gray3',font=("Arial", 10,'bold'),
+        PA = Button(self.parent, text='PA',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#8CA9E4',activeforeground='white',
+                            activebackground = '#C5D4F1', command = self.filtroHP).grid(row=0,column=12,sticky=W)
+        PB = Button(self.parent, text='PB',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#FFACAA',activeforeground='white',
+                            activebackground = '#FFD5D4', command = self.filtroLP).grid(row=0,column=13,sticky=W)
+        RF = Button(self.parent, text='RF',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#6E7E40',activeforeground='white',
+                            activebackground = '#8B9766', command = self.removerFiltros).grid(row=0,column=14,sticky=W)
+
+        pickAmostras = Button(self.parent, text='A',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#999999',activeforeground='white',
+                            activebackground = '#CCCCCC', command = self.pickAmostra).grid(row=0,column=15,sticky=W)
+        FecharPlot = Button(self.parent, text='x', bg = 'gray3',font=("Arial", 10,'bold'),
                                  width = 4,fg='white', activebackground = 'gray30',
-                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=12,sticky=W)
+                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=16,sticky=W)
         self.status = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
-        self.status.grid(row=0,column=13,sticky=E)
+        self.status.grid(row=0,column=17,sticky=E)
+        self.statusPA = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
+        self.statusPA.grid(row=0,column=18,sticky=E)
+        self.statusPB = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
+        self.statusPB.grid(row=0,column=19,sticky=E)
         
         plt.rcParams['keymap.zoom'] = 'z,Z'
         plt.rcParams['keymap.back'] = 'v,V'
@@ -336,20 +355,8 @@ class Sispick(Tk):
 
     def fechar(self):
 
-        global sispickOn
-
         if messagebox.askyesno("Geosis - Sispick", "Sair do programa?"):
 
-            sispickOn = False
-
-            if self.plotExiste == True:
-
-                self.fecharPlot()
-
-            else:
-
-                pass
-            
             self.destroy()
 
         else:
@@ -374,28 +381,21 @@ class Sispick(Tk):
                         self.frame = Frame(self,bg='#F3F3F3')
                         self.frame.grid(row=1, column=0,sticky='nsew')
                         self.frames.append(self.frame)
-
                         fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
                         self.figs.append(fig)
-
                         ax = self.figs[i].add_subplot(111)
                         self.axes.append(ax)
-                        
                         self.sts.append(read(self.arquivos[i]))
-
-                        self.stsNorms.append(self.sts[i].copy())
-
-                        self.sts[i].normalize(1)
-                        self.stsNorms[i].normalize()
-
+                        self.dadosCrus.append({})
+                        self.dadosNorms.append({})
                         self.plotArts[i] = []
                         self.sombArts[i] = []
                         self.trClipados[i] = []
                         self.picks.append({})
                         self.picksArts.append({})
                         self.linhasArts.append({})
-                        self.dadosCrus.append({})
-                        self.dadosNorms.append({})
+                        self.tracosMax.append({})
+                        self.ndados.append(len(self.sts[i][0]))
 
                         try:
                             
@@ -404,7 +404,8 @@ class Sispick(Tk):
 
                         except:
 
-                            messagebox.showinfo('','Posição de fonte de tiro não encontrada no cabeçalho. Para adicionar vá em Cabeçalho > Fontes')
+                            messagebox.showinfo('','Posição de fonte de tiro não encontrada no cabeçalho. Para adicionar vá em Cabeçalho > Editar valores')
+                            self.listSource.append(999)
                             self.seg2 = False
                             pass
 
@@ -415,7 +416,6 @@ class Sispick(Tk):
 
                         except:
 
-                            messagebox.showinfo('','Espaçamento entre geofones não encontrado no cabeçalho. Selecione OK para inserir manualmente.')
                             self.seg2 = False
                             self.configDx()
 
@@ -423,7 +423,7 @@ class Sispick(Tk):
 
                 except:
 
-                    messagebox.showerror('','Arquivo inválido')
+                    messagebox.showerror('','Erro na leitura do arquivo. Informações em Ajuda > Erros')
                     self.status.configure(text='')
 
             else:
@@ -440,44 +440,40 @@ class Sispick(Tk):
 
             self.canais = len(self.sts[0])                      
             self.recordlen = self.sts[0][0].stats.endtime-self.sts[0][0].stats.starttime
-            self.lenPerfil = float((self.canais*self.valordx)-self.valordx)
-            self.intervaloAmostragem = self.sts[0][0].stats.delta
-                    
+            self.intervaloAmostragem = self.sts[0][0].stats.delta     
             self.ganho.append(1)
             self.clips.append(False)
             self.sombreamentos.append(False)
+            self.filtros.append(False)
+            self.copiasCruas.append(None)
+            self.copiasNorms.append(None)
+            self.freqLP.append(1000)
+            self.freqHP.append(5)
+            self.filtrosLP.append(False)
+            self.filtrosHP.append(False)
+
+            for j in range(self.canais):
+
+                self.tracosMax[i][max(self.sts[i][j].data*(-1))] = j
             
             for j in range(self.canais):
 
-                self.dadosCrus[i][j] = []
-                self.dadosNorms[i][j] = []
-
-                for k in self.sts[i][j]:
-
-                    self.dadosCrus[i][j].append(k*(-1))
-
-                for k in self.stsNorms[i][j]:
-
-                    self.dadosNorms[i][j].append(k*(-1))
-
+                self.dadosCrus[i][j] = self.sts[i][j].data/max(self.tracosMax[i])
+                self.dadosNorms[i][j] = self.sts[i][j].data/self.sts[i][j].data.max()
                 self.trClipados[i].append([])
-
-                self.okpicks.append(self.valordx*j)
-                
+                self.okpicks.append(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j)
                 self.ticksLabel.append(str(int(j*self.valordx)))
-
-                traco, = self.axes[i].plot([k+j*self.valordx for k in self.dadosCrus[i][j]],
-                                           [self.sts[i][0].stats.delta*k for k in range(len(self.dadosCrus[i][j]))],color='black')
+                traco, = self.axes[i].plot(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)+float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
+                                           [self.sts[i][0].stats.delta*k for k in range(int(self.ndados[i]))],color='black')
                 self.plotArts[i].append(traco)
 
             plt.figure(i)    
             plt.title(' %s | %d canais'%(os.path.basename(self.arquivos[i]),int(self.canais)))     
             plt.xlabel('Distância (m)')
             plt.ylabel('Tempo (s)')
-            plt.ylim(0,self.recordlen)
-            plt.xlim(-self.valordx,self.lenPerfil+self.valordx)
-            #plt.xticks(int(self.ticksLabel),self.ticksLabel)
-                
+            plt.ylim(0,self.sts[i][0].stats.delta*self.ndados[i])
+            plt.xlim(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])-self.valordx,float(self.sts[i][-1].stats.seg2['RECEIVER_LOCATION'])+self.valordx)
+            #plt.xticks(int(self.ticksLabel),self.ticksLabel)     
             tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
             self.telas.append(tela)
             self.telas[i].show()
@@ -488,7 +484,6 @@ class Sispick(Tk):
             self.telas[i]._tkcanvas.pack(fill='both', expand=True)
 
         self.status.configure(text=' ')
-            
         self.frames[0].tkraise()
         self.pagina = 0
         plt.figure(self.pagina)
@@ -503,8 +498,6 @@ class Sispick(Tk):
         self.yinvertido = False
         self.sombreamento = False
         self.normalizado = False
-        self.eixoy = self.recordlen
-
 
     def nextpage(self):
         
@@ -514,6 +507,22 @@ class Sispick(Tk):
             frame.tkraise()
             self.pagina += 1
             self.telas[self.pagina].show()
+
+            if self.filtrosHP[self.pagina] == True:
+                
+                self.statusPA.configure(text = 'Passa alta: %.2f Hz'%float(self.freqHP[self.pagina]/self.fatorHP))
+
+            if self.filtrosLP[self.pagina] == True:
+
+                self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%float(self.freqLP[self.pagina]/self.fatorLP))
+
+            if self.filtrosHP[self.pagina] != True:
+
+                self.statusPA.configure(text = '')
+
+            if self.filtrosLP[self.pagina] != True:
+                
+                self.statusPB.configure(text = '')
             
         else:
             
@@ -531,6 +540,22 @@ class Sispick(Tk):
             frame.tkraise()
             self.pagina -= 1
             self.telas[self.pagina].show()
+
+            if self.filtrosHP[self.pagina] == True:
+                
+                self.statusPA.configure(text = 'Passa alta: %.2f Hz'%float(self.freqHP[self.pagina]/self.fatorHP))
+
+            if self.filtrosLP[self.pagina] == True:
+
+                self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%float(self.freqLP[self.pagina]/self.fatorLP))
+
+            if self.filtrosHP[self.pagina] != True:
+
+                self.statusPA.configure(text = '')
+
+            if self.filtrosLP[self.pagina] != True:
+                
+                self.statusPB.configure(text = '')
             
         else:
             
@@ -555,8 +580,8 @@ class Sispick(Tk):
 
                             self.picks[self.pagina][nearestMagnetValue] = event.ydata
                             self.picksArts[self.pagina][nearestMagnetValue].remove()
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
                             self.picksArts[self.pagina][nearestMagnetValue] = pickline
                             self.telas[self.pagina].show()
 
@@ -569,14 +594,14 @@ class Sispick(Tk):
                                 else:
 
                                     self.linhasArts[i][nearestMagnetValue].remove()
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
                                     self.linhasArts[i][nearestMagnetValue] = linhasverdes
                                     
                         else:
                             
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='r',linestyle='solid')
+                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
                             self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
                             self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
                             self.telas[self.pagina].show()
@@ -589,8 +614,8 @@ class Sispick(Tk):
 
                                 else:
 
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-0.7,
-                                                                nearestMagnetValue+0.7,colors='green',linestyle='solid')
+                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
+                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
                                     self.linhasArts[i].update({nearestMagnetValue:linhasverdes})
                             
                             self.pickHappened = True
@@ -672,108 +697,165 @@ class Sispick(Tk):
 
                     i.destroy()
 
-                del self.frames[:]
-
                 for i in self.axes:
 
                     i.cla()
-                    
-                del self.axes[:]
 
                 for i in self.figs:
 
                     i.clf()
-                    
+
+                del self.frames[:]
                 del self.figs[:]
-
+                del self.axes[:]
                 del self.telas[:]
-
                 del self.listSource[:]
-
                 del self.sts[:]
-
                 del self.ticksLabel[:]
-
                 del self.toolbars[:]
-
                 del self.stsNorms[:]
-
                 del self.ganho[:]
-
+                del self.filtros[:]
+                del self.filtrosHP[:]
+                del self.filtrosLP[:]
+                del self.copiasCruas[:]
+                del self.copiasNorms[:]
                 del self.okpicks[:]
-
                 del self.clips[:]
-
                 del self.sombreamentos[:]
-
                 del self.picks[:]
-
                 del self.picksArts[:]
-
                 del self.linhasArts[:]
-
                 del self.conexoesPick[:]
-
+                del self.freqLP[:]
+                del self.freqHP[:]
                 self.plotArts.clear()
                 self.sombArts.clear()
                 self.trClipados.clear()
-
-                for i in self.dadosCrus:
-
-                    i.clear()
-
-                for i in self.dadosNorms:
-
-                    i.clear()
-
-                del self.dadosCrus[:]
-                del self.dadosNorms[:]
-
-                self.plotExiste = False                                 
-                self.pickMode = False                                             
+                self.plotExiste = False                 
+                self.pickMode = False                                                
                 self.pickHappened = False               
                 self.yinvertido = False
                 self.seg2 = False
+                self.normalizado = False
+                self.optAberto = False
                 self.eventCon = None                                          
                 self.pagina = None
                 self.recordlen = None                   
-                self.valordx = None                                  
-                self.valorY = 0.4
-                self.valorGanho = 1.2
-                self.valorFigx = self.winfo_screenwidth()/80.50
-
-                if self.winfo_screenheight() == 1080:
-                    
-                    self.valorFigy = self.winfo_screenheight()/93.10
-
-                elif self.winfo_screenheight() == 768:
-
-                    self.valorFigy = self.winfo_screenheight()/99.74
-
-                elif self.winfo_screenheight() == 1024:
-
-                    self.valorFigy = self.winfo_screenheight()/94.1
-
-                elif self.winfo_screenheight() == 900:
-
-                    self.valorFigy = self.winfo_screenheight()/96.5
-
-                elif self.winfo_screenheight() == 720:
-
-                    self.valorFigy = self.winfo_screenheight()/101.5
-
-                else: # 800
-
-                    self.valorFigy = self.winfo_screenheight()/99
-                                    
-                self.eixoy = None
-                self.normalizado = False
-
+                self.valordx = None
+                self.decisaoPontos = None
+                self.ladoFill = 'positivo'
+                self.fatorY = 0.3
+                self.valorGanho = 1.5
+                self.fatorLP = 0.8
+                self.fatorHP = 1.5
                 self.status.configure(text = '',fg='red')
+                self.statusPA.configure(text = '', fg = 'green')
+                self.statusPB.configure(text = '', fg = 'green')
 
             else:
 
                 pass
+
+        else:
+
+            pass
+
+    def conferidorIndividual(self):
+
+        if self.clips[self.pagina] == True:
+
+            posGeof1 = float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])
+
+            for j in range(self.canais):
+
+                self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
+                self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
+                self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
+
+        else:
+
+            pass
+         
+        if self.sombreamentos[self.pagina] == True:
+
+            for j in range(self.canais):
+                
+                self.sombArts[self.pagina][:].pop(j).remove()
+                
+            del self.sombArts[self.pagina][:]
+
+            self.sombreamentos[self.pagina] = False
+            self.fill()
+
+        else:
+
+            pass
+
+        self.figs[self.pagina].canvas.draw()
+        self.status.configure(text=' ')
+
+        if self.pickMode == True:
+
+            self.status.configure(text=' Pick ativado',fg='blue')
+
+        else:
+
+            pass
+
+    def conferidorGeral(self):
+
+        for i in range(len(self.arquivos)):
+
+            posGeof1 = float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])
+                
+            if self.clips[i] == True:
+                    
+                for j in range(self.canais):
+
+                    self.plotArts[i][j].get_xdata()[self.plotArts[i][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
+                    self.plotArts[i][j].get_xdata()[self.plotArts[i][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
+                    self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
+
+            if self.sombreamentos[i] == False:
+
+                pass
+                        
+            else:
+
+                for j in range(self.canais):
+            
+                    self.sombArts[i][:].pop(j).remove()
+        
+                del self.sombArts[i][:]
+
+                if self.ladoFill == 'positivo':
+
+                    for j in range(self.canais):
+            
+                        somb = self.axes[i].fill_betweenx(self.plotArts[i][j].get_ydata(),
+                                         posGeof1+j*self.valordx,self.plotArts[i][j].get_xdata(),
+                                        where=self.plotArts[i][j].get_xdata()>=  posGeof1+j*self.valordx,color='black')
+
+                        self.sombArts[i].append(somb)
+
+                elif self.ladoFill == 'negativo':
+
+                    for j in range(self.canais):
+            
+                        somb = self.axes[i].fill_betweenx(self.plotArts[i][j].get_ydata(),
+                                         posGeof1+j*self.valordx,self.plotArts[i][j].get_xdata(),
+                                        where=self.plotArts[i][j].get_xdata()<= posGeof1+j*self.valordx,color='black')
+
+                        self.sombArts[i].append(somb)
+
+            self.telas[i].show()
+            
+        self.status.configure(text=' ')
+
+        if self.pickMode == True:
+
+            self.status.configure(text=' Pick ativado',fg='blue')
 
         else:
 
@@ -789,70 +871,34 @@ class Sispick(Tk):
 
             if self.normalizado == True:
 
-                for j in range(self.canais):
-                    
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
+                if self.filtros[self.pagina] != True:
 
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+                else:
+
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata(self.copiasNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+                
             else:
 
-                for j in range(self.canais):
+                if self.filtros[self.pagina] != True:
+                
+                    for j in range(self.canais):
 
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
-            if self.clips[self.pagina] == True:
+                else:
 
-                for j in range(self.canais):
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata(self.copiasCruas[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
-                    if len(self.trClipados[self.pagina][j]) > 0:
-
-                        del self.trClipados[self.pagina][j][:]                      
-
-                    for i in self.plotArts[self.pagina][j].get_xdata():
-
-                        if i < (j*self.valordx)-((self.valordx/2)*0.9):
-
-                            self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
-
-                        elif i > (j*self.valordx)+((self.valordx/2)*0.9):
-                            
-                            self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
-
-                        else:
-
-                            self.trClipados[self.pagina][j].append(i)
-
-                    self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
-
-            else:
-
-                pass
-             
-            if self.sombreamentos[self.pagina] == True:
-
-                for j in range(self.canais):
-                    
-                    self.sombArts[self.pagina][:].pop(j).remove()
-                    
-                del self.sombArts[self.pagina][:]
-
-                self.sombreamentos[self.pagina] = False
-                self.fill()
-
-            else:
-
-                pass
-
-            self.figs[self.pagina].canvas.draw()
-            self.status.configure(text=' ')
-
-            if self.pickMode == True:
-
-                self.status.configure(text=' Pick ativado',fg='blue')
-
-            else:
-
-                pass
-
+            self.conferidorIndividual()
+            
         else:
 
             pass
@@ -867,94 +913,99 @@ class Sispick(Tk):
 
             if self.normalizado == True:
 
-                for j in range(self.canais):
-                    
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
+                if self.filtros[self.pagina] != True:
+
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+                else:
+
+                    for j in range(self.canais):
+                        
+                        self.plotArts[self.pagina][j].set_xdata(self.copiasNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
                     
             else:
 
-                for j in range(self.canais):
+                if self.filtros[self.pagina] != True:
 
-                    self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
+                    for j in range(self.canais):
 
-            if self.clips[self.pagina] == True:
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
-                for j in range(self.canais):
+                else:
 
-                    if len(self.trClipados[self.pagina][j]) > 0:
+                    for j in range(self.canais):
 
-                        del self.trClipados[self.pagina][j][:]                      
+                        self.plotArts[self.pagina][j].set_xdata(self.copiasCruas[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
-                    for i in self.plotArts[self.pagina][j].get_xdata():
-
-                        if i < (j*self.valordx)-((self.valordx/2)*0.9):
-
-                            self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
-
-                        elif i > (j*self.valordx)+((self.valordx/2)*0.9):
-                            
-                            self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
-
-                        else:
-
-                            self.trClipados[self.pagina][j].append(i)
-
-                    self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
-
-            else:
-
-                pass
-                
-            if self.sombreamentos[self.pagina] == True:
-
-                for j in range(self.canais):
-                    
-                    self.sombArts[self.pagina][:].pop(j).remove()
-                    
-                del self.sombArts[self.pagina][:]
-
-                self.sombreamentos[self.pagina] = False
-                self.fill()
-
-            else:
-
-                pass
-
-            self.figs[self.pagina].canvas.draw()
-            self.status.configure(text=' ')
-
-            if self.pickMode == True:
-
-                self.status.configure(text=' Pick ativado',fg='blue')
-
-            else:
-
-                pass
-
+            self.conferidorIndividual()
+        
         else:
 
             pass
 
-    def menosy(self):
+    def amostrasDefault(self):
 
-        if self.plotExiste == True and self.eixoy - self.valorY > 0:
+        if self.plotExiste == True:
 
-            self.eixoy -= self.valorY
-
-            for i in range(len(self.arquivos)):
+            if int(self.ndados[self.pagina]) != int(len(self.sts[0][0])):
                 
-                plt.figure(i)
-                plt.ylim(0,self.eixoy)
+                if messagebox.askyesno('Geosis - Sispick', 'Atualizar os plots para número de amostras original (%d)?'%int(len(self.sts[0][0]))):
 
-                if self.yinvertido == True:
+                    self.ndados[self.pagina] = int(len(self.sts[0][0]))
 
-                    plt.gca().invert_yaxis()
+                    if self.normalizado == True:
+
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_data(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
+                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                    else:
+
+                        for j in range(self.canais):
+                    
+                            self.plotArts[self.pagina][j].set_data(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
+                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                    self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
+
+                    if self.yinvertido == True:
+                        
+                        plt.figure(self.pagina)
+                        plt.gca().invert_yaxis()
+                        self.figs[self.pagina].canvas.draw()
+
+                    else:
+
+                        pass
+
+                    self.conferidorIndividual()
 
                 else:
 
                     pass
-                
-                self.figs[i].canvas.draw()
+
+        else:
+
+            pass
+                    
+    def menosy(self):
+
+        if self.plotExiste == True:
+
+            if self.yinvertido == True:
+
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[0])*self.fatorY])
+                plt.figure(self.pagina)
+                plt.gca().invert_yaxis()
+
+            else:
+
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[1])*self.fatorY])
+            
+            self.figs[self.pagina].canvas.draw()
      
         else:
 
@@ -962,24 +1013,19 @@ class Sispick(Tk):
 
     def maisy(self):
 
-        if self.plotExiste == True and self.eixoy + 0.4 < self.recordlen:
+        if self.plotExiste == True:
 
-            self.eixoy += self.valorY
+            if self.yinvertido == True:
 
-            for i in range(len(self.arquivos)):
-                
-                plt.figure(i)
-                plt.ylim(0,self.eixoy)
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[0])/self.fatorY])
+                plt.figure(self.pagina)
+                plt.gca().invert_yaxis()
 
-                if self.yinvertido == True:
+            else:
 
-                    plt.gca().invert_yaxis()
-
-                else:
-
-                    pass
-                
-                self.figs[i].canvas.draw()
+                self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[1])/self.fatorY])
+            
+            self.figs[self.pagina].canvas.draw()
 
         else:
 
@@ -993,11 +1039,17 @@ class Sispick(Tk):
 
                 self.status.configure(text=' Normalizando traços...')
 
-                for i in range(len(self.arquivos)):                
+                for i in range(len(self.arquivos)):
 
-                    for j in range(self.canais):
+                    if self.filtros[i] != True:
 
-                        self.plotArts[i][j].set_xdata([k*self.ganho[i]+j*self.valordx for k in self.dadosNorms[i][j]])
+                        for j in range(self.canais):
+
+                            self.plotArts[i][j].set_xdata(self.dadosNorms[i][j][0:self.ndados[i]]*(-1)*self.ganho[i]+float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+                    else:
+
+                        messagebox.showinfo('','Retire os filtros aplicados no sismograma para normalizar os traços')
 
                 self.normalizado = True
 
@@ -1006,74 +1058,21 @@ class Sispick(Tk):
                 self.status.configure(text=' Removendo normalização de traços...')
 
                 for i in range(len(self.arquivos)):
-                    
-                    for j in range(self.canais):
 
-                        self.plotArts[i][j].set_xdata([k*self.ganho[i]+j*self.valordx for k in self.dadosCrus[i][j]])
+                    if self.filtros[i] != True:
+                    
+                        for j in range(self.canais):
+
+                            self.plotArts[i][j].set_xdata(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)*self.ganho[i]+float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+                    else:
+
+                        messagebox.showinfo('','Retire os filtros aplicados no sismograma para desnormalizar os traços')
+                        self.status.configure(text=' ')
 
                 self.normalizado = False
 
-            for i in range(len(self.arquivos)):
-                
-                if self.clips[i] == False:
-
-                    pass
-
-                else:
-
-                    for j in range(self.canais):
-
-                        if len(self.trClipados[i][j]) > 0:
-
-                            del self.trClipados[i][j][:]                      
-
-                        for k in self.plotArts[i][j].get_xdata():
-
-                            if k < (j*self.valordx)-((self.valordx/2)*0.9):
-
-                                self.trClipados[i][j].append((j*self.valordx)-((self.valordx/2)*0.9))
-
-                            elif k > (j*self.valordx)+((self.valordx/2)*0.9):
-                                
-                                self.trClipados[i][j].append((j*self.valordx)+((self.valordx/2)*0.9))
-
-                            else:
-
-                                self.trClipados[i][j].append(k)
-
-                        self.plotArts[i][j].set_xdata(self.trClipados[i][j])
-
-                if self.sombreamentos[i] == False:
-
-                    pass
-                            
-                else:
-
-                    for j in range(self.canais):
-                
-                        self.sombArts[i][:].pop(j).remove()
-            
-                    del self.sombArts[i][:]
-
-                    for j in range(self.canais):
-            
-                        somb = self.axes[i].fill_betweenx(self.plotArts[i][j].get_ydata(),
-                                        j*self.valordx,self.plotArts[i][j].get_xdata(),
-                                        where=np.array(self.plotArts[i][j].get_xdata())>=j*self.valordx,color='black')
-
-                        self.sombArts[i].append(somb)
-
-                self.figs[i].canvas.draw()
-                
-            self.status.configure(text=' ')
-
-            if self.pickMode == True:
-
-                self.status.configure(text=' Pick ativado',fg='blue')
-
-            else:
-
-                pass
+            self.conferidorGeral()
             
         else:
 
@@ -1084,14 +1083,28 @@ class Sispick(Tk):
         if self.plotExiste == True and self.sombreamentos[self.pagina] == False:
 
             self.status.configure(text=' Aplicando sombreamento...')
-            
-            for j in range(self.canais):
-                
-                somb = self.axes[self.pagina].fill_betweenx(self.plotArts[self.pagina][0].get_ydata(),j*self.valordx,
-                                                            self.plotArts[self.pagina][j].get_xdata(),
-                                            where= np.array(self.plotArts[self.pagina][j].get_xdata()) >= j*self.valordx,color='black')
+
+            if self.ladoFill == 'positivo':
+
+                for j in range(self.canais):
                     
-                self.sombArts[self.pagina].append(somb)
+                    somb = self.axes[self.pagina].fill_betweenx(self.plotArts[self.pagina][j].get_ydata(),
+                                float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
+                                self.plotArts[self.pagina][j].get_xdata(),
+                                where = self.plotArts[self.pagina][j].get_xdata() >= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                        
+                    self.sombArts[self.pagina].append(somb)
+
+            elif self.ladoFill == 'negativo':
+
+                for j in range(self.canais):
+                    
+                    somb = self.axes[self.pagina].fill_betweenx(self.plotArts[self.pagina][j].get_ydata(),
+                            float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
+                            self.plotArts[self.pagina][j].get_xdata(),
+                            where = self.plotArts[self.pagina][j].get_xdata() <= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                        
+                    self.sombArts[self.pagina].append(somb)
 
             self.figs[self.pagina].canvas.draw()
             self.status.configure(text=' ')
@@ -1139,28 +1152,13 @@ class Sispick(Tk):
             if self.clips[self.pagina] == False:
 
                 self.status.configure(text=' Clipando traços...')
+                posGeof1 = float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])
 
                 for j in range(self.canais):
 
-                    if len(self.trClipados[self.pagina][j]) > 0:
-
-                        del self.trClipados[self.pagina][j][:]                      
-
-                    for i in self.plotArts[self.pagina][j].get_xdata():
-
-                        if i < (j*self.valordx)-((self.valordx/2)*0.9):
-
-                            self.trClipados[self.pagina][j].append((j*self.valordx)-((self.valordx/2)*0.9))
-
-                        elif i > (j*self.valordx)+((self.valordx/2)*0.9):
-                            
-                            self.trClipados[self.pagina][j].append((j*self.valordx)+((self.valordx/2)*0.9))
-
-                        else:
-
-                            self.trClipados[self.pagina][j].append(i)
-
-                    self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+                    self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
+                    self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
+                    self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
 
                 self.clips[self.pagina] = True
 
@@ -1172,13 +1170,13 @@ class Sispick(Tk):
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosNorms[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
                 else:
 
                     for j in range(self.canais):
 
-                        self.plotArts[self.pagina][j].set_xdata([k*self.ganho[self.pagina]+j*self.valordx for k in self.dadosCrus[self.pagina][j]])
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
                 self.clips[self.pagina] = False
                 
@@ -1235,6 +1233,148 @@ class Sispick(Tk):
                     self.figs[i].canvas.draw()
 
                 self.yinvertido = False
+
+        else:
+
+            pass
+
+    def removerFiltros(self):
+
+        if self.plotExiste == True:
+
+            if self.filtros[self.pagina] == True:
+
+                if self.normalizado == True:
+
+                    for j in range(self.canais):
+
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+                    self.copiasNorms[self.pagina] = None
+
+                else:
+
+                    for j in range(self.canais):
+
+                        self.plotArts[self.pagina][j].set_xdata(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+                    self.copiasCruas[self.pagina] = None
+
+                self.statusPA.configure(text = '')
+                self.statusPB.configure(text = '')
+                self.filtros[self.pagina] = False
+                self.filtrosHP[self.pagina] = False
+                self.filtrosLP[self.pagina] = False
+                self.freqLP[self.pagina] = 1000
+                self.freqHP[self.pagina] = 5
+                self.conferidorIndividual()
+                self.telas[self.pagina].show()
+
+            else:
+
+                pass        
+
+        else:
+
+            pass
+
+    def filtroLP(self):
+
+        if self.plotExiste == True:
+
+            if self.normalizado == True:
+
+                if self.filtros[self.pagina] != True:
+
+                    self.copiasNorms[self.pagina] = self.sts[self.pagina].copy().normalize()
+                    self.copiasNorms[self.pagina].filter("lowpass", freq = self.freqLP[self.pagina])
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP[self.pagina])
+                    self.freqLP[self.pagina] = self.freqLP[self.pagina]*self.fatorLP
+
+                else:
+
+                    self.copiasNorms[self.pagina].filter("lowpass", freq = self.freqLP[self.pagina])
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP[self.pagina])
+                    self.freqLP[self.pagina] = self.freqLP[self.pagina]*self.fatorLP
+                            
+                for j in range(self.canais):
+
+                    self.plotArts[self.pagina][j].set_xdata(self.copiasNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+            else:
+
+                if self.filtros[self.pagina] != True:
+
+                    self.copiasCruas[self.pagina] = self.sts[self.pagina].copy().normalize(1)
+                    self.copiasCruas[self.pagina].filter("lowpass", freq = self.freqLP[self.pagina])
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP[self.pagina])
+                    self.freqLP[self.pagina] = self.freqLP[self.pagina]*self.fatorLP
+
+                else:
+
+                    self.copiasCruas[self.pagina].filter("lowpass", freq = self.freqLP[self.pagina])
+                    self.statusPB.configure(text = 'Passa baixa: %.2f Hz'%self.freqLP[self.pagina])
+                    self.freqLP[self.pagina] = self.freqLP[self.pagina]*self.fatorLP
+                            
+                for j in range(self.canais):
+
+                    self.plotArts[self.pagina][j].set_xdata(self.copiasCruas[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+            self.filtrosLP[self.pagina] = True        
+            self.filtros[self.pagina] = True
+            self.conferidorIndividual()
+            self.telas[self.pagina].show()
+
+        else:
+
+            pass
+
+    def filtroHP(self):
+
+        if self.plotExiste == True:
+
+            if self.normalizado == True:
+
+                if self.filtros[self.pagina] != True:
+
+                    self.copiasNorms[self.pagina] = self.sts[self.pagina].copy().normalize()
+                    self.copiasNorms[self.pagina].filter("highpass", freq = self.freqHP[self.pagina])
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP[self.pagina])
+                    self.freqHP[self.pagina] = self.freqHP[self.pagina]*self.fatorHP
+
+                else:
+
+                    self.copiasNorms[self.pagina].filter("highpass", freq = self.freqHP[self.pagina])
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP[self.pagina])
+                    self.freqHP[self.pagina] = self.freqHP[self.pagina]*self.fatorHP
+                            
+                for j in range(self.canais):
+
+                    self.plotArts[self.pagina][j].set_xdata(self.copiasNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+            else:
+
+                if self.filtros[self.pagina] != True:
+
+                    self.copiasCruas[self.pagina] = self.sts[self.pagina].copy().normalize(1)
+                    self.copiasCruas[self.pagina].filter("highpass", freq = self.freqHP[self.pagina])
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP[self.pagina])
+                    self.freqHP[self.pagina] = self.freqHP[self.pagina]*self.fatorHP
+
+                else:
+
+                    self.copiasCruas[self.pagina].filter("highpass", freq = self.freqHP[self.pagina])
+                    self.statusPA.configure(text = 'Passa alta: %.2f Hz'%self.freqHP[self.pagina])
+                    self.freqHP = self.freqHP[self.pagina]*self.fatorHP
+                            
+                for j in range(self.canais):
+
+                    self.plotArts[self.pagina][j].set_xdata(self.copiasCruas[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
+
+            self.filtrosHP[self.pagina] = True
+            self.filtros[self.pagina] = True
+            self.conferidorIndividual()
+            self.telas[self.pagina].show()
 
         else:
 
@@ -1314,6 +1454,223 @@ class Sispick(Tk):
 
                 pass
 
+    def pickAmostra(self):
+
+        if self.plotExiste == True:
+
+            def pick(event):
+
+                if int(event.ydata/self.sts[0][0].stats.delta) <= int(len(self.sts[0][0])):
+
+                    marcador = self.axes[self.pagina].hlines(event.ydata,float(self.axes[0].get_xlim()[0]),
+                                            float(self.axes[0].get_xlim()[1]),colors='r',linestyle='--',
+                                            alpha = 1,linewidth = 2)
+                    self.figs[self.pagina].canvas.draw()
+                
+                    if messagebox.askyesno('Geosis - Sispick', 'Atualizar os plots para %d amostras?'%int(event.ydata/self.sts[0][0].stats.delta)):
+
+                        marcador.remove()
+                        self.ndados[self.pagina] = int(event.ydata/self.sts[0][0].stats.delta)
+
+                        if self.normalizado == True:
+
+                            for j in range(self.canais):
+
+                                self.plotArts[self.pagina][j].set_data(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
+                                                             [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                        else:
+
+                            for j in range(self.canais):
+                        
+                                self.plotArts[self.pagina][j].set_data(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
+                                                             [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                        self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
+
+                        if self.yinvertido == True:
+                            
+                            plt.figure(self.pagina)
+                            plt.gca().invert_yaxis()
+                            self.figs[self.pagina].canvas.draw()
+
+                        else:
+
+                            pass
+
+                        self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
+                        self.pickAmostraAtivado = False
+
+                        self.status.configure(text='',fg='red')      
+                        self.conferidorIndividual()
+                        
+                    else:
+                            
+                        self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
+                        self.status.configure(text='',fg='red')
+                        self.pickAmostraAtivado = False
+                        marcador.remove()
+
+            if self.pickAmostraAtivado == False:
+
+                self.cid = self.figs[self.pagina].canvas.mpl_connect('button_press_event', pick)
+                self.status.configure(text='Editor de amostras ON', fg='blue')                    
+                self.pickAmostraAtivado = True
+
+            else:
+
+                self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
+                self.status.configure(text='', fg='red')
+                self.pickAmostraAtivado = False
+                    
+        else:
+
+            pass
+
+    def cabecalho (self):
+
+        if self.plotExiste == True:
+
+            root = Tk()
+            root.geometry('430x300')
+            root.title('Geosis - Sispick')
+            root.resizable(0,0)
+            fonte = StringVar()
+            dx = StringVar()
+            comp = StringVar()
+            pts = StringVar()
+            main = Label(root, text = 'Dados do cabeçalho (%s)'%os.path.basename(self.arquivos[self.pagina]),font=("Helvetica", 14),
+                         fg='green').grid(row = 0, column = 0, sticky='w', padx = 10, pady = 10)
+            fonte = Label(root, text = 'Posição da fonte (atual: %.1f m):'%float(self.listSource[self.pagina]),font=("Helvetica", 12),
+                         fg='black').grid(row = 1, column = 0, sticky='w', padx = 10, pady = 10)
+            espacamento = Label(root, text = 'Espaçamento entre geofones (atual: %.1f m):'%float(self.valordx),font=("Helvetica", 12),
+                         fg='black').grid(row = 2, column = 0, sticky='w', padx = 10, pady = 10)
+            comp = Label(root, text = 'Comprimento do perfil (atual: %.1f m):'%(float(self.sts[self.pagina][-1].stats.seg2['RECEIVER_LOCATION'])-float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])),font=("Helvetica", 12),
+                         fg='black').grid(row = 3, column = 0, sticky='w', padx = 10, pady = 10)
+            pontos = Label(root, text = 'Quantidade de amostras (atual: %d):'%int(self.ndados[self.pagina]),font=("Helvetica", 12),
+                         fg='black').grid(row = 4, column = 0, sticky='w', padx = 10, pady = 10)
+            entryf = Entry(root, textvariable = fonte, width=10)
+            entryf.grid(row = 1, column = 0, sticky = 'w', pady = 10, padx = 250)
+            entrydx = Entry(root, textvariable = dx, width=10)
+            entrydx.grid(row = 2, column = 0, sticky = 'w', pady = 10, padx = 330)
+            entrycomp = Entry(root, textvariable = comp, width=10)
+            entrycomp.grid(row = 3, column = 0, sticky = 'w', pady = 10, padx = 290)
+            entrypontos = Entry(root, textvariable = pts, width=10)
+            entrypontos.grid(row = 4, column = 0, sticky = 'w', pady = 10, padx = 290)
+            warning = Label(root, text = ' ', fg = 'red',font=("Helvetica", 12))
+            warning.grid(row = 6, column = 0, sticky = 'w', padx = 100, pady= 10)
+            
+            def salvar():
+
+                if len(entryf.get()) > 0:
+                    
+                    try:
+
+                        self.listSource[self.pagina] = float(entryf.get())
+                        warning.configure(text = 'Dados salvos', fg = 'blue')
+                        
+                    except:
+
+                        warning.configure(text = 'Posição de fonte inválida', fg = 'red')
+
+                else:
+
+                    pass
+
+                if len(entrydx.get()) > 0:
+                    
+                    try:
+
+                        self.valordx = float(entrydx.get())
+                        warning.configure(text = 'Dados salvos', fg = 'blue')
+
+                        for i in range(len(self.arquivos)):
+
+                            if self.normalizado == True:
+
+                                for j in range(self.canais):
+                        
+                                    self.plotArts[i][j].set_xdata([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
+
+                            else:
+
+                                for j in range(self.canais):
+                        
+                                    self.plotArts[i][j].set_xdata([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
+                
+                            self.conferidorGeral()
+                            
+                    except:
+
+                        warning.configure(text = 'Espaçamento entre geofones inválido', fg = 'red')
+
+                if len(entrycomp.get()) > 0:
+                    
+                    try:
+
+                        warning.configure(text = 'Dados salvos', fg = 'blue')
+
+                        for i in range(len(self.arquivos)):
+
+                            plt.figure(i)
+                            plt.xlim(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])-self.valordx,float(entrycomp.get())+self.valordx)
+                            self.telas[i].show()
+                            
+                    except:
+
+                        warning.configure(text = 'Comprimento de perfil inválido', fg = 'red')
+
+                if len(entrypontos.get()) > 0 and int(entrypontos.get()) <= len(self.sts[self.pagina][0]):
+
+                    self.ndados[self.pagina] = int(entrypontos.get())
+
+                    if self.normalizado == True:
+
+                        for j in range(self.canais):
+
+                            self.plotArts[self.pagina][j].set_data(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
+                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                    else:
+
+                        for j in range(self.canais):
+                    
+                            self.plotArts[self.pagina][j].set_data(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
+                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+
+                    self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
+
+                    if self.yinvertido == True:
+                        
+                        plt.figure(self.pagina)
+                        plt.gca().invert_yaxis()
+                        self.figs[self.pagina].canvas.draw()
+
+                    else:
+
+                        pass
+                        
+                    self.telas[self.pagina].show()
+                    self.conferidorIndividual()
+
+                else:
+
+                    pass
+
+            def fechar():
+
+                root.destroy()
+
+            save = Button(root, text = 'Salvar',font=("Helvetica", 12), width = 6,
+                    command = salvar).grid(row = 5, column = 0, sticky = 'w', padx = 80, pady = 10)
+            fechar = Button(root, text = 'Fechar',font=("Helvetica", 12), width = 6,
+                    command = fechar).grid(row = 5, column = 0, sticky = 'w', padx = 220, pady = 10)
+            root.mainloop()
+
+        else:
+
+            pass
+
     def configPlot(self):
 
         if self.plotExiste == True and self.optAberto == False:
@@ -1321,40 +1678,38 @@ class Sispick(Tk):
             root = Tk()
             root.geometry('420x350+500+250')
             root.title('Sismograma')
-            frame = Frame(root)
-            frame.grid(row = 0, column = 0, sticky = 'nsew')
-
             vardx = StringVar()
             varY = StringVar()
             varGain = StringVar()    
             varFigx = StringVar()
             varFigy = StringVar()
-            
-            mainLabel = Label(frame, text='Configurações de plot',font=("Helvetica", 14),fg='green')
-            mainLabel.grid(row=0, column=0, sticky="w",pady=15,padx=110)
-            labelY = Label(frame, text='Corte temporal (atual: %.1f s): '%self.valorY,font=("Helvetica", 12))
-            entryY = Entry(frame, textvariable = varY,width=10)
-            labelY.grid(row=1, column=0, sticky="w",padx=20,pady=10)
-            entryY.grid(row=1, column=0, sticky="w",padx=310,pady=10)
-            labelGain = Label(frame, text='Fator de ganho (atual: %.1f): '%self.valorGanho,font=("Helvetica", 12))
-            entryGain = Entry(frame, textvariable = varGain,width=10)
-            labelGain.grid(row=2, column=0, sticky="w",padx=20,pady=10)
-            entryGain.grid(row=2, column=0, sticky="w",padx=310,pady=10)
-            labelFigx = Label(frame, text='Tamanho x do plot (atual: %.1f): '%self.valorFigx,font=("Helvetica", 12))
-            entryFigx = Entry(frame, textvariable = varFigx,width=10)
-            labelFigx.grid(row=3, column=0, sticky="w",padx=20,pady=10)
-            entryFigx.grid(row=3, column=0, sticky="w",padx=310,pady=10)
-            labelFigy = Label(frame, text='Tamanho y do plot (atual: %.1f): '%self.valorFigy,font=("Helvetica", 12))
-            entryFigy = Entry(frame, textvariable = varFigy,width=10)
-            labelFigy.grid(row=4, column=0, sticky="w",padx=20,pady=10)
-            entryFigy.grid(row=4, column=0, sticky="w",padx=310,pady=10)
-            warning = Label(frame, text='',font=("Helvetica", 12),fg = 'red')
-            warning.grid(row=6, column=0, sticky="w",pady=0,padx=140)
+            mainLabel = Label(root, text='Configurações de plot',
+                        font=("Helvetica", 14),fg='green').grid(row=0, column=0, sticky="w",pady=15,padx=110)
+            labelY = Label(root, text='Corte temporal (atual: %.1f s): '%self.fatorY,
+                           font=("Helvetica", 12)).grid(row=1, column=0, sticky="w",padx=20,pady=10)
+            entryY = Entry(root, textvariable = varY,width=10)
+            entryY.grid(row=1, column=0, sticky="w",padx=235,pady=10)
+            labelGain = Label(root, text='Fator de ganho (atual: %.1f): '%self.valorGanho,
+                              font=("Helvetica", 12)).grid(row=2, column=0, sticky="w",padx=20,pady=10)
+            entryGain = Entry(root, textvariable = varGain,width=10)
+            entryGain.grid(row=2, column=0, sticky="w",padx=235,pady=10)
+            labelFigx = Label(root, text='Tamanho x do plot (atual: %.1f): '%self.valorFigx,
+                              font=("Helvetica", 12)).grid(row=3, column=0, sticky="w",padx=20,pady=10)
+            entryFigx = Entry(root, textvariable = varFigx,width=10)
+            entryFigx.grid(row=3, column=0, sticky="w",padx=235,pady=10)
+            labelFigy = Label(root, text='Tamanho y do plot (atual: %.1f): '%self.valorFigy,
+                              font=("Helvetica", 12)).grid(row=4, column=0, sticky="w",padx=20,pady=10)
+            entryFigy = Entry(root, textvariable = varFigy,width=10)
+            entryFigy.grid(row=4, column=0, sticky="w",padx=235,pady=10)
+
+            fill = Label(root, text='Lado do sombreamento (atual: %s): '%self.ladoFill,
+                              font=("Helvetica", 12)).grid(row=5, column=0, sticky="w",padx=20,pady=10)
+            warning = Label(root, text='',font=("Helvetica", 12),fg = 'red')
+            warning.grid(row=7, column=0, sticky="w",pady=0,padx=140)
 
             def fechar():
 
                 self.optAberto = False
-                frame.destroy()
                 root.destroy()
                 
             def do():
@@ -1363,7 +1718,7 @@ class Sispick(Tk):
 
                     try:
 
-                        self.valorY = float(entryY.get())
+                        self.fatorY = float(entryY.get())
                         warning.configure(text='Configurações aplicadas',fg = 'blue')
 
                     except:
@@ -1417,16 +1772,25 @@ class Sispick(Tk):
 
             def cancelar():
 
-                frame.destroy()
                 self.optAberto = False
                 root.destroy()
 
-            botaoOK = Button(frame, text='Aplicar', bg = 'gray90',fg='black', activebackground = 'gray93',
-                            activeforeground = 'black',width=8, command = do)
-            botaoX = Button(frame, text='Fechar', bg = 'gray90',fg='black', activebackground = 'gray93',
-                            activeforeground = 'black',width=8, command = cancelar)
-            botaoOK.grid(row=5, column=0, sticky="w",pady=20,padx=110)
-            botaoX.grid(row=5, column=0, sticky="w",padx=260,pady=20)
+            def negativo():
+
+                self.ladoFill = 'negativo'
+
+            def positivo():
+
+                self.ladoFill = 'positivo'
+
+            neg = Button(root, text=' - ',width=4,
+                         command = negativo).grid(row=5, column=0, sticky="w",padx=310,pady=10)
+            pos = Button(root, text=' + ',width=4,
+                         command = positivo).grid(row=5, column=0, sticky="w",padx=360,pady=10)
+            botaoOK = Button(root, text='Aplicar', bg = 'gray90',fg='black', activebackground = 'gray93',
+                            activeforeground = 'black',width=8, command = do).grid(row=6, column=0, sticky="w",pady=20,padx=110)
+            botaoX = Button(root, text='Fechar', bg = 'gray90',fg='black', activebackground = 'gray93',
+                            activeforeground = 'black',width=8, command = cancelar).grid(row=6, column=0, sticky="w",padx=260,pady=20)
             root.bind('<Return>', lambda x: do())
             root.resizable(0,0)
             root.protocol("WM_DELETE_WINDOW", fechar)
@@ -1445,16 +1809,16 @@ class Sispick(Tk):
         
         root = Tk()   
         root.geometry('455x230+500+250')
-        root.title('Sismograma')
-        self.frame = Frame(root)
+        root.title('Geosis - Sispick')
         vardx = StringVar()
-        self.frame.grid(row=0, column=0, sticky="nsew")
-        mainLabel = Label(self.frame, text='Configuração inicial',font=("Helvetica", 14),fg='blue')
-        mainLabel.grid(row=0, column=0, sticky="w",pady=15,padx=50)
-        labeldx = Label(self.frame, text='Espaçamento entre geofones (metros): ',font=("Helvetica", 12))
-        entrydx = Entry(self.frame, textvariable = vardx,width=10)
-        labeldx.grid(row=2, column=0, sticky="w",padx=20,pady=10)
+        mainLabel = Label(root, text='O espaçamento entre geofones não foi encontrado no cabeçalho\ndo arquivo. Insira manualmente no campo abaixo',
+                    font=("Helvetica", 11),fg='red').grid(row=0, column=0, sticky="w",pady=15,padx=5)
+        labeldx = Label(root, text='Espaçamento entre geofones (metros): ',
+                    font=("Helvetica", 12)).grid(row=2, column=0, sticky="w",padx=20,pady=10)
+        entrydx = Entry(root, textvariable = vardx,width=10)
         entrydx.grid(row=2, column=0, sticky="w",padx=310,pady=10)
+        warning = Label(root, text = '', fg = 'red',font=("Helvetica", 12))
+        warning.grid(row = 6, column = 0, sticky = 'w', pady = 5, padx = 180)
         
         def do():
             
@@ -1463,34 +1827,35 @@ class Sispick(Tk):
                 try:
                 
                     self.valordx = float(entrydx.get())
-                    self.frame.destroy()
                     root.destroy()
                     self.abrir_pt2()
 
                 except:
                     
-                    self.warning = Label(self.frame, text='Valor inválido',font=("Helvetica", 12),fg = 'red')
-                    self.warning.grid(row=6, column=0, sticky="w",pady=0,padx=140)
+                    warning.configure(text = 'Valor inválido')
 
             else:
-                
-                aviso = Label(self.frame, text='Preencha o campo em branco',font=("Helvetica", 12),fg = 'red')
-                aviso.grid(row=6, column=0, sticky="w",pady=0,padx=140)
+
+                messagebox.showinfo('Geosis - Sispick', 'Espaçamento entre geofones padrão será usado: 2 m')
+                self.valordx = 2
+                root.destroy()
+                self.abrir_pt2()
                                     
         def cancelar():
 
-            self.frame.destroy()
+            messagebox.showinfo('Geosis - Sispick', 'Espaçamento entre geofones padrão será usado: 2 m')
+            self.valordx = 2
             root.destroy()
+            self.abrir_pt2()
         
-        botaoOK = Button(self.frame, text='   Ok   ', bg = 'gray90',fg='black', activebackground = 'gray93',
-                        activeforeground = 'black',width=8, command = do)
-        botaoX = Button(self.frame, text='Cancelar', bg = 'gray90',fg='black', activebackground = 'gray93',
-                        activeforeground = 'black',width=8, command = cancelar)
-        botaoOK.grid(row=5, column=0, sticky="w",pady=20,padx=110)
-        botaoX.grid(row=5, column=0, sticky="w",padx=260,pady=20)
+        botaoOK = Button(root, text='   Ok   ', bg = 'gray90',fg='black', activebackground = 'gray93',
+                        activeforeground = 'black',width=8, command = do).grid(row=5, column=0, sticky="w",pady=20,padx=110)
+        botaoX = Button(root, text='Ignorar', bg = 'gray90',fg='black', activebackground = 'gray93',
+                        activeforeground = 'black',width=8, command = cancelar).grid(row=5, column=0, sticky="w",padx=260,pady=20)
         entrydx.focus()
         root.bind('<Return>', lambda x: do())
         root.resizable(0,0)
+        root.protocol("WM_DELETE_WINDOW", cancelar)
         root.mainloop()
 
 
@@ -1500,7 +1865,8 @@ class sisref(Tk):
 
         Tk.__init__(self)
         self.configure(background='#F3F3F3')
-        self.geometry('800x400+310+150')        
+        self.geometry("{0}x{1}+0+0".format(self.winfo_screenwidth(),
+                                       self.winfo_screenheight()))        
         self.title('Geosis - sisref')
         self.protocol("WM_DELETE_WINDOW", self.fechar)
         parent = Frame(self,bg='#F3F3F3')
@@ -1604,11 +1970,8 @@ class sisref(Tk):
 
     def fechar(self):
 
-        global sisrefOn
-
         if messagebox.askyesno("Geosis - sisref", "Sair do programa?"):
 
-            sisrefOn = False
             self.destroy()
 
         else:
@@ -1730,12 +2093,14 @@ class sisref(Tk):
                             self.cores[bola] = 'white'
 
                         del self.temp2[:]
+                        self.count2 = 0
 
                         for j in self.xData[i+1]:
 
                             if float(j) > self.fontes[i+1]:
                             
                                 self.temp2.append(j)
+                                self.count2 += 1
 
                         restantes = len(self.xData[i+1])-self.count2
 
@@ -1748,6 +2113,7 @@ class sisref(Tk):
                             self.cores[bola] = 'white'
 
                         del self.temp2[:]
+                        self.count2 = 0
 
                     else:
 
@@ -1894,40 +2260,36 @@ class sisref(Tk):
 
                     if self.cores[i] == 'white':
 
-                        for i in range(self.nlinhas):
+                        for k in range(self.nlinhas):
 
-                            for j in range(len(self.xData[i+1])):
+                            for j in range(len(self.xData[k+1])):
 
-                                self.bolas[i+1][j].set_color('red')
+                                self.bolas[k+1][j].set_color('red')
 
-                            for j in self.bolas[i+1]:
+                            for j in self.bolas[k+1]:
 
-                                if i+1 in self.especiais:
+                                if k+1 in self.especiais:
 
-                                    if float(j.get_offsets()[0][0]) < float(self.especiais[i+1]):
-
-                                        self.camadas[j] = 1
-                                        self.xDataCamada1[i+1][1].append(float(j.get_offsets()[0][0]))
-                                        self.yDataCamada1[i+1][1].append(float(j.get_offsets()[0][1]))
-
-                                    elif float(j.get_offsets()[0][0]) > float(self.especiais[i+1]): 
+                                    if float(j.get_offsets()[0][0]) < float(self.especiais[k+1]):
 
                                         self.camadas[j] = 1
-                                        self.xDataCamada1[i+1][2].append(float(j.get_offsets()[0][0]))
-                                        self.yDataCamada1[i+1][2].append(float(j.get_offsets()[0][1]))
+                                        self.xDataCamada1[k+1][1].append(float(j.get_offsets()[0][0]))
+                                        self.yDataCamada1[k+1][1].append(float(j.get_offsets()[0][1]))
+
+                                    elif float(j.get_offsets()[0][0]) > float(self.especiais[k+1]): 
+
+                                        self.camadas[j] = 1
+                                        self.xDataCamada1[k+1][2].append(float(j.get_offsets()[0][0]))
+                                        self.yDataCamada1[k+1][2].append(float(j.get_offsets()[0][1]))
 
                                 else:
 
                                     self.camadas[j] = 1
-                                    self.xDataCamada1[i+1].append(float(j.get_offsets()[0][0]))
-                                    self.yDataCamada1[i+1].append(float(j.get_offsets()[0][1]))
-                                
-                        for i in self.cores:
+                                    self.xDataCamada1[k+1].append(float(j.get_offsets()[0][0]))
+                                    self.yDataCamada1[k+1].append(float(j.get_offsets()[0][1]))
 
-                            self.cores[i] = 'red'
-                                
+                        self.cores[i] = 'red'
                         self.tela.show()
-                        break
 
                     else:
 
@@ -2119,6 +2481,24 @@ class sisref(Tk):
                 self.retas.update({str(j):k})
                 self.retas2.update({str(l):m})
 
+        self.xretaCamada1 = []
+        self.yretaCamada1 = []
+
+        for i in self.retas:
+
+            lista = ast.literal_eval(i)
+
+            for j in lista:
+                
+                self.xretaCamada1.append(j)
+
+            for j in self.retas[i]:
+                    
+                self.yretaCamada1.append(j)
+                    
+        slope, intercept, r_value, p_value, std_err = stats.linregress(sorted(self.xretaCamada1),sorted(self.yretaCamada1))
+        print(1/slope)
+
         for i,j,k,l in zip(self.retas,self.retas.values(),self.retas2,self.retas2.values()):
 
             slope, intercept, r_value, p_value, std_err = stats.linregress(ast.literal_eval(i),j)
@@ -2178,11 +2558,8 @@ class Siscon(Tk):
 
     def fechar(self):
 
-        global sisconOn
-
         if messagebox.askyesno("Geosis - Siscon", "Sair do programa?"):
 
-            sisconOn = False
             self.destroy()
 
         else:

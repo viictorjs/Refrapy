@@ -12,11 +12,7 @@ import numpy as np
 from scipy import stats
 import sys
 import ast
-                               
-sispickOn = False
-sisconOn = False
-sisrefOn = False
-
+                            
 
 class Launcher(Tk):
     
@@ -75,45 +71,18 @@ class Launcher(Tk):
 
     def chamarsisref(self):
 
-        global sisrefOn
-
-        if sisrefOn == True:
-
-            pass
-
-        else:
-
-            sisrefOn = True
-            self.destroy()
-            sisref()
+        self.destroy()
+        sisref()
 
     def chamarSispick(self):
 
-        global sispickOn
-        
-        if sispickOn == True:
-
-            pass
-
-        else:
-
-            sispickOn = True
-            self.destroy()
-            Sispick()
+        self.destroy()
+        Sispick()
 
     def chamarSiscon(self):
 
-        global sisconOn
-
-        if sisconOn == True:
-
-            pass
-
-        else:
-
-            sisconOn = True
-            self.destroy()
-            Siscon()
+        self.destroy()
+        Siscon()
 
     def Sobre(self):
 
@@ -121,7 +90,6 @@ class Launcher(Tk):
         root.geometry('630x300')
         root.title('Info')
         titulo = Label(root, text='Sobre o software',fg='green',font=("Helvetica", 14))
-        
         root.resizable(0,0)
         root.mainloop()
         
@@ -161,11 +129,8 @@ class Sispick(Tk):
         self.linhasArts = []
         self.conexoesPick = []
         self.ndados = []
-        self.primeirosGeof = {}
         self.tracosMax = []
         self.temp = []
-        #self.sts = []
-        #self.stsNorms = []
                           
         self.plotArts = {}
         self.sombArts = {}
@@ -389,11 +354,8 @@ class Sispick(Tk):
 
     def fechar(self):
 
-        global sispickOn
-
         if messagebox.askyesno("Geosis - Sispick", "Sair do programa?"):
 
-            sispickOn = False
             self.destroy()
 
         else:
@@ -473,74 +435,68 @@ class Sispick(Tk):
 
     def abrir_pt2(self):
 
-        if self.ndados[0] > 10000 and self.decisaoPontos == None:
+        for i in range(len(self.arquivos)):
 
-            self.configPontos()
+            self.canais = len(self.sts[0])                      
+            self.recordlen = self.sts[0][0].stats.endtime-self.sts[0][0].stats.starttime
+            self.intervaloAmostragem = self.sts[0][0].stats.delta     
+            self.ganho.append(1)
+            self.clips.append(False)
+            self.sombreamentos.append(False)
+            self.filtros.append(False)
+            self.copiasCruas.append(None)
+            self.copiasNorms.append(None)
+            self.freqLP.append(1000)
+            self.freqHP.append(5)
+            self.filtrosLP.append(False)
+            self.filtrosHP.append(False)
 
-        else:
+            for j in range(self.canais):
 
-            for i in range(len(self.arquivos)):
-
-                self.canais = len(self.sts[0])                      
-                self.recordlen = self.sts[0][0].stats.endtime-self.sts[0][0].stats.starttime
-                self.intervaloAmostragem = self.sts[0][0].stats.delta     
-                self.ganho.append(1)
-                self.clips.append(False)
-                self.sombreamentos.append(False)
-                self.filtros.append(False)
-                self.copiasCruas.append(None)
-                self.copiasNorms.append(None)
-                self.freqLP.append(1000)
-                self.freqHP.append(5)
-                self.filtrosLP.append(False)
-                self.filtrosHP.append(False)
-
-                for j in range(self.canais):
-
-                    self.tracosMax[i][max(self.sts[i][j].data*(-1))] = j
-                
-                for j in range(self.canais):
-
-                    self.dadosCrus[i][j] = self.sts[i][j].data/max(self.tracosMax[i])
-                    self.dadosNorms[i][j] = self.sts[i][j].data/self.sts[i][j].data.max()
-                    self.trClipados[i].append([])
-                    self.okpicks.append(self.valordx*j)
-                    self.ticksLabel.append(str(int(j*self.valordx)))
-                    traco, = self.axes[i].plot(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)+float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
-                                               [self.sts[i][0].stats.delta*k for k in range(int(self.ndados[i]))],color='black')
-                    self.plotArts[i].append(traco)
-
-                plt.figure(i)    
-                plt.title(' %s | %d canais'%(os.path.basename(self.arquivos[i]),int(self.canais)))     
-                plt.xlabel('Distância (m)')
-                plt.ylabel('Tempo (s)')
-                plt.ylim(0,self.sts[i][0].stats.delta*self.ndados[i])
-                plt.xlim(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])-self.valordx,float(self.sts[i][-1].stats.seg2['RECEIVER_LOCATION'])+self.valordx)
-                #plt.xticks(int(self.ticksLabel),self.ticksLabel)     
-                tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
-                self.telas.append(tela)
-                self.telas[i].show()
-                self.telas[i].get_tk_widget().pack(fill='both', expand=True)
-                toolbar = NavigationToolbar2TkAgg(self.telas[i], self.frames[i])
-                self.toolbars.append(toolbar)
-                self.toolbars[i].update()
-                self.telas[i]._tkcanvas.pack(fill='both', expand=True)
-
-            self.status.configure(text=' ')
-            self.frames[0].tkraise()
-            self.pagina = 0
-            plt.figure(self.pagina)
-
-            def do(event):
-                    
-                key_press_handler(event, self.telas[self.pagina], self.toolbars[self.pagina])
-                
-            self.figs[-1].canvas.mpl_connect('key_press_event', do)
+                self.tracosMax[i][max(self.sts[i][j].data*(-1))] = j
             
-            self.plotExiste = True
-            self.yinvertido = False
-            self.sombreamento = False
-            self.normalizado = False
+            for j in range(self.canais):
+
+                self.dadosCrus[i][j] = self.sts[i][j].data/max(self.tracosMax[i])
+                self.dadosNorms[i][j] = self.sts[i][j].data/self.sts[i][j].data.max()
+                self.trClipados[i].append([])
+                self.okpicks.append(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j)
+                self.ticksLabel.append(str(int(j*self.valordx)))
+                traco, = self.axes[i].plot(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)+float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
+                                           [self.sts[i][0].stats.delta*k for k in range(int(self.ndados[i]))],color='black')
+                self.plotArts[i].append(traco)
+
+            plt.figure(i)    
+            plt.title(' %s | %d canais'%(os.path.basename(self.arquivos[i]),int(self.canais)))     
+            plt.xlabel('Distância (m)')
+            plt.ylabel('Tempo (s)')
+            plt.ylim(0,self.sts[i][0].stats.delta*self.ndados[i])
+            plt.xlim(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])-self.valordx,float(self.sts[i][-1].stats.seg2['RECEIVER_LOCATION'])+self.valordx)
+            #plt.xticks(int(self.ticksLabel),self.ticksLabel)     
+            tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
+            self.telas.append(tela)
+            self.telas[i].show()
+            self.telas[i].get_tk_widget().pack(fill='both', expand=True)
+            toolbar = NavigationToolbar2TkAgg(self.telas[i], self.frames[i])
+            self.toolbars.append(toolbar)
+            self.toolbars[i].update()
+            self.telas[i]._tkcanvas.pack(fill='both', expand=True)
+
+        self.status.configure(text=' ')
+        self.frames[0].tkraise()
+        self.pagina = 0
+        plt.figure(self.pagina)
+
+        def do(event):
+                
+            key_press_handler(event, self.telas[self.pagina], self.toolbars[self.pagina])
+            
+        self.figs[-1].canvas.mpl_connect('key_press_event', do)
+        
+        self.plotExiste = True
+        self.yinvertido = False
+        self.sombreamento = False
+        self.normalizado = False
 
     def nextpage(self):
         
@@ -808,27 +764,13 @@ class Sispick(Tk):
 
         if self.clips[self.pagina] == True:
 
+            posGeof1 = float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])
+
             for j in range(self.canais):
 
-                if len(self.trClipados[self.pagina][j]) > 0:
-
-                    del self.trClipados[self.pagina][j][:]                      
-
-                for i in self.plotArts[self.pagina][j].get_xdata():
-
-                    if i < (float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)-((self.valordx/2)*0.9):
-
-                        self.trClipados[self.pagina][j].append((float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)-((self.valordx/2)*0.9))
-
-                    elif i > (float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)+((self.valordx/2)*0.9):
-                        
-                        self.trClipados[self.pagina][j].append((float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)+((self.valordx/2)*0.9))
-
-                    else:
-
-                        self.trClipados[self.pagina][j].append(i)
-
-                self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+                self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
+                self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
+                self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
 
         else:
 
@@ -863,34 +805,16 @@ class Sispick(Tk):
     def conferidorGeral(self):
 
         for i in range(len(self.arquivos)):
+
+            posGeof1 = float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])
                 
-            if self.clips[i] == False:
-
-                pass
-
-            else:
-
+            if self.clips[i] == True:
+                    
                 for j in range(self.canais):
 
-                    if len(self.trClipados[i][j]) > 0:
-
-                        del self.trClipados[i][j][:]                      
-
-                    for k in self.plotArts[i][j].get_xdata():
-
-                        if k < (float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)-((self.valordx/2)*0.9):
-
-                            self.trClipados[i][j].append((float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)-((self.valordx/2)*0.9))
-
-                        elif k > (float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)+((self.valordx/2)*0.9):
-                            
-                            self.trClipados[i][j].append((float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)+((self.valordx/2)*0.9))
-
-                        else:
-
-                            self.trClipados[i][j].append(k)
-
-                    self.plotArts[i][j].set_xdata(self.trClipados[i][j])
+                    self.plotArts[i][j].get_xdata()[self.plotArts[i][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
+                    self.plotArts[i][j].get_xdata()[self.plotArts[i][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
+                    self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
 
             if self.sombreamentos[i] == False:
 
@@ -909,8 +833,8 @@ class Sispick(Tk):
                     for j in range(self.canais):
             
                         somb = self.axes[i].fill_betweenx(self.plotArts[i][j].get_ydata(),
-                                        float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,self.plotArts[i][j].get_xdata(),
-                                        where=np.array(self.plotArts[i][j].get_xdata())>= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                                         posGeof1+j*self.valordx,self.plotArts[i][j].get_xdata(),
+                                        where=self.plotArts[i][j].get_xdata()>=  posGeof1+j*self.valordx,color='black')
 
                         self.sombArts[i].append(somb)
 
@@ -919,8 +843,8 @@ class Sispick(Tk):
                     for j in range(self.canais):
             
                         somb = self.axes[i].fill_betweenx(self.plotArts[i][j].get_ydata(),
-                                        float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,self.plotArts[i][j].get_xdata(),
-                                        where=np.array(self.plotArts[i][j].get_xdata())<=float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                                         posGeof1+j*self.valordx,self.plotArts[i][j].get_xdata(),
+                                        where=self.plotArts[i][j].get_xdata()<= posGeof1+j*self.valordx,color='black')
 
                         self.sombArts[i].append(somb)
 
@@ -1166,7 +1090,7 @@ class Sispick(Tk):
                     somb = self.axes[self.pagina].fill_betweenx(self.plotArts[self.pagina][j].get_ydata(),
                                 float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
                                 self.plotArts[self.pagina][j].get_xdata(),
-                                where = np.array(self.plotArts[self.pagina][j].get_xdata()) >= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                                where = self.plotArts[self.pagina][j].get_xdata() >= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
                         
                     self.sombArts[self.pagina].append(somb)
 
@@ -1177,7 +1101,7 @@ class Sispick(Tk):
                     somb = self.axes[self.pagina].fill_betweenx(self.plotArts[self.pagina][j].get_ydata(),
                             float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
                             self.plotArts[self.pagina][j].get_xdata(),
-                            where = np.array(self.plotArts[self.pagina][j].get_xdata()) <= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                            where = self.plotArts[self.pagina][j].get_xdata() <= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
                         
                     self.sombArts[self.pagina].append(somb)
 
@@ -1227,28 +1151,13 @@ class Sispick(Tk):
             if self.clips[self.pagina] == False:
 
                 self.status.configure(text=' Clipando traços...')
+                posGeof1 = float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])
 
                 for j in range(self.canais):
 
-                    if len(self.trClipados[self.pagina][j]) > 0:
-
-                        del self.trClipados[self.pagina][j][:]                      
-
-                    for i in self.plotArts[self.pagina][j].get_xdata():
-
-                        if i < (float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)-((self.valordx/2)*0.9):
-
-                            self.trClipados[self.pagina][j].append((float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)-((self.valordx/2)*0.9))
-
-                        elif i > (float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)+((self.valordx/2)*0.9):
-                            
-                            self.trClipados[self.pagina][j].append((float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)+((self.valordx/2)*0.9))
-
-                        else:
-
-                            self.trClipados[self.pagina][j].append(i)
-
-                    self.plotArts[self.pagina][j].set_xdata(self.trClipados[self.pagina][j])
+                    self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
+                    self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
+                    self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
 
                 self.clips[self.pagina] = True
 
@@ -1895,61 +1804,6 @@ class Sispick(Tk):
 
             pass
 
-    def configPontos(self):
-
-        root = Tk()   
-        root.geometry('540x210+500+250')
-        root.title('Geosis - Sispick')
-        pts = StringVar()
-        mainLabel = Label(root, text='Número de amostras em cada traço: %d\nSugere-se trabalhar com menos de 10000 amostras para um bom desempenho\nno processamento. Clique em Ignorar para usar a quantidade original.'%self.ndados[0],
-                    font=("Helvetica", 11),fg='red').grid(row=0, column=0, sticky="w",pady=10,padx=0)
-        labelpts = Label(root, text='Quantidade de amostras a serem utilizadas (original: %d):'%self.ndados[0],
-                    font=("Helvetica", 11)).grid(row=2, column=0, sticky="w",padx=5,pady=10)
-        entrydados = Entry(root, textvariable = pts,width=10)
-        entrydados.grid(row=2, column=0, sticky="w",padx=415,pady=10)
-        warning = Label(root, text = '', fg = 'red',font=("Helvetica", 12))
-        warning.grid(row = 6, column = 0, sticky ='w', padx = 250)
-        
-        def do():
-            
-            if len(entrydados.get()) > 0:
-
-                try:
-
-                    for i in range(len(self.arquivos)):
-                        
-                        self.ndados[i] = int(entrydados.get())
-                        
-                    root.destroy()
-                    self.decisaoPontos = True
-                    self.abrir_pt2()
-
-                except:
-                    
-                    warning.configure(text='Valor inválido')
-
-            else:
-
-                self.decisaoPontos = True
-                root.destroy()
-                self.abrir_pt2()
-    
-                                    
-        def cancelar():
-
-            self.decisaoPontos = True
-            self.abrir_pt2()
-            root.destroy()
-        
-        botaoOK = Button(root, text='   Ok   ',font=("Helvetica", 11),fg='black',
-                        width=6, command = do).grid(row=5, column=0, sticky="w",pady=20,padx=150)
-        botaoX = Button(root, text='Ignorar',font=("Helvetica", 11),fg='black',
-                        width=6, command = cancelar).grid(row=5, column=0, sticky="w",padx=320,pady=20)
-        root.bind('<Return>', lambda x: do())
-        root.resizable(0,0)
-        root.protocol("WM_DELETE_WINDOW", cancelar)
-        root.mainloop()  
-
     def configDx(self):                 
         
         root = Tk()   
@@ -2115,11 +1969,8 @@ class sisref(Tk):
 
     def fechar(self):
 
-        global sisrefOn
-
         if messagebox.askyesno("Geosis - sisref", "Sair do programa?"):
 
-            sisrefOn = False
             self.destroy()
 
         else:
@@ -2706,11 +2557,8 @@ class Siscon(Tk):
 
     def fechar(self):
 
-        global sisconOn
-
         if messagebox.askyesno("Geosis - Siscon", "Sair do programa?"):
 
-            sisconOn = False
             self.destroy()
 
         else:
