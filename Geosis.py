@@ -129,13 +129,19 @@ class Sispick(Tk):
         self.picksArts = []
         self.linhasArts = []
         self.conexoesPick = []
+        self.conexoesMovimento = []
+        self.conexoesClick = []
+        self.conexoesSoltar = []
         self.ndados = []
         self.tracosMax = []
         self.temp = []
                           
         self.plotArts = {}
         self.sombArts = {}
-        self.trClipados = {}
+        self.coordsx = {}
+        self.coordsy = {}
+        self.linhasVel = {}
+        self.textoVel = {}
                          
         self.plotExiste = False                 
         self.pickMode = False                                                
@@ -145,12 +151,15 @@ class Sispick(Tk):
         self.normalizado = False
         self.optAberto = False
         self.pickAmostraAtivado = False
+        self.clickOn = False
+        self.pickVelOn = False
 
         self.eventCon = None                                          
         self.pagina = None
         self.recordlen = None                   
         self.valordx = None
         self.decisaoPontos = None
+        self.linhaVel = None
         self.ladoFill = 'positivo'
         self.fatorY = 0.8
         self.valorGanho = 2
@@ -307,15 +316,20 @@ class Sispick(Tk):
         pickAmostras = Button(self.parent, text='A',fg= 'black',font=("Arial", 10,'bold'),width = 4,
                            bg = '#999999',activeforeground='white',
                             activebackground = '#CCCCCC', command = self.pickAmostra).grid(row=0,column=15,sticky=W)
+
+        vel = Button(self.parent, text='V',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+                           bg = '#FFE9A9',activeforeground='white',
+                            activebackground = '#FFEFC2', command = self.pickVelocidade).grid(row=0,column=16,sticky=W)
+        
         FecharPlot = Button(self.parent, text='x', bg = 'gray3',font=("Arial", 10,'bold'),
                                  width = 4,fg='white', activebackground = 'gray30',
-                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=16,sticky=W)
+                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=17,sticky=W)
         self.status = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
-        self.status.grid(row=0,column=17,sticky=E)
+        self.status.grid(row=0,column=18,sticky=E)
         self.statusPA = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
-        self.statusPA.grid(row=0,column=18,sticky=E)
+        self.statusPA.grid(row=0,column=19,sticky=E)
         self.statusPB = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
-        self.statusPB.grid(row=0,column=19,sticky=E)
+        self.statusPB.grid(row=0,column=20,sticky=E)
         
         plt.rcParams['keymap.zoom'] = 'z,Z'
         plt.rcParams['keymap.back'] = 'v,V'
@@ -324,6 +338,10 @@ class Sispick(Tk):
         plt.rcParams['keymap.pan'] = 'm,M'
         self.bind('<Alt-s>', lambda x: self.destroy())
         self.bind('<Alt-S>', lambda x: self.destroy())
+        self.bind('A', lambda x: self.pickAmostra())
+        self.bind('a', lambda x: self.pickAmostra())
+        self.bind('V', lambda x: self.pickVelocidade())
+        self.bind('v', lambda x: self.pickVelocidade())
         self.bind('<Control-a>', lambda x: self.abrir_pt1())
         self.bind('<Control-A>', lambda x: self.abrir_pt1())
         self.bind('<Control-s>', lambda x: self.salvarpick())
@@ -378,23 +396,7 @@ class Sispick(Tk):
                 
                     for i in range(len(self.arquivos)):
 
-                        self.frame = Frame(self,bg='#F3F3F3')
-                        self.frame.grid(row=1, column=0,sticky='nsew')
-                        self.frames.append(self.frame)
-                        fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
-                        self.figs.append(fig)
-                        ax = self.figs[i].add_subplot(111)
-                        self.axes.append(ax)
                         self.sts.append(read(self.arquivos[i]))
-                        self.dadosCrus.append({})
-                        self.dadosNorms.append({})
-                        self.plotArts[i] = []
-                        self.sombArts[i] = []
-                        self.trClipados[i] = []
-                        self.picks.append({})
-                        self.picksArts.append({})
-                        self.linhasArts.append({})
-                        self.tracosMax.append({})
                         self.ndados.append(len(self.sts[i][0]))
 
                         try:
@@ -404,10 +406,9 @@ class Sispick(Tk):
 
                         except:
 
-                            messagebox.showinfo('','Posição de fonte de tiro não encontrada no cabeçalho. Para adicionar vá em Cabeçalho > Editar valores')
+                            messagebox.showinfo('Geosis - Sispick','Posição(ões) de fonte(s) não encontrada(as) no(s) cabeçalho(s).\nPara adicionar vá em Opções > Editar cabeçalho')
                             self.listSource.append(999)
                             self.seg2 = False
-                            pass
 
                         try:
                             
@@ -419,12 +420,23 @@ class Sispick(Tk):
                             self.seg2 = False
                             self.configDx()
 
+                    if self.ndados[0] > 10000:
+
+                        messagebox.showinfo('Geosis - Sispick','Lentidão pode ocorrer devido ao grande número de amostras.\nUtilize o corte de amostras em Editar > Redefinir amostras')
+
+                    else:
+
+                        pass
+
                     self.abrir_pt2()
 
                 except:
 
-                    messagebox.showerror('','Erro na leitura do arquivo. Informações em Ajuda > Erros')
+                    messagebox.showerror('Geosis - Sispick','Erro na leitura do arquivo. Informações em Ajuda > Erros')
                     self.status.configure(text='')
+                    del self.sts[:]
+                    del self.ndados[:]
+                    self.arquivos = None
 
             else:
 
@@ -437,6 +449,26 @@ class Sispick(Tk):
     def abrir_pt2(self):
 
         for i in range(len(self.arquivos)):
+
+            self.frame = Frame(self,bg='#F3F3F3')
+            self.frame.grid(row=1, column=0,sticky='nsew')
+            self.frames.append(self.frame)
+            fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
+            self.figs.append(fig)
+            ax = self.figs[i].add_subplot(111)
+            self.axes.append(ax)
+            self.dadosCrus.append({})
+            self.dadosNorms.append({})
+            self.plotArts[i] = []
+            self.sombArts[i] = []
+            self.picks.append({})
+            self.picksArts.append({})
+            self.linhasArts.append({})
+            self.tracosMax.append({})
+            self.coordsx[i] = []
+            self.coordsy[i] = []
+            self.linhasVel[i] = []
+            self.textoVel[i] = []
 
             self.canais = len(self.sts[0])                      
             self.recordlen = self.sts[0][0].stats.endtime-self.sts[0][0].stats.starttime
@@ -460,7 +492,6 @@ class Sispick(Tk):
 
                 self.dadosCrus[i][j] = self.sts[i][j].data/max(self.tracosMax[i])
                 self.dadosNorms[i][j] = self.sts[i][j].data/self.sts[i][j].data.max()
-                self.trClipados[i].append([])
                 self.okpicks.append(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j)
                 self.ticksLabel.append(str(int(j*self.valordx)))
                 traco, = self.axes[i].plot(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)+float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
@@ -498,6 +529,8 @@ class Sispick(Tk):
         self.yinvertido = False
         self.sombreamento = False
         self.normalizado = False
+        self.clickOn = False
+        self.pickVelOn = False
 
     def nextpage(self):
         
@@ -636,7 +669,6 @@ class Sispick(Tk):
                     self.figs[i].canvas.mpl_disconnect(self.conexoesPick[i])
                     
                 del self.conexoesPick[:]
-
                 self.pickMode = False
                 self.status.configure(text=' ',fg='red')
         
@@ -713,7 +745,6 @@ class Sispick(Tk):
                 del self.sts[:]
                 del self.ticksLabel[:]
                 del self.toolbars[:]
-                del self.stsNorms[:]
                 del self.ganho[:]
                 del self.filtros[:]
                 del self.filtrosHP[:]
@@ -731,7 +762,6 @@ class Sispick(Tk):
                 del self.freqHP[:]
                 self.plotArts.clear()
                 self.sombArts.clear()
-                self.trClipados.clear()
                 self.plotExiste = False                 
                 self.pickMode = False                                                
                 self.pickHappened = False               
@@ -793,7 +823,7 @@ class Sispick(Tk):
             pass
 
         self.figs[self.pagina].canvas.draw()
-        self.status.configure(text=' ')
+        self.status.configure(text='')
 
         if self.pickMode == True:
 
@@ -1453,6 +1483,105 @@ class Sispick(Tk):
             except:
 
                 pass
+
+    def pickVelocidade(self):
+
+        if self.plotExiste == True:
+
+            if self.pickVelOn == False:
+
+                self.status.configure(text = 'Velocidade aparente ON',fg='blue')
+
+                def clicar(event):
+
+                    try:
+
+                        self.coordsx[self.pagina].append(event.xdata)
+                        self.coordsy[self.pagina].append(event.ydata)
+                        self.linhaVel, = self.axes[self.pagina].plot(self.coordsx[self.pagina],
+                                        self.coordsy[self.pagina],color='blue')
+                        self.linhasVel[self.pagina].append(self.linhaVel)
+                        self.clickOn = True
+
+                    except:
+
+                        pass
+
+                def movimento(event):
+
+                    if self.clickOn == True:
+
+                        try:
+
+                            self.coordsx[self.pagina].append(event.xdata)
+                            self.coordsy[self.pagina].append(event.ydata)
+                            self.linhaVel.set_data(self.coordsx[self.pagina],self.coordsy[self.pagina])
+                            self.figs[self.pagina].canvas.draw()
+                            del self.coordsx[self.pagina][1:-1]
+                            del self.coordsy[self.pagina][1:-1]
+
+                        except:
+
+                            pass
+
+                def soltar(event):
+
+                    try:
+
+                        self.coordsx[self.pagina].append(event.xdata)
+                        self.coordsy[self.pagina].append(event.ydata)
+                        self.linhaVel.set_data(self.coordsx[self.pagina],self.coordsy[self.pagina])
+                        slope, intercept, r_value, p_value, std_err = stats.linregress(np.array(self.coordsx[self.pagina]),
+                                                            np.array(self.coordsy[self.pagina])*1000)
+                        ltex = self.axes[self.pagina].text(self.coordsx[self.pagina][0],self.coordsy[self.pagina][0], '%.2f km/s'%(abs(1/slope)),
+                                    size=12, rotation=0, color = 'blue', ha="center", va="center",bbox = dict(ec='1',fc='1'))
+                        self.textoVel[self.pagina].append(ltex)
+                        self.figs[self.pagina].canvas.draw()
+                        del self.coordsx[self.pagina][:]
+                        del self.coordsy[self.pagina][:]
+                        self.clickOn = False
+
+                    except:
+
+                        pass
+
+                for i in range(len(self.arquivos)):
+
+                    con1 = self.figs[i].canvas.mpl_connect('motion_notify_event', movimento)
+                    con2 = self.figs[i].canvas.mpl_connect('button_release_event', soltar)
+                    con3 = self.figs[i].canvas.mpl_connect('button_press_event', clicar)
+                    self.conexoesMovimento.append(con1)
+                    self.conexoesClick.append(con3)
+                    self.conexoesSoltar.append(con2)
+                    
+                self.pickVelOn = True
+
+            else:
+
+                self.status.configure(text = '',fg='red')
+                self.pickVelOn = False
+
+                for i in range(len(self.arquivos)):
+                    
+                    self.figs[i].canvas.mpl_disconnect(self.conexoesMovimento[i])
+                    self.figs[i].canvas.mpl_disconnect(self.conexoesClick[i])
+                    self.figs[i].canvas.mpl_disconnect(self.conexoesSoltar[i])
+
+                    for j,k in zip(self.linhasVel[i],self.textoVel[i]):
+                        
+                        j.remove()
+                        k.remove()
+                        
+                    self.figs[i].canvas.draw()
+
+                for i in range(len(self.arquivos)):
+                     
+                    del self.linhasVel[i][:]
+                    del self.textoVel[i][:]
+
+                del self.conexoesSoltar[:]
+                del self.conexoesMovimento[:]
+                del self.conexoesClick[:]      
 
     def pickAmostra(self):
 
