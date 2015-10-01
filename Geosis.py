@@ -1,3 +1,11 @@
+'''
+
+    GEOSIS v1.0
+    AUTOR: VICTOR JOSÉ C. B. GUEDES
+    E-MAIL: vjs279@hotmail.com
+    GEOFÍSICA - UNIVERSIDADE DE BRASILIA
+
+                                        '''
 
 from tkinter import * 
 from tkinter import filedialog, messagebox
@@ -12,13 +20,27 @@ import numpy as np
 from scipy import stats
 import sys
 import ast
-                            
+import warnings
+
+warnings.filterwarnings('ignore')       
+
 
 class Launcher(Tk):
     
     def __init__(self):
 
-        print('Geosis v1.0 em execução.\n\nFECHAR ESTA JANELA ENCERRARÁ O PROGRAMA.')
+        print('''
+
+    GEOSIS v1.0
+    
+    AUTOR: VICTOR JOSÉ C. B. GUEDES
+    E-MAIL: vjs279@hotmail.com
+    
+    GEOFÍSICA - UNIVERSIDADE DE BRASILIA
+
+    *fechar esta janela encerrará o programa*
+
+                                        ''')
         Tk.__init__(self)
         self.geometry('640x400')
         self.title('Geosis v1.0')
@@ -66,10 +88,6 @@ class Launcher(Tk):
             
             self.destroy()
 
-        else:
-
-            pass
-
     def chamarsisref(self):
 
         self.destroy()
@@ -101,7 +119,8 @@ class Sispick(Tk):
 
         Tk.__init__(self)                       
         self.configure(background='#F3F3F3')
-        self.geometry('800x600')
+        #self.geometry('800x600')
+        #self.attributes('-zoomed',True)
         self.wm_state('zoomed')
         self.title('Geosis - Sispick')               
         self.iconbitmap("%s/imagens/terra1.ico"%os.getcwd())
@@ -127,7 +146,6 @@ class Sispick(Tk):
         self.sombreamentos = []
         self.picks = []
         self.picksArts = []
-        self.linhasArts = []
         self.conexoesPick = []
         self.conexoesMovimento = []
         self.conexoesClick = []
@@ -135,6 +153,12 @@ class Sispick(Tk):
         self.ndados = []
         self.tracosMax = []
         self.temp = []
+        self.linhasPick = []
+        self.sublinhas = {}
+        self.bolas = {}
+        self.indicadores = {}
+        self.coordx = []
+        self.coordy = []
                           
         self.plotArts = {}
         self.sombArts = {}
@@ -160,6 +184,7 @@ class Sispick(Tk):
         self.valordx = None
         self.decisaoPontos = None
         self.linhaVel = None
+        self.linhaPick = None
         self.ladoFill = 'positivo'
         self.fatorY = 0.8
         self.valorGanho = 2
@@ -168,7 +193,7 @@ class Sispick(Tk):
         self.freqLP = []
         self.freqHP = []
         
-        self.valorFigx = self.winfo_screenwidth()/80.50
+        self.valorFigx = self.winfo_screenwidth()/80
 
         if self.winfo_screenheight() == 1080:
             
@@ -176,7 +201,7 @@ class Sispick(Tk):
 
         elif self.winfo_screenheight() == 768:
 
-            self.valorFigy = self.winfo_screenheight()/99.74
+            self.valorFigy = self.winfo_screenheight()/100
 
         elif self.winfo_screenheight() == 1024:
 
@@ -246,10 +271,16 @@ class Sispick(Tk):
         menu_editar.add_command(label='Limpar plot                                L',
                                      command=self.limparplot)
         menu_editar.add_separator()
-        menu_editar.add_command(label='Redefinir amostras      A',
+        menu_editar.add_command(label='Cortar amostras      A',
                                  command=self.pickAmostra)
         menu_editar.add_command(label='Restaurar amostras originais      Alt + A',
                                          command=self.amostrasDefault)
+        menu_editar.add_separator()
+        menu_editar.add_command(label='Remover ligaçao de picks      Alt + A',
+                                         command=self.removerLinhaPicks)
+        menu_editar.add_separator()
+        menu_editar.add_command(label='Visualizar curva de tempo de percurso      Alt + A',
+                                         command=self.verCurva)
         menu_editar.add_separator()
         menu_editar.add_command(label='Fechar seçao atual                     Ctrl+X',
                                      command=self.fecharPlot)
@@ -267,69 +298,112 @@ class Sispick(Tk):
         menu_ajuda = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Ajuda',menu=menu_ajuda)
         menu_ajuda.add_command(label='Atalhos de teclado',command = lambda: print(''))
-        Back = Button(self.parent, text='<',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = 'chartreuse3',activeforeground='white',
-                      activebackground = 'chartreuse2', command = self.backpage).grid(row=0,column=0,sticky=W)
-        Next = Button(self.parent, text='>',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = 'chartreuse3',activeforeground='white',
-                      activebackground = 'chartreuse2', command = self.nextpage).grid(row=0,column=1,sticky=W)
-        ampDown = Button(self.parent, text='-',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                              bg = 'gold2',activeforeground='white',
-                         activebackground = 'yellow2', command = self.ampdown).grid(row=0,column=2,sticky=W)
-        ampUp = Button(self.parent, text='+',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                            bg = 'gold2',activeforeground='white',
-                       activebackground = 'yellow2', command = self.ampup).grid(row=0,column=3,sticky=W)
-        menosY = Button(self.parent, text='- Y',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                             bg = 'DarkOrange2',activeforeground='white',
-                            activebackground = 'orange2', command = self.menosy).grid(row=0,column=4,sticky=W)
-        maisY = Button(self.parent, text='+Y',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                            bg = 'DarkOrange2',activeforeground='white',
-                            activebackground = 'orange2', command = self.maisy).grid(row=0,column=5,sticky=W)
-        Pick = Button(self.parent, text='P', bg = 'red3',font=("Arial", 10,'bold'),width = 4,
-                           activebackground = 'red2',
-                      activeforeground = 'white', command = self.ativarPick).grid(row=0,column=6,sticky=W)
-        limpar = Button(self.parent, text='L', bg = 'snow2',font=("Arial", 10,'bold'),width = 4,
-                           activebackground = 'snow',
-                      activeforeground = 'black', command = self.limparplot).grid(row=0,column=7,sticky=W)
-        inverttime = Button(self.parent, text='I',width = 4,font=("Arial", 10,'bold'),
-                                 fg= 'black', bg = 'goldenrod4',activeforeground='white',
-                            activebackground = 'gold3', command = self.invert).grid(row=0,column=8,sticky=W)
-        normal = Button(self.parent, text='N',fg= 'black',font=("Arial", 10,'bold'),
-                             width = 4, bg = 'purple2',activeforeground='white',
-                            activebackground = 'DarkOrchid1', command = self.normalizar).grid(row=0,column=9,sticky=W)
-        FILL = Button(self.parent, text='S',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = '#3065CE',activeforeground='white',
-                            activebackground = '#5983D7', command = self.fill).grid(row=0,column=10,sticky=W)
-        clipar = Button(self.parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = 'bisque4',activeforeground='white',
-                            activebackground = 'bisque3', command = self.clip).grid(row=0,column=11,sticky=W)
-        PA = Button(self.parent, text='PA',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = '#8CA9E4',activeforeground='white',
-                            activebackground = '#C5D4F1', command = self.filtroHP).grid(row=0,column=12,sticky=W)
-        PB = Button(self.parent, text='PB',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = '#FFACAA',activeforeground='white',
-                            activebackground = '#FFD5D4', command = self.filtroLP).grid(row=0,column=13,sticky=W)
-        RF = Button(self.parent, text='RF',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = '#6E7E40',activeforeground='white',
-                            activebackground = '#8B9766', command = self.removerFiltros).grid(row=0,column=14,sticky=W)
 
-        pickAmostras = Button(self.parent, text='A',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = '#999999',activeforeground='white',
-                            activebackground = '#CCCCCC', command = self.pickAmostra).grid(row=0,column=15,sticky=W)
-
-        vel = Button(self.parent, text='V',fg= 'black',font=("Arial", 10,'bold'),width = 4,
-                           bg = '#FFE9A9',activeforeground='white',
-                            activebackground = '#FFEFC2', command = self.pickVelocidade).grid(row=0,column=16,sticky=W)
+        Abrir = Button(self.parent, command = self.abrir_pt1)
+        img_abrir = PhotoImage(file="%s/imagens/abrir.gif"%os.getcwd())
+        Abrir.config(image=img_abrir)
+        Abrir.grid(row=0,column=0,sticky=W)
+        Salvar = Button(self.parent, command = self.salvargp)
+        img_salvar = PhotoImage(file="%s/imagens/salvar.gif"%os.getcwd())
+        Salvar.config(image=img_salvar)
+        Salvar.grid(row=0,column=1,sticky=W)
+        Back = Button(self.parent, command = self.backpage)
+        img_voltar = PhotoImage(file="%s/imagens/voltar.gif"%os.getcwd())
+        Back.config(image=img_voltar)
+        Back.grid(row=0,column=2,sticky=W)
+        Next = Button(self.parent, command = self.nextpage)
+        img_proximo = PhotoImage(file="%s/imagens/proximo.gif"%os.getcwd())
+        Next.config(image=img_proximo)
+        Next.grid(row=0,column=3,sticky=W)
+        ampDown = Button(self.parent,command = self.ampdown)
+        img_menos = PhotoImage(file="%s/imagens/menos.gif"%os.getcwd())
+        ampDown.config(image=img_menos)
+        ampDown.grid(row=0,column=4,sticky=W)
+        ampUp = Button(self.parent, command = self.ampup)
+        img_mais = PhotoImage(file="%s/imagens/mais.gif"%os.getcwd())
+        ampUp.config(image=img_mais)
+        ampUp.grid(row=0,column=5,sticky=W)
+        menosY = Button(self.parent, command = self.menosy)
+        img_baixo = PhotoImage(file="%s/imagens/baixo.gif"%os.getcwd())
+        menosY.config(image=img_baixo)
+        menosY.grid(row=0,column=6,sticky=W)
+        maisY = Button(self.parent, command = self.maisy)
+        img_cima = PhotoImage(file="%s/imagens/cima.gif"%os.getcwd())
+        maisY.config(image=img_cima)
+        maisY.grid(row=0,column=7,sticky=W)
+        Pick = Button(self.parent, command = self.ativarPick)
+        img_pick = PhotoImage(file="%s/imagens/pick.gif"%os.getcwd())
+        Pick.config(image=img_pick)
+        Pick.grid(row=0,column=8,sticky=W)
+        limpar = Button(self.parent, command = self.limparplot)
+        img_limpar = PhotoImage(file="%s/imagens/limpar.gif"%os.getcwd())
+        limpar.config(image=img_limpar)
+        limpar.grid(row=0,column=9,sticky=W)
+        inverttime = Button(self.parent, command = self.invert)
+        img_invert = PhotoImage(file="%s/imagens/invert.gif"%os.getcwd())
+        inverttime.config(image=img_invert)
+        inverttime.grid(row=0,column=10,sticky=W)
+        normal = Button(self.parent, command = self.normalizar)
+        img_norm = PhotoImage(file="%s/imagens/norm.gif"%os.getcwd())
+        normal.config(image=img_norm)
+        normal.grid(row=0,column=11,sticky=W)
+        FILL = Button(self.parent, command = self.fill)
+        img_fill = PhotoImage(file="%s/imagens/fill_pos.gif"%os.getcwd())
+        FILL.config(image=img_fill)
+        FILL.grid(row=0,column=12,sticky=W)
+        clipar = Button(self.parent, command = self.clip)
+        img_clip = PhotoImage(file="%s/imagens/clip.gif"%os.getcwd())
+        clipar.config(image=img_clip)
+        clipar.grid(row=0,column=13,sticky=W)
+        PA = Button(self.parent, command = self.filtroHP)
+        img_PA = PhotoImage(file="%s/imagens/PA.gif"%os.getcwd())
+        PA.config(image=img_PA)
+        PA.grid(row=0,column=14,sticky=W)
+        PB = Button(self.parent, command = self.filtroLP)
+        img_PB = PhotoImage(file="%s/imagens/PB.gif"%os.getcwd())
+        PB.config(image=img_PB)
+        PB.grid(row=0,column=15,sticky=W)
+        RF = Button(self.parent, command = self.removerFiltros)
+        img_RF = PhotoImage(file="%s/imagens/RF.gif"%os.getcwd())
+        RF.config(image=img_RF)
+        RF.grid(row=0,column=16,sticky=W)
+        pickAmostras = Button(self.parent, command = self.pickAmostra)
+        img_cortar = PhotoImage(file="%s/imagens/cortar.gif"%os.getcwd())
+        pickAmostras.config(image=img_cortar)
+        pickAmostras.grid(row=0,column=17,sticky=W)
+        vel = Button(self.parent, command = self.pickVelocidade)
+        img_vel = PhotoImage(file="%s/imagens/vel.gif"%os.getcwd())
+        vel.config(image=img_vel)
+        vel.grid(row=0,column=18,sticky=W)
+        ligar = Button(self.parent, command = self.ligarPicks)
+        img_ligar = PhotoImage(file="%s/imagens/ligar.gif"%os.getcwd())
+        ligar.config(image=img_ligar)
+        ligar.grid(row=0,column=19,sticky=W)
+        grafico = Button(self.parent, command = self.verCurva)
+        img_grafico = PhotoImage(file="%s/imagens/grafico.gif"%os.getcwd())
+        grafico.config(image=img_grafico)
+        grafico.grid(row=0,column=20,sticky=W)
+        opt = Button(self.parent, command = self.configPlot)
+        img_opt = PhotoImage(file="%s/imagens/opt.gif"%os.getcwd())
+        opt.config(image=img_opt)
+        opt.grid(row=0,column=21,sticky=W)
+        header = Button(self.parent, command = self.cabecalho)
+        img_header = PhotoImage(file="%s/imagens/header.gif"%os.getcwd())
+        header.config(image=img_header)
+        header.grid(row=0,column=22,sticky=W)
         
-        FecharPlot = Button(self.parent, text='x', bg = 'gray3',font=("Arial", 10,'bold'),
-                                 width = 4,fg='white', activebackground = 'gray30',
-                            activeforeground = 'gold2', command = self.fecharPlot).grid(row=0,column=17,sticky=W)
+        
+        FecharPlot = Button(self.parent, command = self.fecharPlot)
+        img_fechar = PhotoImage(file="%s/imagens/fechar.gif"%os.getcwd())
+        FecharPlot.config(image=img_fechar)
+        FecharPlot.grid(row=0,column=23,sticky=W)
+        
         self.status = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12))
-        self.status.grid(row=0,column=18,sticky=E)
+        self.status.grid(row=0,column=24,sticky=E)
         self.statusPA = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
-        self.statusPA.grid(row=0,column=19,sticky=E)
+        self.statusPA.grid(row=0,column=25,sticky=E)
         self.statusPB = Label(self.parent,text = ' ', fg='green',font=("Helvetica", 12))
-        self.statusPB.grid(row=0,column=20,sticky=E)
+        self.statusPB.grid(row=0,column=26,sticky=E)
         
         plt.rcParams['keymap.zoom'] = 'z,Z'
         plt.rcParams['keymap.back'] = 'v,V'
@@ -376,10 +450,7 @@ class Sispick(Tk):
         if messagebox.askyesno("Geosis - Sispick", "Sair do programa?"):
 
             self.destroy()
-
-        else:
-
-            pass
+            sys.exit()
 
     def abrir_pt1(self):
         
@@ -422,11 +493,7 @@ class Sispick(Tk):
 
                     if self.ndados[0] > 10000:
 
-                        messagebox.showinfo('Geosis - Sispick','Lentidão pode ocorrer devido ao grande número de amostras.\nUtilize o corte de amostras em Editar > Redefinir amostras')
-
-                    else:
-
-                        pass
+                        messagebox.showinfo('Geosis - Sispick','Para acelerar o processamento utilize o cortador de amostras em Editar > Cortas amostras')
 
                     self.abrir_pt2()
 
@@ -437,10 +504,6 @@ class Sispick(Tk):
                     del self.sts[:]
                     del self.ndados[:]
                     self.arquivos = None
-
-            else:
-
-                pass
 
         else:
         
@@ -463,12 +526,19 @@ class Sispick(Tk):
             self.sombArts[i] = []
             self.picks.append({})
             self.picksArts.append({})
-            self.linhasArts.append({})
             self.tracosMax.append({})
             self.coordsx[i] = []
             self.coordsy[i] = []
             self.linhasVel[i] = []
             self.textoVel[i] = []
+            self.bolas[i] = []
+            self.indicadores[i] = []
+            self.linhasPick.append(None)
+            self.sublinhas[i] = []
+
+            for j in range(len(self.arquivos)):
+
+                self.sublinhas[i].append(None)
 
             self.canais = len(self.sts[0])                      
             self.recordlen = self.sts[0][0].stats.endtime-self.sts[0][0].stats.starttime
@@ -495,14 +565,14 @@ class Sispick(Tk):
                 self.okpicks.append(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j)
                 self.ticksLabel.append(str(int(j*self.valordx)))
                 traco, = self.axes[i].plot(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)+float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
-                                           [self.sts[i][0].stats.delta*k for k in range(int(self.ndados[i]))],color='black')
+                                           [self.sts[i][0].stats.delta*k*1000 for k in range(int(self.ndados[i]))],color='black')
                 self.plotArts[i].append(traco)
 
             plt.figure(i)    
             plt.title(' %s | %d canais'%(os.path.basename(self.arquivos[i]),int(self.canais)))     
             plt.xlabel('Distância (m)')
-            plt.ylabel('Tempo (s)')
-            plt.ylim(0,self.sts[i][0].stats.delta*self.ndados[i])
+            plt.ylabel('Tempo (ms)')
+            plt.ylim(0,1000*(self.sts[i][0].stats.delta*self.ndados[i]))
             plt.xlim(float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])-self.valordx,float(self.sts[i][-1].stats.seg2['RECEIVER_LOCATION'])+self.valordx)
             #plt.xticks(int(self.ticksLabel),self.ticksLabel)     
             tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
@@ -556,18 +626,10 @@ class Sispick(Tk):
             if self.filtrosLP[self.pagina] != True:
                 
                 self.statusPB.configure(text = '')
-            
-        else:
-            
-            pass
 
     def backpage(self):
 
-        if self.plotExiste == True and self.pagina == 0:
-                
-             pass
-
-        elif self.plotExiste == True and self.pagina != 0:
+        if self.plotExiste == True and self.pagina != 0:
                 
             frame = self.frames[self.pagina-1] 
             frame.tkraise()
@@ -589,10 +651,6 @@ class Sispick(Tk):
             if self.filtrosLP[self.pagina] != True:
                 
                 self.statusPB.configure(text = '')
-            
-        else:
-            
-            pass
                     
     def ativarPick(self):
         
@@ -607,6 +665,10 @@ class Sispick(Tk):
 
                     try:
 
+                        self.coordx.append(event.xdata)
+                        self.coordy.append(event.ydata)
+                        self.linhaPick, = self.axes[self.pagina].plot(self.coordx,self.coordy,color='red')
+                        self.clickOn = True
                         nearestMagnetValue = min(self.okpicks, key=lambda x: abs(event.xdata - x))
                         
                         if nearestMagnetValue in self.picks[self.pagina]:
@@ -617,19 +679,6 @@ class Sispick(Tk):
                                                                 nearestMagnetValue+1,colors='r',linestyle='solid')
                             self.picksArts[self.pagina][nearestMagnetValue] = pickline
                             self.telas[self.pagina].show()
-
-                            for i in range(len(self.arquivos)):
-
-                                if i == self.pagina:
-
-                                    pass
-
-                                else:
-
-                                    self.linhasArts[i][nearestMagnetValue].remove()
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
-                                    self.linhasArts[i][nearestMagnetValue] = linhasverdes
                                     
                         else:
                             
@@ -638,43 +687,252 @@ class Sispick(Tk):
                             self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
                             self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
                             self.telas[self.pagina].show()
+   
+                        for i in range(len(self.arquivos)):
 
-                            for i in range(len(self.arquivos)):
+                            if i != self.pagina:
 
-                                if i == self.pagina:
-
-                                    pass
+                                if self.sublinhas[i][self.pagina] == None:
+                                
+                                    sublinha, = self.axes[i].plot([key for key in sorted(self.picks[self.pagina])],
+                                            [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])], color = 'green')
+                                    self.sublinhas[i][self.pagina] = sublinha
 
                                 else:
+                                    
+                                    self.sublinhas[i][self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
+                                            [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
+                                    
+                        if self.indicadores[self.pagina]:
 
-                                    linhasverdes = self.axes[i].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='green',linestyle='solid')
-                                    self.linhasArts[i].update({nearestMagnetValue:linhasverdes})
-                            
-                            self.pickHappened = True
+                            for i in self.indicadores[self.pagina]:
+
+                                if float(i.get_offsets()[0][0]) == nearestMagnetValue:
+                                    
+                                    i.remove()
+                                    self.telas[self.pagina].show()
+
+                        if self.linhasPick[self.pagina] != None and bool(self.picks[self.pagina]) == True:
+
+                            self.linhasPick[self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
+                                    [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
+                            self.telas[self.pagina].show()
 
                     except:
 
                         pass
-                
+
+                def movimento(event):
+
+                    if self.clickOn == True:
+
+                        try:
+
+                            self.coordx.append(event.xdata)
+                            self.coordy.append(event.ydata)
+                            self.linhaPick.set_data(self.coordx,self.coordy)
+                            self.telas[self.pagina].show()
+                            del self.coordx[1:-1]
+                            del self.coordy[1:-1]
+
+                        except:
+
+                            pass
+
+                def soltar(event):
+
+                    if self.clickOn == True:
+                            
+                        try:
+
+                            self.coordx.append(event.xdata)
+                            self.coordy.append(event.ydata)
+                            m, b = np.polyfit([int(i) for i in self.coordx], self.coordy, 1)
+                            self.linhaPick.remove()
+                            #m, b = np.polyfit([int(i) for i in self.coordx], self.coordy, 1)
+                            valorMaisproximo1 = min(self.okpicks, key=lambda x: abs(self.coordx[0] - x))
+                            valorMaisproximo2 = min(self.okpicks, key=lambda x: abs(self.coordx[-1] - x))
+
+                            if valorMaisproximo1 < valorMaisproximo2:
+                            
+                                for i in range(int(valorMaisproximo1),int(valorMaisproximo2)+int(self.valordx), int(self.valordx)):
+
+                                    if i in self.okpicks:
+
+                                        if i in self.picks[self.pagina]:
+
+                                            self.picks[self.pagina][i] = m*i+b
+                                            self.picksArts[self.pagina][i].remove()
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                                i+1,colors='r',linestyle='solid')
+                                            self.picksArts[self.pagina][i] = pickline
+
+                                        else:
+
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                        i+1,colors='r',linestyle='solid')
+                                            self.picksArts[self.pagina].update({i:pickline})
+                                            self.picks[self.pagina].update({i:m*i+b})
+
+                            else:
+
+                                for i in range(int(valorMaisproximo1),int(valorMaisproximo2)-int(self.valordx), -int(self.valordx)):
+
+                                    if i in self.okpicks:
+
+                                        if i in self.picks[self.pagina]:
+
+                                            self.picks[self.pagina][i] = m*i+b
+                                            self.picksArts[self.pagina][i].remove()
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                                i+1,colors='r',linestyle='solid')
+                                            self.picksArts[self.pagina][i] = pickline
+
+                                        else:
+
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                        i+1,colors='r',linestyle='solid')
+                                            self.picksArts[self.pagina].update({i:pickline})
+                                            self.picks[self.pagina].update({i:m*i+b})
+
+                            for i in range(len(self.arquivos)):
+
+                                if i != self.pagina:
+
+                                    if self.sublinhas[i][self.pagina] == None:
+                                    
+                                        sublinha, = self.axes[i].plot([key for key in sorted(self.picks[self.pagina])],
+                                                [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])], color = 'green')
+                                        self.sublinhas[i][self.pagina] = sublinha
+
+                                    else:
+                                        
+                                        self.sublinhas[i][self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
+                                                [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
+
+                            if self.linhasPick[self.pagina] != None and bool(self.picks[self.pagina]) == True:
+
+                                self.linhasPick[self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
+                                        [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
+
+                            self.telas[self.pagina].show()
+                            del self.coordx[:]
+                            del self.coordy[:]
+                            self.clickOn = False
+
+                        except:
+
+                            self.clickOn = False
+                            self.linhaPick.remove()
+                            #self.linhaPick = None
+                               
                 for i in range(len(self.arquivos)):
-                    
-                    cid = self.figs[i].canvas.mpl_connect('button_press_event', pick)
-                    self.conexoesPick.append(cid)
+ 
+                    con1 = self.figs[i].canvas.mpl_connect('motion_notify_event', movimento)
+                    con2 = self.figs[i].canvas.mpl_connect('button_release_event', soltar)
+                    con3 = self.figs[i].canvas.mpl_connect('button_press_event', pick)
+                    self.conexoesMovimento.append(con1)
+                    self.conexoesClick.append(con3)
+                    self.conexoesSoltar.append(con2)
 
             else:
 
                 for i in range(len(self.arquivos)):
                     
-                    self.figs[i].canvas.mpl_disconnect(self.conexoesPick[i])
+                    self.figs[i].canvas.mpl_disconnect(self.conexoesClick[i])
+                    self.figs[i].canvas.mpl_disconnect(self.conexoesMovimento[i])
+                    self.figs[i].canvas.mpl_disconnect(self.conexoesSoltar[i])
                     
-                del self.conexoesPick[:]
+                del self.conexoesClick[:]
+                del self.conexoesMovimento[:]
+                del self.conexoesSoltar[:]
                 self.pickMode = False
                 self.status.configure(text=' ',fg='red')
-        
-        else:
 
-            pass
+    def verCurva(self):
+
+        if self.plotExiste == True:
+
+            root = Tk()
+            root.title('Geosis - Sispick') 
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            
+            for i in range(len(self.arquivos)):
+
+                del self.bolas[i][:]
+                del self.indicadores[i][:]
+
+            for i in range(len(self.arquivos)):
+
+                if bool(self.picks[i]) == True:
+
+                    ax.plot([key for key in sorted(self.picks[i])],
+                        np.array([self.picks[i][key] for key in sorted(self.picks[i])]))
+
+                    for key in sorted(self.picks[i]):
+                        
+                        bola = ax.scatter(key, self.picks[i][key],s=40,c = 'white',picker = 5)
+                        self.bolas[i].append(bola)
+
+            def click(event):
+
+                for i in range(len(self.arquivos)):
+
+                    if event.artist in self.bolas[i]:
+
+                        event.artist.set_color('blue')
+                        indicador = self.axes[i].scatter(float(event.artist.get_offsets()[0][0]),
+                                float(event.artist.get_offsets()[0][1]), s = 300, c ='blue', alpha = .5)
+                        self.indicadores[i].append(indicador)
+                        fig.canvas.draw()
+                        self.figs[i].canvas.draw()
+
+            plt.title('Previa de curva de tempo de percurso')    
+            plt.xlabel('Distância (m)')
+            plt.ylabel('Tempo (ms)')
+            plt.grid()
+            canvas = FigureCanvasTkAgg(fig, root)
+            canvas.show()
+            canvas.get_tk_widget().pack(fill='both', expand=True)
+            toolbar = NavigationToolbar2TkAgg(canvas, root)
+            toolbar.update()
+            canvas._tkcanvas.pack(fill='both', expand=True)
+            fig.canvas.mpl_connect('pick_event', click)
+            root.mainloop()
+
+    def ligarPicks(self):
+
+        if self.plotExiste == True:
+
+            if self.linhasPick[self.pagina] == None and bool(self.picks[self.pagina]) == True:
+
+                linhaPick, = self.axes[self.pagina].plot([key for key in sorted(self.picks[self.pagina])],
+                        [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])], color = 'red')
+                self.linhasPick[self.pagina] = linhaPick
+                self.figs[self.pagina].canvas.draw()
+
+            elif self.linhasPick[self.pagina] != None:
+
+                try:
+
+                    self.linhasPick[self.pagina].remove()
+                    self.linhasPick[self.pagina] = None
+                    self.figs[self.pagina].canvas.draw()
+
+                except:
+
+                    pass
+
+    def removerLinhaPicks(self):
+
+        if self.plotExiste == True:
+
+            if self.linhasPick[self.pagina] != None:
+
+                self.linhasPick[self.pagina].remove()
+                self.linhasPick[self.pagina] = None
+                self.figs[self.pagina].canvas.draw()
 
     def limparplot(self):
 
@@ -692,6 +950,12 @@ class Sispick(Tk):
                     self.picksArts[self.pagina].clear()
                     self.telas[self.pagina].show()
 
+                    if self.linhasPick[self.pagina] != None:
+
+                        self.linhasPick[self.pagina].remove()
+                        self.linhasPick[self.pagina] = None
+                        self.figs[self.pagina].canvas.draw()
+
                     for i in range(len(self.arquivos)):
 
                         if i == self.pagina:
@@ -700,24 +964,12 @@ class Sispick(Tk):
 
                         else:
 
-                            for j in self.linhasArts[i].values():
+                            if self.sublinhas[i] != None:
 
-                                j.remove()
-
-                        self.linhasArts[i].clear()
+                                self.sublinhas[i].remove()
+                                self.sublinhas[i] = None
+                                
                         self.telas[i].show()
-
-                else:
-
-                    pass
-
-            else:
-
-                pass   
-
-        else:
-
-            pass
                     
     def fecharPlot(self):
           
@@ -783,14 +1035,6 @@ class Sispick(Tk):
                 self.statusPA.configure(text = '', fg = 'green')
                 self.statusPB.configure(text = '', fg = 'green')
 
-            else:
-
-                pass
-
-        else:
-
-            pass
-
     def conferidorIndividual(self):
 
         if self.clips[self.pagina] == True:
@@ -802,10 +1046,6 @@ class Sispick(Tk):
                 self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
                 self.plotArts[self.pagina][j].get_xdata()[self.plotArts[self.pagina][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
                 self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
-
-        else:
-
-            pass
          
         if self.sombreamentos[self.pagina] == True:
 
@@ -818,20 +1058,12 @@ class Sispick(Tk):
             self.sombreamentos[self.pagina] = False
             self.fill()
 
-        else:
-
-            pass
-
         self.figs[self.pagina].canvas.draw()
         self.status.configure(text='')
 
         if self.pickMode == True:
 
             self.status.configure(text=' Pick ativado',fg='blue')
-
-        else:
-
-            pass
 
     def conferidorGeral(self):
 
@@ -846,12 +1078,8 @@ class Sispick(Tk):
                     self.plotArts[i][j].get_xdata()[self.plotArts[i][j].get_xdata() < posGeof1+j*self.valordx-((self.valordx/2)*0.9)] = posGeof1+j*self.valordx-((self.valordx/2)*0.9)
                     self.plotArts[i][j].get_xdata()[self.plotArts[i][j].get_xdata() > posGeof1+j*self.valordx+((self.valordx/2)*0.9)] = posGeof1+j*self.valordx+((self.valordx/2)*0.9)
                     self.plotArts[self.pagina][j].set_xdata(self.plotArts[self.pagina][j].get_xdata())
-
-            if self.sombreamentos[i] == False:
-
-                pass
                         
-            else:
+            if self.sombreamentos[i] == True:
 
                 for j in range(self.canais):
             
@@ -865,7 +1093,7 @@ class Sispick(Tk):
             
                         somb = self.axes[i].fill_betweenx(self.plotArts[i][j].get_ydata(),
                                          posGeof1+j*self.valordx,self.plotArts[i][j].get_xdata(),
-                                        where=self.plotArts[i][j].get_xdata()>=  posGeof1+j*self.valordx,color='black')
+                                        where=self.plotArts[i][j].get_xdata()>=  posGeof1+j*self.valordx,color='#4C4C4C')
 
                         self.sombArts[i].append(somb)
 
@@ -875,7 +1103,7 @@ class Sispick(Tk):
             
                         somb = self.axes[i].fill_betweenx(self.plotArts[i][j].get_ydata(),
                                          posGeof1+j*self.valordx,self.plotArts[i][j].get_xdata(),
-                                        where=self.plotArts[i][j].get_xdata()<= posGeof1+j*self.valordx,color='black')
+                                        where=self.plotArts[i][j].get_xdata()<= posGeof1+j*self.valordx,color='#4C4C4C')
 
                         self.sombArts[i].append(somb)
 
@@ -886,10 +1114,6 @@ class Sispick(Tk):
         if self.pickMode == True:
 
             self.status.configure(text=' Pick ativado',fg='blue')
-
-        else:
-
-            pass
 
     def ampup(self):
 
@@ -928,10 +1152,6 @@ class Sispick(Tk):
                         self.plotArts[self.pagina][j].set_xdata(self.copiasCruas[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
             self.conferidorIndividual()
-            
-        else:
-
-            pass
 
     def ampdown(self):
 
@@ -970,10 +1190,6 @@ class Sispick(Tk):
                         self.plotArts[self.pagina][j].set_xdata(self.copiasCruas[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx)
 
             self.conferidorIndividual()
-        
-        else:
-
-            pass
 
     def amostrasDefault(self):
 
@@ -990,16 +1206,16 @@ class Sispick(Tk):
                         for j in range(self.canais):
 
                             self.plotArts[self.pagina][j].set_data(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
-                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                                                         [self.sts[self.pagina][0].stats.delta*k*1000 for k in range(int(self.ndados[self.pagina]))])
 
                     else:
 
                         for j in range(self.canais):
                     
                             self.plotArts[self.pagina][j].set_data(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
-                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                                                         [self.sts[self.pagina][0].stats.delta*k*1000 for k in range(int(self.ndados[self.pagina]))])
 
-                    self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
+                    self.axes[self.pagina].set_ylim([0,1000*(self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])])
 
                     if self.yinvertido == True:
                         
@@ -1007,19 +1223,7 @@ class Sispick(Tk):
                         plt.gca().invert_yaxis()
                         self.figs[self.pagina].canvas.draw()
 
-                    else:
-
-                        pass
-
                     self.conferidorIndividual()
-
-                else:
-
-                    pass
-
-        else:
-
-            pass
                     
     def menosy(self):
 
@@ -1036,10 +1240,6 @@ class Sispick(Tk):
                 self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[1])*self.fatorY])
             
             self.figs[self.pagina].canvas.draw()
-     
-        else:
-
-            pass
 
     def maisy(self):
 
@@ -1056,10 +1256,6 @@ class Sispick(Tk):
                 self.axes[self.pagina].set_ylim([0,float(self.axes[self.pagina].get_ylim()[1])/self.fatorY])
             
             self.figs[self.pagina].canvas.draw()
-
-        else:
-
-            pass
 
     def normalizar(self):
 
@@ -1103,10 +1299,6 @@ class Sispick(Tk):
                 self.normalizado = False
 
             self.conferidorGeral()
-            
-        else:
-
-            pass
 
     def fill(self):
                 
@@ -1121,7 +1313,7 @@ class Sispick(Tk):
                     somb = self.axes[self.pagina].fill_betweenx(self.plotArts[self.pagina][j].get_ydata(),
                                 float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+self.valordx*j,
                                 self.plotArts[self.pagina][j].get_xdata(),
-                                where = self.plotArts[self.pagina][j].get_xdata() >= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                                where = self.plotArts[self.pagina][j].get_xdata() >= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='#4C4C4C')
                         
                     self.sombArts[self.pagina].append(somb)
 
@@ -1132,7 +1324,7 @@ class Sispick(Tk):
                     somb = self.axes[self.pagina].fill_betweenx(self.plotArts[self.pagina][j].get_ydata(),
                             float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
                             self.plotArts[self.pagina][j].get_xdata(),
-                            where = self.plotArts[self.pagina][j].get_xdata() <= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='black')
+                            where = self.plotArts[self.pagina][j].get_xdata() <= float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,color='#4C4C4C')
                         
                     self.sombArts[self.pagina].append(somb)
 
@@ -1144,10 +1336,6 @@ class Sispick(Tk):
             if self.pickMode == True:
 
                 self.status.configure(text=' Pick ativado',fg='blue')
-
-            else:
-
-                pass
 
         elif self.plotExiste == True and self.sombreamentos[self.pagina] == True:
 
@@ -1166,14 +1354,6 @@ class Sispick(Tk):
             if self.pickMode == True:
 
                 self.status.configure(text=' Pick ativado',fg='blue')
-
-            else:
-
-                pass
-
-        else:
-
-            pass
 
     def clip(self):
 
@@ -1221,24 +1401,12 @@ class Sispick(Tk):
                 self.sombreamentos[self.pagina] = False
                 self.fill()
 
-            else:
-
-                pass
-
             self.figs[self.pagina].canvas.draw()
             self.status.configure(text=' ')
 
             if self.pickMode == True:
 
                 self.status.configure(text=' Pick ativado',fg='blue')
-
-            else:
-
-                pass
-
-        else:
-
-            pass
   
     def invert(self):
 
@@ -1263,10 +1431,6 @@ class Sispick(Tk):
                     self.figs[i].canvas.draw()
 
                 self.yinvertido = False
-
-        else:
-
-            pass
 
     def removerFiltros(self):
 
@@ -1299,14 +1463,6 @@ class Sispick(Tk):
                 self.freqHP[self.pagina] = 5
                 self.conferidorIndividual()
                 self.telas[self.pagina].show()
-
-            else:
-
-                pass        
-
-        else:
-
-            pass
 
     def filtroLP(self):
 
@@ -1355,10 +1511,6 @@ class Sispick(Tk):
             self.conferidorIndividual()
             self.telas[self.pagina].show()
 
-        else:
-
-            pass
-
     def filtroHP(self):
 
         if self.plotExiste == True:
@@ -1406,10 +1558,6 @@ class Sispick(Tk):
             self.conferidorIndividual()
             self.telas[self.pagina].show()
 
-        else:
-
-            pass
-
     def salvargp(self):
 
         if not self.picks[:]:
@@ -1422,13 +1570,13 @@ class Sispick(Tk):
                 
                 arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Geosis pick', '.gp')])
                 
-                with open(arquivoSaida+'.gp','a') as arqpck:
+                with open(arquivoSaida,'a') as arqpck:
 
                     for i in range(len(self.arquivos)):
                             
                         for key in sorted(self.picks[i]):
                             
-                            arqpck.write('%f %f 1\n'%(key,self.picks[i][key]*1000))
+                            arqpck.write('%f %f 1\n'%(key,self.picks[i][key]))
 
                         if self.seg2 == True:
 
@@ -1473,7 +1621,7 @@ class Sispick(Tk):
                             
                         for key in sorted(self.picks[i]):
                             
-                            arqpck.write('%f %f 1 \n'%(key,self.picks[i][key]*1000))
+                            arqpck.write('%f %f 1 \n'%(key,self.picks[i][key]))
 
                     arqpck.write('0 0 \n 0 \n 0 0 \n')
 
@@ -1532,8 +1680,8 @@ class Sispick(Tk):
                         self.coordsy[self.pagina].append(event.ydata)
                         self.linhaVel.set_data(self.coordsx[self.pagina],self.coordsy[self.pagina])
                         slope, intercept, r_value, p_value, std_err = stats.linregress(np.array(self.coordsx[self.pagina]),
-                                                            np.array(self.coordsy[self.pagina])*1000)
-                        ltex = self.axes[self.pagina].text(self.coordsx[self.pagina][0],self.coordsy[self.pagina][0], '%.2f km/s'%(abs(1/slope)),
+                                                            np.array(self.coordsy[self.pagina]))
+                        ltex = self.axes[self.pagina].text(self.coordsx[self.pagina][0],self.coordsy[self.pagina][0], '%.2f m/s'%(abs(1/slope)*1000),
                                     size=12, rotation=0, color = 'blue', ha="center", va="center",bbox = dict(ec='1',fc='1'))
                         self.textoVel[self.pagina].append(ltex)
                         self.figs[self.pagina].canvas.draw()
@@ -1589,43 +1737,39 @@ class Sispick(Tk):
 
             def pick(event):
 
-                if int(event.ydata/self.sts[0][0].stats.delta) <= int(len(self.sts[0][0])):
+                if int((event.ydata/self.sts[0][0].stats.delta)/1000) <= int(len(self.sts[0][0])):
 
                     marcador = self.axes[self.pagina].hlines(event.ydata,float(self.axes[0].get_xlim()[0]),
                                             float(self.axes[0].get_xlim()[1]),colors='r',linestyle='--',
-                                            alpha = 1,linewidth = 2)
+                                            alpha = 1,linewidth = 3)
                     self.figs[self.pagina].canvas.draw()
                 
-                    if messagebox.askyesno('Geosis - Sispick', 'Atualizar os plots para %d amostras?'%int(event.ydata/self.sts[0][0].stats.delta)):
+                    if messagebox.askyesno('Geosis - Sispick', 'Cortar o plot para %d ms?'%int(event.ydata)):
 
                         marcador.remove()
-                        self.ndados[self.pagina] = int(event.ydata/self.sts[0][0].stats.delta)
+                        self.ndados[self.pagina] = int((event.ydata/self.sts[0][0].stats.delta)/1000)
 
                         if self.normalizado == True:
 
                             for j in range(self.canais):
 
                                 self.plotArts[self.pagina][j].set_data(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
-                                                             [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                                                             [self.sts[self.pagina][0].stats.delta*k*1000 for k in range(int(self.ndados[self.pagina]))])
 
                         else:
 
                             for j in range(self.canais):
                         
                                 self.plotArts[self.pagina][j].set_data(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
-                                                             [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                                                             [self.sts[self.pagina][0].stats.delta*k*1000 for k in range(int(self.ndados[self.pagina]))])
 
-                        self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
+                        self.axes[self.pagina].set_ylim([0,1000*(self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])])
 
                         if self.yinvertido == True:
                             
                             plt.figure(self.pagina)
                             plt.gca().invert_yaxis()
                             self.figs[self.pagina].canvas.draw()
-
-                        else:
-
-                            pass
 
                         self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
                         self.pickAmostraAtivado = False
@@ -1651,10 +1795,6 @@ class Sispick(Tk):
                 self.figs[self.pagina].canvas.mpl_disconnect(self.cid)
                 self.status.configure(text='', fg='red')
                 self.pickAmostraAtivado = False
-                    
-        else:
-
-            pass
 
     def cabecalho (self):
 
@@ -1701,10 +1841,6 @@ class Sispick(Tk):
                     except:
 
                         warning.configure(text = 'Posição de fonte inválida', fg = 'red')
-
-                else:
-
-                    pass
 
                 if len(entrydx.get()) > 0:
                     
@@ -1758,33 +1894,25 @@ class Sispick(Tk):
                         for j in range(self.canais):
 
                             self.plotArts[self.pagina][j].set_data(self.dadosNorms[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
-                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                                                         [self.sts[self.pagina][0].stats.delta*1000*k for k in range(int(self.ndados[self.pagina]))])
 
                     else:
 
                         for j in range(self.canais):
                     
                             self.plotArts[self.pagina][j].set_data(self.dadosCrus[self.pagina][j][0:self.ndados[self.pagina]]*(-1)*self.ganho[self.pagina]+float(self.sts[self.pagina][0].stats.seg2['RECEIVER_LOCATION'])+j*self.valordx,
-                                                         [self.sts[self.pagina][0].stats.delta*k for k in range(int(self.ndados[self.pagina]))])
+                                                         [self.sts[self.pagina][0].stats.delta*k*1000 for k in range(int(self.ndados[self.pagina]))])
 
-                    self.axes[self.pagina].set_ylim([0,self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina]])
+                    self.axes[self.pagina].set_ylim([0,1000*(self.sts[self.pagina][0].stats.delta*self.ndados[self.pagina])])
 
                     if self.yinvertido == True:
                         
                         plt.figure(self.pagina)
                         plt.gca().invert_yaxis()
                         self.figs[self.pagina].canvas.draw()
-
-                    else:
-
-                        pass
                         
                     self.telas[self.pagina].show()
                     self.conferidorIndividual()
-
-                else:
-
-                    pass
 
             def fechar():
 
@@ -1795,10 +1923,6 @@ class Sispick(Tk):
             fechar = Button(root, text = 'Fechar',font=("Helvetica", 12), width = 6,
                     command = fechar).grid(row = 5, column = 0, sticky = 'w', padx = 220, pady = 10)
             root.mainloop()
-
-        else:
-
-            pass
 
     def configPlot(self):
 
@@ -1926,14 +2050,6 @@ class Sispick(Tk):
             self.optAberto = True
             root.mainloop()
 
-        elif self.plotExiste == True and self.optAberto == True:
-
-            pass
-
-        else:
-
-            pass
-
     def configDx(self):                 
         
         root = Tk()   
@@ -1994,8 +2110,8 @@ class sisref(Tk):
 
         Tk.__init__(self)
         self.configure(background='#F3F3F3')
-        self.geometry("{0}x{1}+0+0".format(self.winfo_screenwidth(),
-                                       self.winfo_screenheight()))        
+        #self.attributes('-zoomed',True)
+        self.wm_state('zoomed')
         self.title('Geosis - sisref')
         self.protocol("WM_DELETE_WINDOW", self.fechar)
         parent = Frame(self,bg='#F3F3F3')
@@ -2018,17 +2134,20 @@ class sisref(Tk):
                                       command=self.camadas)
         menu_inversao.add_command(label='Calcular velocidades                    Ctrl+E',
                                       command=self.velocidades)
-        botao_editor = Button(parent, text='E',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        botao_editor = Button(parent, text='E',fg= 'black',font=("Arial", 10,'bold'),width = 3,
                               bg = 'floral white',activeforeground='black',
                          activebackground = 'snow', command = self.editarCurva).grid(row=0,column=2,sticky=W)
-        botao_c2 = Button(parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        botao_c2 = Button(parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 3,
                               bg = 'red',activeforeground='white',
                          activebackground = 'orange red', command = self.camadas).grid(row=0,column=3,sticky=W)
-        botao_v = Button(parent, text='V',fg= 'black',font=("Arial", 10,'bold'),width = 4,
+        botao_v = Button(parent, text='V',fg= 'black',font=("Arial", 10,'bold'),width = 3,
                               bg = 'dodger blue',activeforeground='white',
                          activebackground = 'sky blue', command = self.velocidades).grid(row=0,column=4,sticky=W)
+        botao_va = Button(parent, text='VA',fg= 'black',font=("Arial", 10,'bold'),width = 3,
+                              bg = 'dodger blue',activeforeground='white',
+                         activebackground = 'sky blue', command = self.pickVA).grid(row=0,column=5,sticky=W)
         self.status = Label(parent,text = '', fg='green',font=("Helvetica", 12))
-        self.status.grid(row=0,column=13,sticky=E)
+        self.status.grid(row=0,column=6,sticky=E)
         self.frame = Frame(self,bg='#F3F3F3')
         self.frame.grid(row=1, column=0,sticky='nsew')
 
@@ -2051,6 +2170,11 @@ class sisref(Tk):
         self.temp2 = []
         self.vels = []
         self.vels2 = []
+        self.coordx = []
+        self.coordy = []
+        self.linhasVel = []
+        self.textosVel = []
+        self.conexoes = []
         self.nlinhas = 0
         self.count = 1
         self.count2 = 0
@@ -2058,6 +2182,9 @@ class sisref(Tk):
         self.linha = None
         self.cor = None
         self.artista = None
+        self.linhaVel = None
+        self.clickOn = False
+        self.pickVelOn = False
 
         self.valorFigx = self.winfo_screenwidth()/161
 
@@ -2103,10 +2230,6 @@ class sisref(Tk):
 
             self.destroy()
 
-        else:
-
-            pass
-
     def abrirgp(self):
 
         if self.curvaExiste == True:
@@ -2143,9 +2266,12 @@ class sisref(Tk):
                         if self.temp[0] < float(i.split()[1]) and self.temp[-1] > float(i.split()[1]):
 
                             self.especiais[self.nlinhas] = float(i.split()[1])
-
                             del self.temp[:]
 
+                        else:
+
+                            del self.temp[:]
+                            
                 for i in range(self.nlinhas):
 
                     if i+1 in self.especiais:
@@ -2192,63 +2318,33 @@ class sisref(Tk):
                     linha, = self.ax.plot(self.xData[i+1],self.yData[i+1], picker = 0, color='black')
                     self.linhas.append(linha,)
                     self.ax.scatter(float(self.fontes[i+1]),0,s=80,alpha=1,marker=(5,1),color='#E5C100')
-                    #self.ax.axvline(float(self.fontes[i+1]),color='black',linestyle='--')
                     self.bolas[i+1] = []
-
-                    if self.fontes[i+1] > float(self.xData[i+1][-1]):
-
-                        for j,k in zip(self.xData[i+1][::-1],self.yData[i+1][::-1]):
-
-                            bola = self.ax.scatter(j, k, s=30,c = 'white', alpha=1, picker = 5)
-                            self.bolas[i+1].append(bola)
-                            self.camadas[bola] = 1
-                            self.cores[bola] = 'white'
-
-                    elif i+1 in self.especiais:
-
+                       
+                    if i+1 in self.especiais:
+                        
                         for j in self.xData[i+1]:
 
                             if float(j) < self.fontes[i+1]:
-                            
-                                self.temp2.append(j)
-                                self.count2 += 1
 
-                        for j,k in zip(self.temp2[::-1],range(self.count2-1,-1,-1)):
+                                bola = self.ax.scatter(j, self.yData[i+1][self.xData[i+1].index(j)], s=30,c = 'white', alpha=1, picker = 5)
+                                self.bolas[i+1].append(bola)
+                                self.camadas[bola] = 1
+                                self.sublinhas[bola] = 1
+                                self.cores[bola] = 'white'
 
-                            bola = self.ax.scatter(j, self.yData[i+1][k], s=30,c = 'white', alpha=1, picker = 5)
-                            self.bolas[i+1].append(bola)
-                            self.camadas[bola] = 1
-                            self.sublinhas[bola] = 1
-                            self.cores[bola] = 'white'
+                            else:
 
-                        del self.temp2[:]
-                        self.count2 = 0
-
-                        for j in self.xData[i+1]:
-
-                            if float(j) > self.fontes[i+1]:
-                            
-                                self.temp2.append(j)
-                                self.count2 += 1
-
-                        restantes = len(self.xData[i+1])-self.count2
-
-                        for j,k in zip(self.temp2,range(restantes,len(self.xData[i+1]),1)):
-
-                            bola = self.ax.scatter(j, self.yData[i+1][k], s=30,c = 'white', alpha=1, picker = 5)
-                            self.bolas[i+1].append(bola)
-                            self.camadas[bola] = 1
-                            self.sublinhas[bola] = 2
-                            self.cores[bola] = 'white'
-
-                        del self.temp2[:]
-                        self.count2 = 0
-
+                                bola = self.ax.scatter(j, self.yData[i+1][self.xData[i+1].index(j)], s=30,c = 'white', alpha=1, picker = 5)
+                                self.bolas[i+1].append(bola)
+                                self.camadas[bola] = 1
+                                self.sublinhas[bola] = 2
+                                self.cores[bola] = 'white'
+                        #
                     else:
-
-                        for j in range(len(self.xData[i+1])):
-                                
-                            bola = self.ax.scatter(self.xData[i+1][j], self.yData[i+1][j], s=30,c = 'white', alpha=1, picker = 5)
+                        
+                        for j,k in zip(self.xData[i+1],self.yData[i+1]):
+                            
+                            bola = self.ax.scatter(j, k, s=30,c = 'white', alpha=1, picker = 5)
                             self.bolas[i+1].append(bola)
                             self.camadas[bola] = 1
                             self.cores[bola] = 'white'
@@ -2277,10 +2373,91 @@ class sisref(Tk):
                 self.layerPick = False
                 self.status.configure(text = ' Editor de traços: Off   Editor de camadas: Off')
                     
-            else:
+    def pickVA(self):
 
-                pass
+        def clicar(event):
 
+            #try:
+
+            self.coordx.append(event.xdata)
+            self.coordy.append(event.ydata)
+            self.linhaVel, = self.ax.plot(self.coordx,self.coordy,color='blue')
+            self.linhasVel.append(self.linhaVel,)
+            self.clickOn = True
+
+            #except:
+
+             #   pass
+
+        def movimento(event):
+
+            if self.clickOn == True:
+                #try:
+
+                self.coordx.append(event.xdata)
+                self.coordy.append(event.ydata)
+                self.linhaVel.set_data(self.coordx,self.coordy)
+                self.fig.canvas.draw()
+                del self.coordx[1:-1]
+                del self.coordy[1:-1]
+
+               # except:
+
+                 #   pass
+
+        def soltar(event):
+
+            #try:
+
+            self.coordx.append(event.xdata)
+            self.coordy.append(event.ydata)
+            self.linhaVel.set_data(self.coordx,self.coordy)
+            #slope, intercept, r_value, p_value, std_err = stats.linregress(self.coordx,self.coordy)
+            m, b, r_value, p_value, std_err = stats.linregress([int(i) for i in self.coordx],
+                                                            self.coordy)
+            #m,b = np.polyfit(self.coordx, self.coordy, 1)
+            ltex = self.ax.text(self.coordx[0],self.coordy[0], '%.2f m/s'%(abs(1/m)*1000),
+                        size=12, rotation=0, color = 'blue', ha="center", va="center",bbox = dict(ec='1',fc='1'))
+            self.textosVel.append(ltex)
+            self.fig.canvas.draw()
+            del self.coordx[:]
+            del self.coordy[:]
+            self.clickOn = False
+
+           # except:
+
+              #  pass
+
+        if self.pickVelOn == False:
+
+            con1 = self.fig.canvas.mpl_connect('motion_notify_event', movimento)
+            con2 = self.fig.canvas.mpl_connect('button_release_event', soltar)
+            con3 = self.fig.canvas.mpl_connect('button_press_event', clicar)
+            self.conexoes.append(con1)
+            self.conexoes.append(con2)
+            self.conexoes.append(con3)
+            self.pickVelOn = True
+
+        else:
+
+            self.pickVelOn = False
+
+            for i in self.conexoes:
+                
+                self.fig.canvas.mpl_disconnect(i)
+
+            del self.conexoes[:]
+
+            for j,k in zip(self.linhasVel,self.textosVel):
+                
+                j.remove()
+                k.remove()
+                    
+            self.fig.canvas.draw()
+            del self.linhasVel[:]
+            del self.textosVel[:]
+    
+    #
     def onoffcheck(self):
 
         if self.editorOn == True and self.layerPick == True:
@@ -2324,10 +2501,6 @@ class sisref(Tk):
                             self.linha = i+1
                             self.artista = event.artist
                             break
-                            
-                        else:
-
-                            pass
 
                 def soltar(event):
 
@@ -2355,23 +2528,11 @@ class sisref(Tk):
                                 self.tela.show()
                                 self.apertado = False
                                 break
-                        
-                            else:
-    
-                                pass
-                  
-                    else:
-
-                        pass
 
                 self.conexao1 = self.fig.canvas.mpl_connect('pick_event', click)
                 self.conexao2 = self.fig.canvas.mpl_connect('button_release_event', soltar)
                 self.editorOn = True
                 self.onoffcheck()
-
-        else:
-
-            pass
 
     def camadas(self):
 
@@ -2385,44 +2546,35 @@ class sisref(Tk):
 
             else:
 
-                for i in self.cores:
+                for i in range(self.nlinhas):
+                    
+                    for j in self.bolas[i+1]:
 
-                    if self.cores[i] == 'white':
+                        if self.cores[j] == 'white':
 
-                        for k in range(self.nlinhas):
+                            j.set_color('red')
 
-                            for j in range(len(self.xData[k+1])):
+                        if i+1 in self.especiais:
 
-                                self.bolas[k+1][j].set_color('red')
+                            if float(j.get_offsets()[0][0]) < float(self.especiais[i+1]):
 
-                            for j in self.bolas[k+1]:
+                                #self.camadas[j] = 1
+                                self.xDataCamada1[i+1][1].append(float(j.get_offsets()[0][0]))
+                                self.yDataCamada1[i+1][1].append(float(j.get_offsets()[0][1]))
 
-                                if k+1 in self.especiais:
+                            else:
 
-                                    if float(j.get_offsets()[0][0]) < float(self.especiais[k+1]):
+                                #self.camadas[j] = 1
+                                self.xDataCamada1[i+1][2].append(float(j.get_offsets()[0][0]))
+                                self.yDataCamada1[i+1][2].append(float(j.get_offsets()[0][1]))
 
-                                        self.camadas[j] = 1
-                                        self.xDataCamada1[k+1][1].append(float(j.get_offsets()[0][0]))
-                                        self.yDataCamada1[k+1][1].append(float(j.get_offsets()[0][1]))
+                        else:
 
-                                    elif float(j.get_offsets()[0][0]) > float(self.especiais[k+1]): 
+                            #self.camadas[j] = 1
+                            self.xDataCamada1[i+1].append(float(j.get_offsets()[0][0]))
+                            self.yDataCamada1[i+1].append(float(j.get_offsets()[0][1]))
 
-                                        self.camadas[j] = 1
-                                        self.xDataCamada1[k+1][2].append(float(j.get_offsets()[0][0]))
-                                        self.yDataCamada1[k+1][2].append(float(j.get_offsets()[0][1]))
-
-                                else:
-
-                                    self.camadas[j] = 1
-                                    self.xDataCamada1[k+1].append(float(j.get_offsets()[0][0]))
-                                    self.yDataCamada1[k+1].append(float(j.get_offsets()[0][1]))
-
-                        self.cores[i] = 'red'
-                        self.tela.show()
-
-                    else:
-
-                        pass
+                self.tela.show()
 
                 def click2(event):
 
@@ -2431,20 +2583,12 @@ class sisref(Tk):
                         if event.artist in self.bolas[i+1]:
 
                             linha = i+1
-
-                        else:
-
-                            pass
                     
                     if linha in self.especiais:
 
                         if event.artist in self.sublinhas:
 
                             self.sublinha = self.sublinhas[event.artist]
-
-                        else:
-
-                            pass
 
                         if self.sublinha == 1:
 
@@ -2460,10 +2604,6 @@ class sisref(Tk):
                             del self.xDataCamada2[linha][2][:]
                             del self.yDataCamada2[linha][2][:]
 
-                        else:
-
-                            pass
-
                     else:
 
                         if len(self.xDataCamada1[linha]) > 0:
@@ -2473,17 +2613,16 @@ class sisref(Tk):
                             del self.xDataCamada2[linha][:]
                             del self.yDataCamada2[linha][:]
 
-                        else:
-
-                            pass
-
                     if event.artist in self.bolas[linha]:
 
-                        for bola in self.bolas[linha]:
+                        if linha in self.especiais:
 
-                            if linha in self.especiais:
+                            if float(event.artist.get_offsets()[0][0]) < float(self.especiais[linha]):
 
-                                if float(event.artist.get_offsets()[0][0]) < float(self.especiais[linha]):
+                                self.xDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][0]))
+                                self.yDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][1]))
+
+                                for bola in self.bolas[linha]:
 
                                     if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[linha]):
                 
@@ -2512,8 +2651,13 @@ class sisref(Tk):
 
                                                 self.cores[i] = 'red'
                                                 break
-                                    
-                                elif float(event.artist.get_offsets()[0][0]) > float(self.especiais[linha]):
+                                
+                            elif float(event.artist.get_offsets()[0][0]) > float(self.especiais[linha]):
+
+                                self.xDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][0]))
+                                self.yDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][1]))
+                                       
+                                for bola in self.bolas[linha]:
 
                                     if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) > float(self.especiais[linha]):
 
@@ -2542,9 +2686,14 @@ class sisref(Tk):
 
                                                 self.cores[i] = 'red'
                                                 break
-                                        
-                            else:
-                                     
+                                    
+                        else:
+
+                            self.xDataCamada1[linha].append(float(event.artist.get_offsets()[0][0]))
+                            self.yDataCamada1[linha].append(float(event.artist.get_offsets()[0][1]))
+                                   
+                            for bola in self.bolas[linha]:
+                            
                                 if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]):
 
                                     bola.set_color('#1BB270')
@@ -2559,7 +2708,7 @@ class sisref(Tk):
                                                 self.cores[i] = '#1BB270'
                                                 break
 
-                                else:
+                                elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]):
 
                                     bola.set_color('red')
                                     self.camadas[event.artist] = 1
@@ -2572,16 +2721,12 @@ class sisref(Tk):
 
                                                 self.cores[i] = 'red'
                                                 break
-                                 
+                                            
                         self.tela.show()
                         
                 self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click2)
                 self.layerPick = True
                 self.onoffcheck()
-
-        else:
-
-            pass
 
     def velocidades(self):
 
@@ -2591,10 +2736,6 @@ class sisref(Tk):
             self.retas2.clear()
             del self.vels[:]
             del self.vels2[:]
-
-        else:
-
-            pass
 
         for j,k,l,m in zip(self.xDataCamada1.values(),self.yDataCamada1.values(),self.xDataCamada2.values(),self.yDataCamada2.values()):
 
@@ -2610,35 +2751,24 @@ class sisref(Tk):
                 self.retas.update({str(j):k})
                 self.retas2.update({str(l):m})
 
-        self.xretaCamada1 = []
-        self.yretaCamada1 = []
-
-        for i in self.retas:
-
-            lista = ast.literal_eval(i)
-
-            for j in lista:
-                
-                self.xretaCamada1.append(j)
-
-            for j in self.retas[i]:
-                    
-                self.yretaCamada1.append(j)
-                    
-        slope, intercept, r_value, p_value, std_err = stats.linregress(sorted(self.xretaCamada1),sorted(self.yretaCamada1))
-        print(1/slope)
-
-        for i,j,k,l in zip(self.retas,self.retas.values(),self.retas2,self.retas2.values()):
+        for i,j in zip(self.retas,self.retas.values()):
 
             slope, intercept, r_value, p_value, std_err = stats.linregress(ast.literal_eval(i),j)
             self.vels.append(abs(1/slope))
-            slope2, intercept2, r_value2, p_value2, std_err2 = stats.linregress(ast.literal_eval(k),l)
-            self.vels2.append(abs(1/slope2))
 
-        vmed1 = sum(self.vels) / float(len(self.vels))
-        vmed2 = sum(self.vels2) / float(len(self.vels2))
-        messagebox.showinfo('','Velocidades médias: camada 1 = %.2f km/s, camada 2 = %.2f km/s'%(vmed1,vmed2))
+        for k,l in zip(self.retas2,self.retas2.values()):
 
+            slope, intercept, r_value, p_value, std_err = stats.linregress(ast.literal_eval(k),l)
+            self.vels2.append(abs(1/slope))
+            print(k)
+            print(l)
+            print(abs(1/slope))
+
+        print(self.vels)
+        print(self.vels2)
+        vmed1 = sum(self.vels)/len(self.vels)
+        vmed2 = sum(self.vels2)/len(self.vels2)
+        messagebox.showinfo('','Velocidades médias: camada 1 = %.2f m/s, camada 2 = %.2f m/s'%(1000*vmed1,vmed2*1000))
 
 class Siscon(Tk):
     
@@ -2655,9 +2785,9 @@ class Siscon(Tk):
         self.labelEntrada = Label(self.frame, text='Arquivos de entrada:',fg='black',font=("Helvetica", 12))
         self.labelSaida = Label(self.frame, text='Diretório de saída:',fg='black',font=("Helvetica", 12))
         self.botaoEntrada = Button(self.frame, text=' ... ', bg = 'gray90',fg='black', activebackground = 'gray93',
-                            activeforeground = 'black', command = self.entrada,width = 4)
+                            activeforeground = 'black', command = self.entrada,width = 3)
         self.botaoSaida = Button(self.frame, text=' ... ', bg = 'gray90',fg='black', activebackground = 'gray93',
-                            activeforeground = 'black', command = self.saida,width = 4)
+                            activeforeground = 'black', command = self.saida,width = 3)
         self.label1 = Label(self.frame, text='Converter para:',fg='black',font=("Helvetica", 12))
         self.labelEntrada.grid(row=0, column=0, sticky="w",pady=15,padx=20)
         self.botaoEntrada.grid(row=0,column=0,padx=180)
@@ -2690,10 +2820,6 @@ class Siscon(Tk):
         if messagebox.askyesno("Geosis - Siscon", "Sair do programa?"):
 
             self.destroy()
-
-        else:
-
-            pass
         
     def entrada(self):
          
@@ -2720,10 +2846,6 @@ class Siscon(Tk):
             
             saidaOK = Label(self.frame, text='OK',fg = 'blue',font=("Helvetica", 11))
             saidaOK.grid(row=4,column=0,sticky='e',padx=150)
-            
-        else:
-            
-            pass
                 
     def formatar(self):
 
@@ -2768,10 +2890,6 @@ class Siscon(Tk):
                 except:
 
                     messagebox.showerror('Geosis - Siscon','Formato inválido')
-
-            else:
-
-                pass
             
             for i in self.liststreams:
                 
@@ -2779,10 +2897,6 @@ class Siscon(Tk):
                 
             self.frame.destroy()
             self.destroy()
-
-        else:
-
-            pass
         
     def cancelar(self):
 
