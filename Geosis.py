@@ -95,17 +95,17 @@ class Launcher(Tk):
     def chamarsisref(self):
 
         self.destroy()
-        sisref()
+        run_sisref = sisref()
 
     def chamarSispick(self):
 
         self.destroy()
-        Sispick()
+        run_sispick = Sispick()
 
     def chamarSiscon(self):
 
         self.destroy()
-        Siscon()
+        run_siscon = Siscon()
 
     def Sobre(self):
 
@@ -118,12 +118,27 @@ class Launcher(Tk):
         
 
 class Sispick(Tk):
-    
+
+    frames, figs, axes, telas, listSource, sts, ticksLabel, toolbars, dadosNorms, dadosCrus, \
+    ganho, filtros,filtrosHP, filtrosLP, copiasCruas, copiasNorms, okpicks, clips, \
+    sombreamentos, picks, picksArts, coordx, coordy, conPickClick, conPickMov, conPickSoltar, \
+    conVelClick, conVelMov, conVelSoltar, conAmostra, ndados, tracosMax, linhasPick, freqLP, \
+    freqHP = [],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[], \
+    [],[],[],[],[],[],[],[],[]
+    sublinhas, bolas, indicadores, plotArts, sombArts, coordsx, coordsy, linhasVel, \
+    textoVel = {},{},{},{},{},{}, {}, {}, {}
+    plotExiste, pickMode, yinvertido, normalizado, optAberto, pickAmostraAtivado, clickOn, \
+    pickVelOn = False,False,False,False,False,False,False,False
+    arquivos, formato, posicaoGeof1, eventCon, pagina, recordlen, valordx, linhaVel, linhaPick, \
+    valorFigx, valorFigy = None,None,None,None,None,None,None,None,None,None,None
+    fatorY, valorGanho, fatorLP, fatorHP = 0.8, 2, 0.8, 1.5
+
     def __init__(self):                         
 
         Tk.__init__(self)                       
         self.configure(background='#F3F3F3')
         self.title('Geosis - Sispick')
+        
         if platform.system() == 'Windows':
 
             self.wm_state('zoomed')
@@ -139,104 +154,62 @@ class Sispick(Tk):
         else:
             
             self.attributes('-zoomed',True)
-               
-        self.frames = []                        
-        self.figs = []                          
-        self.axes = []                      
-        self.telas = []                    
-        self.listSource = []                    
-        self.sts = []                        
-        self.ticksLabel = []                    
-        self.toolbars = []
-        self.dadosNorms = []
-        self.dadosCrus = []
-        self.ganho = []
-        self.filtros = []
-        self.filtrosHP = []
-        self.filtrosLP = []
-        self.copiasCruas = []
-        self.copiasNorms = []
-        self.okpicks = []
-        self.clips = []
-        self.sombreamentos = []
-        self.picks = []
-        self.picksArts = []
-  
-        self.ndados = []
-        self.tracosMax = []
-        self.temp = []
-        self.linhasPick = []
-        self.sublinhas = {}
-        self.bolas = {}
-        self.indicadores = {}
-        self.coordx = []
-        self.coordy = []
-                          
-        self.plotArts = {}
-        self.sombArts = {}
-        self.coordsx = {}
-        self.coordsy = {}
-        self.linhasVel = {}
-        self.textoVel = {}
-                         
-        self.plotExiste = False                 
-        self.pickMode = False                                                
-        self.pickHappened = False               
-        self.yinvertido = False
-        self.formato = None
-        self.normalizado = False
-        self.optAberto = False
-        self.pickAmostraAtivado = False
-        self.clickOn = False
-        self.pickVelOn = False
-        self.posicaoGeof1 = None
-        self.conPickClick = []
-        self.conPickMov = []
-        self.conPickSoltar = []
-        self.conVelClick = []
-        self.conVelMov = []
-        self.conVelSoltar = []
-        self.conAmostra = []
 
-        self.eventCon = None                                          
-        self.pagina = None
-        self.recordlen = None                   
-        self.valordx = None
-        self.decisaoPontos = None
-        self.linhaVel = None
-        self.linhaPick = None
-        self.fatorY = 0.8
-        self.valorGanho = 2
-        self.fatorLP = 0.8
-        self.fatorHP = 3
-        self.freqLP = []
-        self.freqHP = []
+        if platform.system() == 'Windows':
         
-        self.valorFigx = self.winfo_screenwidth()/80
+            self.valorFigx = self.winfo_screenwidth()/80
 
-        if self.winfo_screenheight() == 1080:
-            
-            self.valorFigy = self.winfo_screenheight()/93.1
+            if self.winfo_screenheight() == 1080:
+                
+                self.valorFigy = self.winfo_screenheight()/93.1
 
-        elif self.winfo_screenheight() == 768:
+            elif self.winfo_screenheight() == 768:
 
-            self.valorFigy = self.winfo_screenheight()/100.5
+                self.valorFigy = self.winfo_screenheight()/100.5
 
-        elif self.winfo_screenheight() == 1024:
+            elif self.winfo_screenheight() == 1024:
 
-            self.valorFigy = self.winfo_screenheight()/94.1
+                self.valorFigy = self.winfo_screenheight()/94.1
 
-        elif self.winfo_screenheight() == 900:
+            elif self.winfo_screenheight() == 900:
 
-            self.valorFigy = self.winfo_screenheight()/96.5
+                self.valorFigy = self.winfo_screenheight()/96.5
 
-        elif self.winfo_screenheight() == 720:
+            elif self.winfo_screenheight() == 720:
 
-            self.valorFigy = self.winfo_screenheight()/101.5
+                self.valorFigy = self.winfo_screenheight()/101.5
 
-        else: # 800
+            else: # 800
 
-            self.valorFigy = self.winfo_screenheight()/99
+                self.valorFigy = self.winfo_screenheight()/99
+
+        elif platform.system() == 'Linux':
+
+            self.valorFigx = self.winfo_screenwidth()/83
+
+            if self.winfo_screenheight() == 1080:
+                
+                self.valorFigy = self.winfo_screenheight()/93.1
+
+            elif self.winfo_screenheight() == 768:
+
+                self.valorFigy = self.winfo_screenheight()/96
+
+            elif self.winfo_screenheight() == 1024:
+
+                self.valorFigy = self.winfo_screenheight()/94.1
+
+            elif self.winfo_screenheight() == 900:
+
+                self.valorFigy = self.winfo_screenheight()/96.5
+
+            elif self.winfo_screenheight() == 720:
+
+                self.valorFigy = self.winfo_screenheight()/101.5
+
+            else: # 800
+
+                self.valorFigy = self.winfo_screenheight()/99
         
         self.parent = Frame(self,bg='#F3F3F3')
         self.parent.grid(row=0,column=0,sticky='nsew')
@@ -321,7 +294,6 @@ class Sispick(Tk):
         menu_ajuda = Menu(barraDEmenu)
         barraDEmenu.add_cascade(label='Ajuda',menu=menu_ajuda)
         menu_ajuda.add_command(label='Atalhos de teclado',command = lambda: print(''))
-
         Abrir = Button(self.parent, command = self.abrir_pt1)
         img_abrir = PhotoImage(file="%s/imagens/abrir.gif"%os.getcwd())
         Abrir.config(image=img_abrir)
@@ -338,78 +310,78 @@ class Sispick(Tk):
         img_proximo = PhotoImage(file="%s/imagens/proximo.gif"%os.getcwd())
         Next.config(image=img_proximo)
         Next.grid(row=0,column=3,sticky=W)
-        ampDown = Button(self.parent,command = self.ampdown)
-        img_menos = PhotoImage(file="%s/imagens/menos.gif"%os.getcwd())
-        ampDown.config(image=img_menos)
-        ampDown.grid(row=0,column=4,sticky=W)
-        ampUp = Button(self.parent, command = self.ampup)
-        img_mais = PhotoImage(file="%s/imagens/mais.gif"%os.getcwd())
-        ampUp.config(image=img_mais)
-        ampUp.grid(row=0,column=5,sticky=W)
         menosY = Button(self.parent, command = self.menosy)
         img_baixo = PhotoImage(file="%s/imagens/baixo.gif"%os.getcwd())
         menosY.config(image=img_baixo)
-        menosY.grid(row=0,column=6,sticky=W)
+        menosY.grid(row=0,column=4,sticky=W)
         maisY = Button(self.parent, command = self.maisy)
         img_cima = PhotoImage(file="%s/imagens/cima.gif"%os.getcwd())
         maisY.config(image=img_cima)
-        maisY.grid(row=0,column=7,sticky=W)
-        Pick = Button(self.parent, command = self.ativarPick)
-        img_pick = PhotoImage(file="%s/imagens/pick.gif"%os.getcwd())
-        Pick.config(image=img_pick)
-        Pick.grid(row=0,column=8,sticky=W)
-        limpar = Button(self.parent, command = self.limparplot)
-        img_limpar = PhotoImage(file="%s/imagens/limpar.gif"%os.getcwd())
-        limpar.config(image=img_limpar)
-        limpar.grid(row=0,column=9,sticky=W)
-        inverttime = Button(self.parent, command = self.invert)
-        img_invert = PhotoImage(file="%s/imagens/invert.gif"%os.getcwd())
-        inverttime.config(image=img_invert)
-        inverttime.grid(row=0,column=10,sticky=W)
+        maisY.grid(row=0,column=5,sticky=W)
+        ampDown = Button(self.parent,command = self.ampdown)
+        img_menos = PhotoImage(file="%s/imagens/menos.gif"%os.getcwd())
+        ampDown.config(image=img_menos)
+        ampDown.grid(row=0,column=6,sticky=W)
+        ampUp = Button(self.parent, command = self.ampup)
+        img_mais = PhotoImage(file="%s/imagens/mais.gif"%os.getcwd())
+        ampUp.config(image=img_mais)
+        ampUp.grid(row=0,column=7,sticky=W)
         normal = Button(self.parent, command = self.normalizar)
         img_norm = PhotoImage(file="%s/imagens/norm.gif"%os.getcwd())
         normal.config(image=img_norm)
-        normal.grid(row=0,column=11,sticky=W)
-        somb_null = Button(self.parent, command = self.sombNull)
-        img_sombnull = PhotoImage(file="%s/imagens/fill_null.gif"%os.getcwd())
-        somb_null.config(image=img_sombnull)
-        somb_null.grid(row=0,column=12,sticky=W)
-        somb_neg = Button(self.parent, command = self.sombNeg)
-        img_sombneg = PhotoImage(file="%s/imagens/fill_neg.gif"%os.getcwd())
-        somb_neg.config(image=img_sombneg)
-        somb_neg.grid(row=0,column=13,sticky=W)
-        somb_pos = Button(self.parent, command = self.sombPos)
-        img_sombpos = PhotoImage(file="%s/imagens/fill_pos.gif"%os.getcwd())
-        somb_pos.config(image=img_sombpos)
-        somb_pos.grid(row=0,column=14,sticky=W) 
-        clipar = Button(self.parent, command = self.clip)
-        img_clip = PhotoImage(file="%s/imagens/clip.gif"%os.getcwd())
-        clipar.config(image=img_clip)
-        clipar.grid(row=0,column=15,sticky=W)
-        PA = Button(self.parent, command = self.filtroHP)
-        img_PA = PhotoImage(file="%s/imagens/PA.gif"%os.getcwd())
-        PA.config(image=img_PA)
-        PA.grid(row=0,column=16,sticky=W)
-        PB = Button(self.parent, command = self.filtroLP)
-        img_PB = PhotoImage(file="%s/imagens/PB.gif"%os.getcwd())
-        PB.config(image=img_PB)
-        PB.grid(row=0,column=17,sticky=W)
-        RF = Button(self.parent, command = self.removerFiltros)
-        img_RF = PhotoImage(file="%s/imagens/RF.gif"%os.getcwd())
-        RF.config(image=img_RF)
-        RF.grid(row=0,column=18,sticky=W)
+        normal.grid(row=0,column=8,sticky=W)
+        inverttime = Button(self.parent, command = self.invert)
+        img_invert = PhotoImage(file="%s/imagens/invert.gif"%os.getcwd())
+        inverttime.config(image=img_invert)
+        inverttime.grid(row=0,column=9,sticky=W)
         pickAmostras = Button(self.parent, command = self.pickAmostra)
         img_cortar = PhotoImage(file="%s/imagens/cortar.gif"%os.getcwd())
         pickAmostras.config(image=img_cortar)
-        pickAmostras.grid(row=0,column=19,sticky=W)
-        vel = Button(self.parent, command = self.pickVelocidade)
-        img_vel = PhotoImage(file="%s/imagens/vel.gif"%os.getcwd())
-        vel.config(image=img_vel)
-        vel.grid(row=0,column=20,sticky=W)
+        pickAmostras.grid(row=0,column=10,sticky=W)
+        somb_null = Button(self.parent, command = self.sombNull)
+        img_sombnull = PhotoImage(file="%s/imagens/fill_null.gif"%os.getcwd())
+        somb_null.config(image=img_sombnull)
+        somb_null.grid(row=0,column=11,sticky=W)
+        somb_neg = Button(self.parent, command = self.sombNeg)
+        img_sombneg = PhotoImage(file="%s/imagens/fill_neg.gif"%os.getcwd())
+        somb_neg.config(image=img_sombneg)
+        somb_neg.grid(row=0,column=12,sticky=W)
+        somb_pos = Button(self.parent, command = self.sombPos)
+        img_sombpos = PhotoImage(file="%s/imagens/fill_pos.gif"%os.getcwd())
+        somb_pos.config(image=img_sombpos)
+        somb_pos.grid(row=0,column=13,sticky=W) 
+        clipar = Button(self.parent, command = self.clip)
+        img_clip = PhotoImage(file="%s/imagens/clip.gif"%os.getcwd())
+        clipar.config(image=img_clip)
+        clipar.grid(row=0,column=14,sticky=W)
+        PA = Button(self.parent, command = self.filtroHP)
+        img_PA = PhotoImage(file="%s/imagens/PA.gif"%os.getcwd())
+        PA.config(image=img_PA)
+        PA.grid(row=0,column=15,sticky=W)
+        PB = Button(self.parent, command = self.filtroLP)
+        img_PB = PhotoImage(file="%s/imagens/PB.gif"%os.getcwd())
+        PB.config(image=img_PB)
+        PB.grid(row=0,column=16,sticky=W)
+        RF = Button(self.parent, command = self.removerFiltros)
+        img_RF = PhotoImage(file="%s/imagens/RF.gif"%os.getcwd())
+        RF.config(image=img_RF)
+        RF.grid(row=0,column=17,sticky=W)
+        Pick = Button(self.parent, command = self.ativarPick)
+        img_pick = PhotoImage(file="%s/imagens/pick.gif"%os.getcwd())
+        Pick.config(image=img_pick)
+        Pick.grid(row=0,column=18,sticky=W)
         ligar = Button(self.parent, command = self.ligarPicks)
         img_ligar = PhotoImage(file="%s/imagens/ligar.gif"%os.getcwd())
         ligar.config(image=img_ligar)
-        ligar.grid(row=0,column=21,sticky=W)
+        ligar.grid(row=0,column=19,sticky=W)
+        limpar = Button(self.parent, command = self.limparplot)
+        img_limpar = PhotoImage(file="%s/imagens/limpar.gif"%os.getcwd())
+        limpar.config(image=img_limpar)
+        limpar.grid(row=0,column=20,sticky=W)
+        vel = Button(self.parent, command = self.pickVelocidade)
+        img_vel = PhotoImage(file="%s/imagens/vel.gif"%os.getcwd())
+        vel.config(image=img_vel)
+        vel.grid(row=0,column=21,sticky=W)
         grafico = Button(self.parent, command = self.verCurva)
         img_grafico = PhotoImage(file="%s/imagens/grafico.gif"%os.getcwd())
         grafico.config(image=img_grafico)
@@ -426,7 +398,6 @@ class Sispick(Tk):
         img_fechar = PhotoImage(file="%s/imagens/fechar.gif"%os.getcwd())
         FecharPlot.config(image=img_fechar)
         FecharPlot.grid(row=0,column=25,sticky=W)
-        
         self.statusPick = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12), bg='#F3F3F3')
         self.statusPick.grid(row=0,column=26,sticky=E)
         self.statusVel = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12), bg='#F3F3F3')
@@ -439,7 +410,6 @@ class Sispick(Tk):
         self.statusPB.grid(row=0,column=30,sticky=E)
         self.status = Label(self.parent,text = ' ', fg='red',font=("Helvetica", 12),bg='#F3F3F3')
         self.status.grid(row=0,column=31,sticky=E)
-        
         plt.rcParams['keymap.zoom'] = 'z,Z'
         plt.rcParams['keymap.back'] = 'b,B'
         plt.rcParams['keymap.home'] = 'ctrl+z,ctrl+Z'
@@ -449,7 +419,8 @@ class Sispick(Tk):
         self.bind('<Alt-S>', lambda x: self.destroy())
         self.bind('A', lambda x: self.pickAmostra())
         self.bind('a', lambda x: self.pickAmostra())
-        self.bind('L', lambda x: self.ligarPicks())
+        self.bind('<Alt-L>', lambda x: self.ligarPicks())
+        self.bind('<Alt-l>', lambda x: self.ligarPicks())
         self.bind('l', lambda x: self.ligarPicks())
         self.bind('V', lambda x: self.pickVelocidade())
         self.bind('v', lambda x: self.pickVelocidade())
@@ -492,11 +463,17 @@ class Sispick(Tk):
 
     def fechar(self):
 
-        if messagebox.askyesno("Geosis - Sispick", "Sair do programa?"):
+        if self.plotExiste == True:
 
+            self.fecharPlot()
             self.destroy()
             sys.exit()
 
+        else:
+
+            self.destroy()
+            sys.exit()
+            
     def abrir_pt1(self):
         
         if self.plotExiste == False:
@@ -613,13 +590,14 @@ class Sispick(Tk):
             messagebox.showinfo('','Feche a seçao sismica atual para abrir uma nova')
 
     def abrir_pt2(self):
-
+        
         for i in range(len(self.arquivos)):
 
             frame = Frame(self,bg='#F3F3F3')
-            frame.grid(row=1, column=0,sticky=W+E+N+S)
+            frame.grid(row=1, column=0,sticky='nsew')
             self.frames.append(frame)
             fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
+            print(self.valorFigy)
             self.figs.append(fig)
             ax = self.figs[i].add_subplot(111)
             self.axes.append(ax)
@@ -1120,48 +1098,32 @@ class Sispick(Tk):
 
                     i.clf()
 
-                del self.frames[:]
-                del self.figs[:]
-                del self.axes[:]
-                del self.telas[:]
-                del self.listSource[:]
-                del self.sts[:]
-                del self.ticksLabel[:]
-                del self.toolbars[:]
-                del self.ganho[:]
-                del self.filtros[:]
-                del self.filtrosHP[:]
-                del self.filtrosLP[:]
-                del self.copiasCruas[:]
-                del self.copiasNorms[:]
-                del self.okpicks[:]
-                del self.clips[:]
-                del self.sombreamentos[:]
-                del self.picks[:]
-                del self.picksArts[:]
-                del self.linhasArts[:]
-                del self.conexoesPick[:]
-                del self.freqLP[:]
-                del self.freqHP[:]
+                del self.frames[:],self.figs[:],self.axes[:],self.telas[:],self.listSource[:],self.sts[:], \
+                    self.ticksLabel[:],self.toolbars[:],self.dadosCrus[:],self.dadosNorms[:],self.ganho[:], \
+                    self.filtros[:],self.filtrosHP[:],self.filtrosLP[:],self.copiasCruas[:],self.copiasNorms[:], \
+                    self.okpicks[:],self.clips[:],self.sombreamentos[:],self.picks[:],self.picksArts[:],self.ndados[:], \
+                    self.tracosMax[:],self.freqLP[:],self.freqHP[:],self.coordx[:],self.coordy[:],self.conPickClick[:], \
+                    self.conPickMov[:],self.conPickSoltar[:],self.conVelClick[:],self.conVelMov[:],self.conVelSoltar[:], \
+                    self.conAmostra[:]
+                
+                self.sublinhas.clear()
+                self.bolas.clear()
+                self.indicadores.clear()
                 self.plotArts.clear()
                 self.sombArts.clear()
-                self.plotExiste = False                 
-                self.pickMode = False                                                
-                self.pickHappened = False               
-                self.yinvertido = False
-                self.seg2 = False
-                self.normalizado = False
-                self.optAberto = False
-                self.eventCon = None                                          
-                self.pagina = None
-                self.recordlen = None                   
-                self.valordx = None
-                self.decisaoPontos = None
-                self.fatorY = 0.3
-                self.valorGanho = 1.5
-                self.fatorLP = 0.8
-                self.fatorHP = 1.5
+                self.coordsx.clear()
+                self.coordsy.clear()
+                self.linhasVel.clear()
+                self.textoVel.clear()
+                self.plotExiste, self.pickMode, self.yinvertido, self.normalizado, self.optAberto, self.pickAmostraAtivado, \
+                self.clickOn,self.pickVelOn = False,False,False,False,False,False,False,False
+                self.arquivos, self.formato, self.posicaoGeof1, self.eventCon, self.pagina, self.recordlen, self.valordx, self.linhaVel, \
+                self.linhaPick = None,None,None,None,None,None,None,None,None
+                self.fatorY, self.valorGanho, self.fatorLP, self.fatorHP = 0.8, 2, 0.8, 1.5
                 self.status.configure(text = '',fg='red')
+                self.statusPick.configure(text = '',fg='blue')
+                self.statusVel.configure(text = '',fg='blue')
+                self.statusCortador.configure(text = '',fg='blue')
                 self.statusPA.configure(text = '', fg = 'green')
                 self.statusPB.configure(text = '', fg = 'green')
 
@@ -1361,7 +1323,6 @@ class Sispick(Tk):
                         
                         plt.figure(self.pagina)
                         plt.gca().invert_yaxis()
-                        self.figs[self.pagina].canvas.draw()
 
                     self.conferidorIndividual()
                     
@@ -1737,21 +1698,35 @@ class Sispick(Tk):
             try:
                 
                 arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Geosis pick', '.gp')])
-                
-                with open(arquivoSaida,'a') as arqpck:
 
-                    for i in range(len(self.arquivos)):
-                            
-                        for key in sorted(self.picks[i]):
-                            
-                            arqpck.write('%f %f 1\n'%(key,self.picks[i][key]))
+                if platform.system() == 'Windows':
+                    
+                    with open(arquivoSaida+'.gp','a') as arqpck:
+
+                        for i in range(len(self.arquivos)):
+                                
+                            for key in sorted(self.picks[i]):
+                                
+                                arqpck.write('%f %f 1\n'%(key,self.picks[i][key]))
+                                
                             arqpck.write('/ %f\n'%(float(self.listSource[i])))
 
-                        else:
+                    arqpck.close()
 
-                            arqpck.write('0.0 %d 0.0\n'%self.canais)
+                elif platform.system() == 'Linux':
+                    
+                    with open(arquivoSaida,'a') as arqpck:
 
-                arqpck.close()
+                        for i in range(len(self.arquivos)):
+                                
+                            for key in sorted(self.picks[i]):
+                                
+                                arqpck.write('%f %f 1\n'%(key,self.picks[i][key]))
+                                
+                            arqpck.write('/ %f\n'%(float(self.listSource[i])))
+
+                    arqpck.close()
+                    
                 messagebox.showinfo('Geosis - Sispick','Pick salvo')
 
             except:
@@ -1769,22 +1744,43 @@ class Sispick(Tk):
             try:
                 
                 arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Seisimager', '.vs')])
+
+                if platform.system() == 'Windows':
                 
-                with open(arquivoSaida+'.vs','a') as arqpck:
+                    with open(arquivoSaida+'.vs','a') as arqpck:
 
-                    arqpck.write('1996 0 3.0\n0 %d %f\n'%(len(self.arquivos),self.valordx))
+                        arqpck.write('1996 0 3.0\n0 %d %f\n'%(len(self.arquivos),self.valordx))
 
-                    for i in range(len(self.arquivos)):
+                        for i in range(len(self.arquivos)):
 
-                        arqpck.write('%f %d 0.0\n'%(float(self.listSource[i]), self.canais))
-                            
-                        for key in sorted(self.picks[i]):
-                            
-                            arqpck.write('%f %f 1 \n'%(key,self.picks[i][key]))
+                            arqpck.write('%f %d 0.0\n'%(float(self.listSource[i]), self.canais))
+                                
+                            for key in sorted(self.picks[i]):
+                                
+                                arqpck.write('%f %f 1 \n'%(key,self.picks[i][key]))
 
-                    arqpck.write('0 0 \n 0 \n 0 0 \n')
+                        arqpck.write('0 0 \n 0 \n 0 0 \n')
 
-                arqpck.close()
+                    arqpck.close()
+
+                elif platform.system() == 'Linux':
+
+                    with open(arquivoSaida,'a') as arqpck:
+
+                        arqpck.write('1996 0 3.0\n0 %d %f\n'%(len(self.arquivos),self.valordx))
+
+                        for i in range(len(self.arquivos)):
+
+                            arqpck.write('%f %d 0.0\n'%(float(self.listSource[i]), self.canais))
+                                
+                            for key in sorted(self.picks[i]):
+                                
+                                arqpck.write('%f %f 1 \n'%(key,self.picks[i][key]))
+
+                        arqpck.write('0 0 \n 0 \n 0 0 \n')
+
+                    arqpck.close()
+                    
                 messagebox.showinfo('Geosis - Sispick','Pick salvo')
 
             except:
@@ -1955,18 +1951,21 @@ class Sispick(Tk):
                             plt.gca().invert_yaxis()
                             self.figs[self.pagina].canvas.draw()
 
-                        self.figs[self.pagina].canvas.mpl_disconnect(self.conAmostra[self.pagina])
-                        self.conAmostra[self.pagina] = None
-                        self.pickAmostraAtivado = False
+                        for i in range(len(self.arquivos)):
 
-                        self.statusCortador.configure(text='',fg='blue')      
+                            self.figs[i].canvas.mpl_disconnect(self.conAmostra[i])
+                            self.conAmostra[i] = None
+
+                        self.pickAmostraAtivado = False
+                        self.statusCortador.configure(text='',fg='blue')
                         self.conferidorIndividual()
                         
                     else:
+                        
                         for i in range(len(self.arquivos)):
                             
                             self.figs[self.pagina].canvas.mpl_disconnect(self.conAmostra[i])
-                            self.conkAmostra[i] = None
+                            self.conAmostra[i] = None
                             
                         self.statusCortador.configure(text='',fg='blue')
                         self.pickAmostraAtivado = False
@@ -2034,14 +2033,14 @@ class Sispick(Tk):
             pos1 = StringVar()
             main = Label(root, text = 'Dados do cabeçalho (%s)'%os.path.basename(self.arquivos[self.pagina]),font=("Helvetica", 14),
                          fg='green').grid(row = 0, column = 0, sticky='w', padx = 10, pady = 10)
-            fonte = Label(root, text = 'Posição da fonte (atual: %.1f m):'%float(self.listSource[self.pagina]),font=("Helvetica", 11),
+            fonte = Label(root, text = 'Posição da fonte (atual: %.1f m):'%float(self.listSource[self.pagina]),font=("Helvetica", 10),
                          fg='black').grid(row = 1, column = 0, sticky='w', padx = 10, pady = 10)
-            espacamento = Label(root, text = 'Espaçamento entre geofones (atual: %.1f m):'%float(self.valordx),font=("Helvetica", 11),
+            espacamento = Label(root, text = 'Espaçamento entre geofones (atual: %.1f m):'%float(self.valordx),font=("Helvetica", 10),
                          fg='black').grid(row = 2, column = 0, sticky='w', padx = 10, pady = 10)
             comp = Label(root, text = 'Comprimento do perfil (atual: %.1f m):'%(self.valordx*len(self.sts[self.pagina])),
-                         font=("Helvetica", 11),fg='black').grid(row = 3, column = 0, sticky='w', padx = 10, pady = 10)
+                         font=("Helvetica", 10),fg='black').grid(row = 3, column = 0, sticky='w', padx = 10, pady = 10)
             pos = Label(root, text = 'Posiçao do primeiro geofone (atual: %.1f m):'%self.posicaoGeof1,
-                           font=("Helvetica", 11),fg='black').grid(row = 4, column = 0, sticky='w', padx = 10, pady = 10)
+                           font=("Helvetica", 10),fg='black').grid(row = 4, column = 0, sticky='w', padx = 10, pady = 10)
             entryf = Entry(root, textvariable = fonte, width=10)
             entryf.grid(row = 1, column = 0, sticky = 'w', pady = 10, padx = 250)
             entrydx = Entry(root, textvariable = dx, width=10)
@@ -2073,21 +2072,29 @@ class Sispick(Tk):
                         self.valordx = float(entrydx.get())
                         warning.configure(text = 'Dados salvos', fg = 'blue')
 
-                        for i in range(len(self.arquivos)):
+                        if self.normalizado == True:
 
-                            if self.normalizado == True:
-
-                                for j in range(self.canais):
-                        
-                                    self.plotArts[i][j].set_xdata([self.stsNorms[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
-
-                            else:
+                            for i in range(len(self.arquivos)):
 
                                 for j in range(self.canais):
-                        
-                                    self.plotArts[i][j].set_xdata([self.sts[i][j][k]*(-1)*self.ganho[i]+j*self.valordx for k in range(self.ndados[i])])
-                
-                            self.conferidorGeral()
+
+                                    self.plotArts[i][j].set_data(self.dadosNorms[i][j][0:self.ndados[i]]*(-1)*self.ganho[i]+self.posicaoGeof1+j*self.valordx,
+                                                                 [self.sts[i][0].stats.delta*1000*k for k in range(int(self.ndados[i]))])
+
+                                self.axes[i].set_xlim(self.posicaoGeof1-self.valordx,self.posicaoGeof1+self.valordx*len(self.sts[i]))
+                                
+                        else:
+
+                            for i in range(len(self.arquivos)):
+
+                                for j in range(self.canais):
+                            
+                                    self.plotArts[i][j].set_data(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)*self.ganho[i]+self.posicaoGeof1+j*self.valordx,
+                                                                 [self.sts[i][0].stats.delta*k*1000 for k in range(int(self.ndados[i]))])
+
+                                self.axes[i].set_xlim(self.posicaoGeof1-self.valordx,self.posicaoGeof1+self.valordx*len(self.sts[i]))
+                            
+                        self.conferidorGeral()
                             
                     except:
 
@@ -2102,7 +2109,7 @@ class Sispick(Tk):
                         for i in range(len(self.arquivos)):
 
                             plt.figure(i)
-                            plt.xlim(self.posicaoGeof1-self.valordx,float(entrycomp.get()))
+                            self.axes[i].set_xlim(self.posicaoGeof1-self.valordx,self.posicaoGeof1+float(entrycomp.get()))
                             self.telas[i].show()
                             
                     except:
@@ -2134,14 +2141,7 @@ class Sispick(Tk):
                                                              [self.sts[i][0].stats.delta*k*1000 for k in range(int(self.ndados[i]))])
 
                             self.axes[i].set_xlim(self.posicaoGeof1-self.valordx,self.posicaoGeof1+self.valordx*len(self.sts[i]))
-
-                    if self.yinvertido == True:
                         
-                        plt.figure(self.pagina)
-                        plt.gca().invert_yaxis()
-                        self.figs[self.pagina].canvas.draw()
-                        
-                    self.telas[self.pagina].show()
                     self.conferidorGeral()
 
             def fechar():
@@ -2159,7 +2159,7 @@ class Sispick(Tk):
         if self.plotExiste == True and self.optAberto == False:
 
             root = Tk()
-            root.geometry('420x390+500+250')
+            root.geometry('420x350+500+250')
             root.title('Geosis - Sispick')
             vardx = StringVar()
             varY = StringVar()
@@ -2998,7 +2998,7 @@ class sisref(Tk):
         print(self.vels2)
         vmed1 = sum(self.vels)/len(self.vels)
         vmed2 = sum(self.vels2)/len(self.vels2)
-        messagebox.showinfo('','Velocidades médias: camada 1 = %.2f m/s, camada 2 = %.2f m/s'%(1000*vmed1,vmed2*1000))
+        messagebox.showinfo('','Velocidades médias: camada 1 = %.2f m/s, camada 2 = %.2f m/s'%(vmed1,vmed2))
 
 class Siscon(Tk):
     
