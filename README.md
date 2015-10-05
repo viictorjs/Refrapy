@@ -20,7 +20,7 @@ Running the program on Windows:
     
  - The developer offers a Python 3 program to make it easier and faster to install all the necessary packages on the following website: https://github.com/viictorjs/Geosis-easy-packages-installer-Windows-. By using this method you will not be getting the lastest versions of each package. If you wish to have those you need to install the packages manually (requires internet connection).
  
- - The fastest way to install the necessary packages yourself is by using the Python Package Index. On your command promp type:
+ - The fastest way to install the necessary packages yourself is by using the Python Package Index. On your command prompt run:
    ```
    C:\Python34\Scripts\pip.exe install numpy
    C:\Python34\Scripts\pip.exe install matplotlib
