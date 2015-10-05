@@ -1,9 +1,16 @@
 # Geosis
-Geosis is an under development Python 3 application with a graphic interface for seismic refraction data processing tested on Windows and Linux.
-Current content: 
+Geosis is an under development Python 3 application with a graphic interface for seismic refraction data processing tested on Windows and Linux. It is based on 3 modules: Sispick, Sisref and Sisconv.
+
+- Sispick: 
  - Visualize seismic sections (supported: seg2 and segy);
  - Processing: normalize, energy gain, clip amplitudes superposition, shade amplitudes and filters (low pass/high pass);
  - Editing: first-break picking with real time travel-time curve observation and aparent velocity observation.
+
+- Sisref:
+  - Apply the time-term inversion method; -*under development*-
+
+- Sisconv:
+  - Convert SEG2 files to SEGY.
  
 Running the program on Windows:
 
