@@ -122,11 +122,11 @@ class Sispick(Tk):
     frames, figs, axes, telas, listSource, sts, ticksLabel, toolbars, dadosNorms, dadosCrus, \
     ganho, filtros,filtrosHP, filtrosLP, copiasCruas, copiasNorms, okpicks, clips, \
     sombreamentos, picks, picksArts, coordx, coordy, conPickClick, conPickMov, conPickSoltar, \
-    conVelClick, conVelMov, conVelSoltar, conAmostra, ndados, tracosMax, linhasPick, freqLP, \
+    conVelClick, conVelMov, conVelSoltar, conAmostra, ndados, linhasPick, freqLP, \
     freqHP = [],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[], \
-    [],[],[],[],[],[],[],[],[]
+    [],[],[],[],[],[],[],[]
     sublinhas, bolas, indicadores, plotArts, sombArts, coordsx, coordsy, linhasVel, \
-    textoVel = {},{},{},{},{},{}, {}, {}, {}
+    textoVel, tracosMax = {},{},{},{},{},{}, {}, {}, {}, {}
     plotExiste, pickMode, yinvertido, normalizado, optAberto, pickAmostraAtivado, clickOn, \
     pickVelOn = False,False,False,False,False,False,False,False
     arquivos, formato, posicaoGeof1, eventCon, pagina, recordlen, valordx, linhaVel, linhaPick, \
@@ -486,104 +486,104 @@ class Sispick(Tk):
 
                 self.status.configure(text=' Abrindo %d arquivo(os). Aguarde...'%len(self.arquivos))
 
-                try:
+               # try:
                 
-                    for i in range(len(self.arquivos)):
+                for i in range(len(self.arquivos)):
 
-                        self.sts.append(read(self.arquivos[i]))
-                        self.ndados.append(len(self.sts[i][0]))
+                    self.sts.append(read(self.arquivos[i]))
+                    self.ndados.append(len(self.sts[i][0]))
 
-                        if self.sts[i][0].stats._format == 'SEG2':
+                    if self.sts[i][0].stats._format == 'SEG2':
 
-                            self.formato = 'seg2'
+                        self.formato = 'seg2'
 
-                        elif self.sts[i][0].stats._format == 'SEGY':
+                    elif self.sts[i][0].stats._format == 'SEGY':
 
-                            self.formato = 'segy'
+                        self.formato = 'segy'
 
-                        else:
+                    else:
 
-                            messagebox.showerror('Geosis - Sispick', 'Formato invalido. Mais informaçoes em Ajuda > Erros')
-                            break
+                        messagebox.showerror('Geosis - Sispick', 'Formato invalido. Mais informaçoes em Ajuda > Erros')
+                        break
 
-                        if self.formato == 'seg2':
+                    if self.formato == 'seg2':
 
-                            try:
-                                
-                                self.listSource.append(self.sts[i][0].stats.seg2['SOURCE_LOCATION'])
-
-                            except:
-
-                                messagebox.showinfo('Geosis - Sispick','Posição(ões) de fonte(s) não encontrada(as) no(s) cabeçalho(s).\nPara adicionar vá em Opções > Editar cabeçalho')
-                                self.listSource.append(999)
-
-                        elif self.formato == 'segy':
-
-                            try:
-                                
-                                self.listSource.append(self.sts[i][0].stats.segy['SOURCE_LOCATION'])
-
-                            except:
-
-                                messagebox.showinfo('Geosis - Sispick','Posição(ões) de fonte(s) não encontrada(as) no(s) cabeçalho(s).\nPara adicionar vá em Opções > Editar cabeçalho')
-                                self.listSource.append(999)
-
-                        if self.formato == 'seg2':
-
-                            try:
-
-                                self.posicaoGeof1 = float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])
-
-                            except:
-
-                                self.posicaoGeof1 = 0
-                                messagebox.showinfo('Geosis - Sispick', 'Posiçao do primeiro geofone nao encontrada. Sera utilizado 0 m.\nPara alterar va em Opçoes > Editar cabeçalho')
-
-                        elif self.formato == 'segy':
-
-                            try:
-
-                                self.posicaoGeof1 = float(self.sts[i][0].stats.segy['RECEIVER_LOCATION'])
-
-                            except:
-
-                                self.posicaoGeof1 = 0
-                                messagebox.showinfo('Geosis - Sispick', 'Posiçao do primeiro geofone nao encontrada. Sera utilizado 0 m.\nPara alterar va em Opçoes > Editar cabeçalho')
-
-
-                        if self.formato == 'seg2':
+                        try:
                             
-                            try:
-                                
-                                self.valordx = float(self.sts[0][1].stats.seg2['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.seg2['RECEIVER_LOCATION'])
+                            self.listSource.append(self.sts[i][0].stats.seg2['SOURCE_LOCATION'])
 
-                            except:
-                                
-                                self.configDx()
+                        except:
 
-                        elif self.formato == 'segy':
+                            messagebox.showinfo('Geosis - Sispick','Posição(ões) de fonte(s) não encontrada(as) no(s) cabeçalho(s).\nPara adicionar vá em Opções > Editar cabeçalho')
+                            self.listSource.append(999)
+
+                    elif self.formato == 'segy':
+
+                        try:
                             
-                            try:
-                                
-                                self.valordx = float(self.sts[0][1].stats.segy['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.segy['RECEIVER_LOCATION'])
+                            self.listSource.append(self.sts[i][0].stats.segy['SOURCE_LOCATION'])
 
-                            except:
-                                
-                                self.configDx()
+                        except:
 
-                    if self.ndados[0] > 10000:
+                            messagebox.showinfo('Geosis - Sispick','Posição(ões) de fonte(s) não encontrada(as) no(s) cabeçalho(s).\nPara adicionar vá em Opções > Editar cabeçalho')
+                            self.listSource.append(999)
 
-                        messagebox.showinfo('Geosis - Sispick','Para acelerar o processamento utilize o cortador de amostras em Editar > Cortas amostras')
+                    if self.formato == 'seg2':
 
-                    self.abrir_pt2()
+                        try:
 
-                except:
+                            self.posicaoGeof1 = float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])
 
-                    messagebox.showerror('Geosis - Sispick','Erro na leitura do arquivo. Informações em Ajuda > Erros')
-                    self.status.configure(text='')
-                    del self.sts[:]
-                    del self.ndados[:]
-                    self.arquivos = None
+                        except:
+
+                            self.posicaoGeof1 = 0
+                            messagebox.showinfo('Geosis - Sispick', 'Posiçao do primeiro geofone nao encontrada. Sera utilizado 0 m.\nPara alterar va em Opçoes > Editar cabeçalho')
+
+                    elif self.formato == 'segy':
+
+                        try:
+
+                            self.posicaoGeof1 = float(self.sts[i][0].stats.segy['RECEIVER_LOCATION'])
+
+                        except:
+
+                            self.posicaoGeof1 = 0
+                            messagebox.showinfo('Geosis - Sispick', 'Posiçao do primeiro geofone nao encontrada. Sera utilizado 0 m.\nPara alterar va em Opçoes > Editar cabeçalho')
+
+
+                    if self.formato == 'seg2':
+                        
+                        try:
+                            
+                            self.valordx = float(self.sts[0][1].stats.seg2['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.seg2['RECEIVER_LOCATION'])
+
+                        except:
+                            
+                            self.configDx()
+
+                    elif self.formato == 'segy':
+                        
+                        try:
+                            
+                            self.valordx = float(self.sts[0][1].stats.segy['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.segy['RECEIVER_LOCATION'])
+
+                        except:
+                            
+                            self.configDx()
+
+                if self.ndados[0] > 10000:
+
+                    messagebox.showinfo('Geosis - Sispick','Para acelerar o processamento utilize o cortador de amostras em Editar > Cortas amostras')
+
+                self.abrir_pt2()
+
+               # except:
+
+                 #   messagebox.showerror('Geosis - Sispick','Erro na leitura do arquivo. Informações em Ajuda > Erros')
+                   # self.status.configure(text='')
+                  #  del self.sts[:]
+                  #  del self.ndados[:]
+                  #  self.arquivos = None
 
         else:
         
@@ -597,7 +597,6 @@ class Sispick(Tk):
             frame.grid(row=1, column=0,sticky='nsew')
             self.frames.append(frame)
             fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
-            print(self.valorFigy)
             self.figs.append(fig)
             ax = self.figs[i].add_subplot(111)
             self.axes.append(ax)
@@ -607,7 +606,6 @@ class Sispick(Tk):
             self.sombArts[i] = []
             self.picks.append({})
             self.picksArts.append({})
-            self.tracosMax.append({})
             self.coordsx[i] = []
             self.coordsy[i] = []
             self.linhasVel[i] = []
@@ -641,15 +639,12 @@ class Sispick(Tk):
             self.freqHP.append(5)
             self.filtrosLP.append(False)
             self.filtrosHP.append(False)
-
-            for j in range(self.canais):
-
-                self.tracosMax[i][max(self.sts[i][j].data*(-1))] = j
+            self.tracosMax[i] = [max(self.sts[i][j]) for j in range(self.canais)]
             
             for j in range(self.canais):
 
                 self.dadosCrus[i][j] = self.sts[i][j].data/max(self.tracosMax[i])
-                self.dadosNorms[i][j] = self.sts[i][j].data/self.sts[i][j].data.max()
+                self.dadosNorms[i][j] = self.sts[i][j].data/max(self.sts[i][j].data)
                 self.okpicks.append(self.posicaoGeof1+self.valordx*j)
                 self.ticksLabel.append(str(int(j*self.valordx)))
                 traco, = self.axes[i].plot(self.dadosCrus[i][j][0:self.ndados[i]]*(-1)+self.posicaoGeof1+self.valordx*j,
@@ -1102,7 +1097,7 @@ class Sispick(Tk):
                     self.ticksLabel[:],self.toolbars[:],self.dadosCrus[:],self.dadosNorms[:],self.ganho[:], \
                     self.filtros[:],self.filtrosHP[:],self.filtrosLP[:],self.copiasCruas[:],self.copiasNorms[:], \
                     self.okpicks[:],self.clips[:],self.sombreamentos[:],self.picks[:],self.picksArts[:],self.ndados[:], \
-                    self.tracosMax[:],self.freqLP[:],self.freqHP[:],self.coordx[:],self.coordy[:],self.conPickClick[:], \
+                    self.freqLP[:],self.freqHP[:],self.coordx[:],self.coordy[:],self.conPickClick[:], \
                     self.conPickMov[:],self.conPickSoltar[:],self.conVelClick[:],self.conVelMov[:],self.conVelSoltar[:], \
                     self.conAmostra[:]
                 
@@ -1115,6 +1110,7 @@ class Sispick(Tk):
                 self.coordsy.clear()
                 self.linhasVel.clear()
                 self.textoVel.clear()
+                self.tracosMax.clear()
                 self.plotExiste, self.pickMode, self.yinvertido, self.normalizado, self.optAberto, self.pickAmostraAtivado, \
                 self.clickOn,self.pickVelOn = False,False,False,False,False,False,False,False
                 self.arquivos, self.formato, self.posicaoGeof1, self.eventCon, self.pagina, self.recordlen, self.valordx, self.linhaVel, \
