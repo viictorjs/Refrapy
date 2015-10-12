@@ -2401,6 +2401,10 @@ class sisref(Tk):
         self.linhasVel = []
         self.textosVel = []
         self.conexoes = []
+        self.dCamada1 = None
+        self.GCamada1 = None
+        self.dCamada2 = None
+        self.GCamada2 = None
         self.nlinhas = 0
         self.count = 1
         self.count2 = 0
@@ -2845,8 +2849,8 @@ class sisref(Tk):
 
                             if float(event.artist.get_offsets()[0][0]) < float(self.especiais[linha]):
 
-                                self.xDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][0]))
-                                self.yDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][1]))
+                                #self.xDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][0]))
+                                #self.yDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][1]))
 
                                 for bola in self.bolas[linha]:
 
@@ -2880,8 +2884,8 @@ class sisref(Tk):
                                 
                             elif float(event.artist.get_offsets()[0][0]) > float(self.especiais[linha]):
 
-                                self.xDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][0]))
-                                self.yDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][1]))
+                               # self.xDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][0]))
+                                #self.yDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][1]))
                                        
                                 for bola in self.bolas[linha]:
 
@@ -2915,8 +2919,8 @@ class sisref(Tk):
                                     
                         else:
 
-                            self.xDataCamada1[linha].append(float(event.artist.get_offsets()[0][0]))
-                            self.yDataCamada1[linha].append(float(event.artist.get_offsets()[0][1]))
+                            #self.xDataCamada1[linha].append(float(event.artist.get_offsets()[0][0]))
+                            #self.yDataCamada1[linha].append(float(event.artist.get_offsets()[0][1]))
                                    
                             for bola in self.bolas[linha]:
                             
@@ -2956,45 +2960,127 @@ class sisref(Tk):
 
     def velocidades(self):
 
-        if len(self.retas) > 0:
+        if self.curvaExiste == True:
 
-            self.retas.clear()
-            self.retas2.clear()
-            del self.vels[:]
-            del self.vels2[:]
+            soma = 0
+            soma2 = 0
+            dadosd = []
+            dadosG = []
+            dadosd2 = []
+            dadosG2 = []
+            temp = []
 
-        for j,k,l,m in zip(self.xDataCamada1.values(),self.yDataCamada1.values(),self.xDataCamada2.values(),self.yDataCamada2.values()):
+            for i in self.xDataCamada1[1]:
 
-            if type(j) == dict:
+                temp.append(i)
 
-                self.retas.update({str(j[1]):k[1]})
-                self.retas.update({str(j[2]):k[2]})
-                self.retas2.update({str(l[1]):m[1]})
-                self.retas2.update({str(l[2]):m[2]})
+            for i in self.xDataCamada2[1]:
+                 
+                temp.append(i)
 
-            else:
+            for i in range(self.nlinhas):
 
-                self.retas.update({str(j):k})
-                self.retas2.update({str(l):m})
+                if type(self.yDataCamada1[i+1]) == dict:
 
-        for i,j in zip(self.retas,self.retas.values()):
+                    soma += len(self.yDataCamada1[i+1][1])
+                    soma += len(self.yDataCamada1[i+1][2])
+                    soma2 += len(self.yDataCamada2[i+1][1])
+                    soma2 += len(self.yDataCamada2[i+1][2])
 
-            slope, intercept, r_value, p_value, std_err = stats.linregress(ast.literal_eval(i),j)
-            self.vels.append(abs(1/slope))
+                    for j in self.xDataCamada1[i+1][1]:
 
-        for k,l in zip(self.retas2,self.retas2.values()):
+                        dadosG.append(abs(self.fontes[i+1]-j))
 
-            slope, intercept, r_value, p_value, std_err = stats.linregress(ast.literal_eval(k),l)
-            self.vels2.append(abs(1/slope))
-            print(k)
-            print(l)
-            print(abs(1/slope))
+                    for j in self.xDataCamada1[i+1][2]:
 
-        print(self.vels)
-        print(self.vels2)
-        vmed1 = sum(self.vels)/len(self.vels)
-        vmed2 = sum(self.vels2)/len(self.vels2)
-        messagebox.showinfo('','Velocidades médias: camada 1 = %.2f m/s, camada 2 = %.2f m/s'%(vmed1,vmed2))
+                        dadosG.append(abs(self.fontes[i+1]-j))
+
+                    for j in self.xDataCamada2[i+1][1]:
+
+                        dadosG2.append(abs(self.fontes[i+1]-j))
+
+                    for j in self.xDataCamada2[i+1][2]:
+
+                        dadosG2.append(abs(self.fontes[i+1]-j))
+
+                    for j in self.yDataCamada1[i+1][1]:
+
+                        dadosd.append(j)
+
+                    for j in self.yDataCamada1[i+1][2]:
+                        
+                        dadosd.append(j)
+
+                    for j in self.yDataCamada2[i+1][1]:
+                        
+                        dadosd2.append(j)
+
+                    for j in self.yDataCamada2[i+1][2]:
+                        
+                        dadosd2.append(j)
+                    
+                else:
+                    
+                    soma += len(self.yDataCamada1[i+1])
+                    soma2 += len(self.yDataCamada2[i+1])
+                
+                    for j in self.xDataCamada1[i+1]:
+
+                        dadosG.append(abs(self.fontes[i+1]-j))
+
+                    for j in self.xDataCamada2[i+1]:
+
+                        dadosG2.append(abs(self.fontes[i+1]-j))
+
+                    for j in self.yDataCamada1[i+1]:
+                        
+                        dadosd.append(j)
+
+                    for j in self.yDataCamada2[i+1]:
+                        
+                        dadosd2.append(j)
+
+            self.dCamada1 = np.array(dadosd)
+            self.GCamada1 = np.zeros((soma,1))
+
+            for i in range(soma):
+
+                self.GCamada1[i] = dadosG[i]
+
+            self.dCamada2 = np.array(dadosd2)
+            self.GCamada2 = np.zeros((soma2, len(self.fontes)+len(self.xData[1])+1))
+            count = -1
+
+            for i in range(self.nlinhas):
+
+                if type(self.xDataCamada2[i+1]) != dict:
+                
+                    for j in range(len(self.xDataCamada2[i+1])):
+
+                        count += 1
+                        self.GCamada2[count][i] = 1
+                        self.GCamada2[count][-1] = dadosG2[count]
+                        self.GCamada2[count][temp.index(abs(dadosG2[count]-abs(self.fontes[i+1])))+len(self.fontes)] = 1
+
+                else:
+
+                    for j in range(len(self.xDataCamada2[i+1][1])):
+
+                        count += 1
+                        self.GCamada2[count][i] = 1
+                        self.GCamada2[count][-1] = dadosG2[count]
+                        self.GCamada2[count][temp.index(abs(dadosG2[count]-abs(self.fontes[i+1])))+len(self.fontes)] = 1
+
+                    for j in range(len(self.xDataCamada2[i+1][2])):
+
+                        count += 1
+                        self.GCamada2[count][i] = 1
+                        self.GCamada2[count][-1] = dadosG2[count]
+                        self.GCamada2[count][temp.index(abs(dadosG2[count]+abs(self.fontes[i+1])))+len(self.fontes)] = 1
+                    
+            m1 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(self.GCamada1),self.GCamada1)),np.transpose(self.GCamada1)),self.dCamada1)
+            m2 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(self.GCamada2),self.GCamada2)),np.transpose(self.GCamada2)),self.dCamada2)
+            messagebox.showinfo('','Velocidades médias: camada 1 = %.2f km/s, camada 2 = %.2f km/s'%(1/m1[-1],1/m2[-1]))
 
 class Siscon(Tk):
     
