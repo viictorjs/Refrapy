@@ -1,11 +1,3 @@
-'''
-
-    GEOSIS v1.0
-    AUTOR: VICTOR JOSÉ C. B. GUEDES
-    E-MAIL: vjs279@hotmail.com
-    GEOFÍSICA - UNIVERSIDADE DE BRASILIA
-
-                                        '''
 
 from tkinter import * 
 from tkinter import filedialog, messagebox
@@ -22,6 +14,8 @@ import sys
 import ast
 import warnings
 import platform
+from scipy.interpolate import spline
+
 
 warnings.filterwarnings('ignore')       
 
@@ -2687,7 +2681,6 @@ class sisref(Tk):
             del self.linhasVel[:]
             del self.textosVel[:]
     
-    #
     def onoffcheck(self):
 
         if self.editorOn == True and self.layerPick == True:
@@ -2788,19 +2781,16 @@ class sisref(Tk):
 
                             if float(j.get_offsets()[0][0]) < float(self.especiais[i+1]):
 
-                                #self.camadas[j] = 1
                                 self.xDataCamada1[i+1][1].append(float(j.get_offsets()[0][0]))
                                 self.yDataCamada1[i+1][1].append(float(j.get_offsets()[0][1]))
 
                             else:
 
-                                #self.camadas[j] = 1
                                 self.xDataCamada1[i+1][2].append(float(j.get_offsets()[0][0]))
                                 self.yDataCamada1[i+1][2].append(float(j.get_offsets()[0][1]))
 
                         else:
 
-                            #self.camadas[j] = 1
                             self.xDataCamada1[i+1].append(float(j.get_offsets()[0][0]))
                             self.yDataCamada1[i+1].append(float(j.get_offsets()[0][1]))
 
@@ -2849,9 +2839,6 @@ class sisref(Tk):
 
                             if float(event.artist.get_offsets()[0][0]) < float(self.especiais[linha]):
 
-                                #self.xDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][0]))
-                                #self.yDataCamada1[linha][1].append(float(event.artist.get_offsets()[0][1]))
-
                                 for bola in self.bolas[linha]:
 
                                     if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]) and float(bola.get_offsets()[0][0]) < float(self.especiais[linha]):
@@ -2883,9 +2870,6 @@ class sisref(Tk):
                                                 break
                                 
                             elif float(event.artist.get_offsets()[0][0]) > float(self.especiais[linha]):
-
-                               # self.xDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][0]))
-                                #self.yDataCamada1[linha][2].append(float(event.artist.get_offsets()[0][1]))
                                        
                                 for bola in self.bolas[linha]:
 
@@ -2918,9 +2902,6 @@ class sisref(Tk):
                                                 break
                                     
                         else:
-
-                            #self.xDataCamada1[linha].append(float(event.artist.get_offsets()[0][0]))
-                            #self.yDataCamada1[linha].append(float(event.artist.get_offsets()[0][1]))
                                    
                             for bola in self.bolas[linha]:
                             
@@ -2970,13 +2951,34 @@ class sisref(Tk):
             dadosG2 = []
             temp = []
 
-            for i in self.xDataCamada1[1]:
+            if type(self.xDataCamada1[1]) == dict:
+                
+                for i in self.xDataCamada1[1][1]:
 
-                temp.append(i)
+                    temp.append(i)
 
-            for i in self.xDataCamada2[1]:
-                 
-                temp.append(i)
+                for i in self.xDataCamada1[1][2]:
+
+                    temp.append(i)
+
+                for i in self.xDataCamada2[1][1]:
+                     
+                    temp.append(i)
+
+                for i in self.xDataCamada2[1][2]:
+                     
+                    temp.append(i)
+
+            else:
+
+                for i in self.xDataCamada1[1]:
+
+                    temp.append(i)
+
+                for i in self.xDataCamada2[1]:
+                     
+                    temp.append(i)
+                
 
             for i in range(self.nlinhas):
 
@@ -3077,10 +3079,60 @@ class sisref(Tk):
                         self.GCamada2[count][i] = 1
                         self.GCamada2[count][-1] = dadosG2[count]
                         self.GCamada2[count][temp.index(abs(dadosG2[count]+abs(self.fontes[i+1])))+len(self.fontes)] = 1
+
+            count = 0
+            smooth = np.zeros((len(self.fontes)+len(self.xData[1]),len(self.fontes)+len(self.xData[1])+1))
+
+            for i in range(len(self.fontes)+len(self.xData[1])):
+                    
+                smooth[count][count] = 0.15
+                smooth[count][count+1] = -0.15
+                count+=1
+            
+            smooth_G2 = np.concatenate((self.GCamada2,smooth))
+            smooth_d2 =  np.hstack((self.dCamada2,[i*0 for i in range(len(self.fontes)+len(self.xData[1]))]))
                     
             m1 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(self.GCamada1),self.GCamada1)),np.transpose(self.GCamada1)),self.dCamada1)
-            m2 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(self.GCamada2),self.GCamada2)),np.transpose(self.GCamada2)),self.dCamada2)
+            #m2 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(self.GCamada2),self.GCamada2)),np.transpose(self.GCamada2)),self.dCamada2)
+            m2 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(smooth_G2),smooth_G2)),np.transpose(smooth_G2)),smooth_d2)
+            
             messagebox.showinfo('','Velocidades médias: camada 1 = %.2f km/s, camada 2 = %.2f km/s'%(1/m1[-1],1/m2[-1]))
+            xnew = np.linspace(0, 10, num=41, endpoint=True)
+
+            frame2 = Frame(self)
+            frame2.grid(row = 1, column = 1)
+            fig2 = plt.figure(figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
+
+            ax2 = fig2.add_subplot(111)
+
+            x_smooth = np.linspace(np.array(temp).min(),np.array(temp).max(), 30)
+            y_smooth = spline(np.array(temp),-1*(m2[len(self.fontes):-1]*(1/m1[-1])*(1/m2[-1]))/np.sqrt(((1/m2[-1])**2)-(1/m1[-1])**2), x_smooth)
+            
+            l, = ax2.plot(x_smooth,y_smooth, linewidth = 2, linestyle ='--', color='black')
+            ax2.set_ylabel('Elevação (m)')
+            ax2.set_xlabel('Distância (m)')
+            ax2.set_xlim(temp[0],temp[-1])
+            ax2.set_ylim(min(l.get_ydata())*2,2)
+            ax2.fill_between(x_smooth, y_smooth, 0, color = '#FF00C8')
+            ax2.fill_between(x_smooth, y_smooth, min(l.get_ydata())-2, color = 'blue')
+            ax2.text(temp[int(len(temp)/2)], -1, '%.1f km/s'%(round(1/m1[-1],1)), fontsize=18)
+            ax2.text(temp[int(len(temp)/2)], min(l.get_ydata())-1, '%.1f km/s'%(round(1/m2[-1],1)), fontsize=18)
+
+            print(m2)
+            #f = open('matriz.txt','w')
+           # for i in smooth_G2:
+                
+              #  f.write(str(i).strip('[]')+'\n')
+                
+           # print(-1*(m2[len(self.fontes):-1]*(1/m1[-1])*(1/m2[-1]))/np.sqrt(((1/m2[-1])**2)-(1/m1[-1])**2))
+
+            tela2 = FigureCanvasTkAgg(fig2, frame2)
+            tela2.show()
+            tela2.get_tk_widget().pack(fill='both', expand=True)
+            toolbar2 = NavigationToolbar2TkAgg(tela2, frame2)
+            toolbar2.update()
+            tela2._tkcanvas.pack(fill='both', expand=True)
+            
 
 class Siscon(Tk):
     
