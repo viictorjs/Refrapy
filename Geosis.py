@@ -1,5 +1,5 @@
 
-from tkinter import * 
+from tkinter import *
 from tkinter import filedialog, messagebox
 from obspy import read
 import matplotlib
@@ -9,7 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.backend_bases import key_press_handler
 import os                                                                              
 import numpy as np
-from scipy import stats
+from scipy import stats,arange
 import sys
 import ast
 import warnings
@@ -764,7 +764,7 @@ class Sispick(Tk):
                             self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
                             self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
                             self.telas[self.pagina].show()
-   
+
                         for i in range(len(self.arquivos)):
 
                             if i != self.pagina:
@@ -797,7 +797,7 @@ class Sispick(Tk):
 
                     except:
 
-                        pass
+                       pass
 
                 def movimento(event):
 
@@ -826,14 +826,13 @@ class Sispick(Tk):
                             self.coordy.append(event.ydata)
                             m, b = np.polyfit([int(i) for i in self.coordx], self.coordy, 1)
                             self.linhaPick.remove()
-                            #m, b = np.polyfit([int(i) for i in self.coordx], self.coordy, 1)
                             valorMaisproximo1 = min(self.okpicks, key=lambda x: abs(self.coordx[0] - x))
                             valorMaisproximo2 = min(self.okpicks, key=lambda x: abs(self.coordx[-1] - x))
 
                             if valorMaisproximo1 < valorMaisproximo2:
                             
-                                for i in range(int(valorMaisproximo1),int(valorMaisproximo2)+int(self.valordx), int(self.valordx)):
-
+                                for i in arange(valorMaisproximo1,valorMaisproximo2+self.valordx, self.valordx):
+                        
                                     if i in self.okpicks:
 
                                         if i in self.picks[self.pagina]:
@@ -853,7 +852,8 @@ class Sispick(Tk):
 
                             else:
 
-                                for i in range(int(valorMaisproximo1),int(valorMaisproximo2)-int(self.valordx), -int(self.valordx)):
+                                for i in arange(valorMaisproximo1,valorMaisproximo2-self.valordx, -self.valordx):
+                                
 
                                     if i in self.okpicks:
 
@@ -901,7 +901,7 @@ class Sispick(Tk):
 
                             self.clickOn = False
                             self.linhaPick.remove()
-                            #self.linhaPick = None
+                            self.linhaPick = None
 
                 if self.pickVelOn == True:
 
@@ -1951,7 +1951,7 @@ class Sispick(Tk):
                         self.conferidorIndividual()
                         
                     else:
-                        
+                                               
                         for i in range(len(self.arquivos)):
                             
                             self.figs[self.pagina].canvas.mpl_disconnect(self.conAmostra[i])
@@ -1960,6 +1960,7 @@ class Sispick(Tk):
                         self.statusCortador.configure(text='',fg='blue')
                         self.pickAmostraAtivado = False
                         marcador.remove()
+                        self.figs[self.pagina].canvas.draw()
 
             if self.pickAmostraAtivado == False:
 
@@ -2354,18 +2355,32 @@ class sisref(Tk):
                                       command=self.camadas)
         menu_inversao.add_command(label='Calcular velocidades                    Ctrl+E',
                                       command=self.velocidades)
-        botao_editor = Button(parent, text='E',fg= 'black',font=("Arial", 10,'bold'),width = 3,
-                              bg = 'floral white',activeforeground='black',
-                         activebackground = 'snow', command = self.editarCurva).grid(row=0,column=2,sticky=W)
-        botao_c2 = Button(parent, text='C',fg= 'black',font=("Arial", 10,'bold'),width = 3,
-                              bg = 'red',activeforeground='white',
-                         activebackground = 'orange red', command = self.camadas).grid(row=0,column=3,sticky=W)
-        botao_v = Button(parent, text='V',fg= 'black',font=("Arial", 10,'bold'),width = 3,
-                              bg = 'dodger blue',activeforeground='white',
-                         activebackground = 'sky blue', command = self.velocidades).grid(row=0,column=4,sticky=W)
-        botao_va = Button(parent, text='VA',fg= 'black',font=("Arial", 10,'bold'),width = 3,
-                              bg = 'dodger blue',activeforeground='white',
-                         activebackground = 'sky blue', command = self.pickVA).grid(row=0,column=5,sticky=W)
+
+        Abrir = Button(parent, command = self.abrirgp)
+        img_abrir = PhotoImage(file="%s/imagens/abrir.gif"%os.getcwd())
+        Abrir.config(image=img_abrir)
+        Abrir.grid(row=0,column=0,sticky=W)
+        Salvar = Button(parent, command = self.abrirgp)
+        img_salvar = PhotoImage(file="%s/imagens/salvar.gif"%os.getcwd())
+        Salvar.config(image=img_salvar)
+        Salvar.grid(row=0,column=1,sticky=W)
+        Editor = Button(parent, command = self.editarCurva)
+        img_edit = PhotoImage(file="%s/imagens/edit.gif"%os.getcwd())
+        Editor.config(image=img_edit)
+        Editor.grid(row=0,column=2,sticky=W)
+        Camadas = Button(parent, command = self.camadas)
+        img_camadas = PhotoImage(file="%s/imagens/camadas.gif"%os.getcwd())
+        Camadas.config(image=img_camadas)
+        Camadas.grid(row=0,column=3,sticky=W)
+        VA = Button(parent, command = self.pickVA)
+        img_vel = PhotoImage(file="%s/imagens/vel.gif"%os.getcwd())
+        VA.config(image=img_vel)
+        VA.grid(row=0,column=4,sticky=W)
+        inv = Button(parent, command = self.velocidades)
+        img_inv = PhotoImage(file="%s/imagens/inv.gif"%os.getcwd())
+        inv.config(image=img_inv)
+        inv.grid(row=0,column=5,sticky=W)
+        
         self.status = Label(parent,text = '', fg='green',font=("Helvetica", 12))
         self.status.grid(row=0,column=6,sticky=E)
         self.frame = Frame(self,bg='#F3F3F3')
@@ -2384,12 +2399,7 @@ class sisref(Tk):
         self.sublinhas = {}
         self.especiais = {}
         self.cores = {}
-        self.retas = {}
-        self.retas2 = {}
         self.temp = []
-        self.temp2 = []
-        self.vels = []
-        self.vels2 = []
         self.coordx = []
         self.coordy = []
         self.linhasVel = []
@@ -2410,31 +2420,61 @@ class sisref(Tk):
         self.clickOn = False
         self.pickVelOn = False
 
-        self.valorFigx = self.winfo_screenwidth()/161
+        if platform.system() == 'Windows':
+        
+            self.valorFigx = self.winfo_screenwidth()/160
 
-        if self.winfo_screenheight() == 1080:
-            
-            self.valorFigy = self.winfo_screenheight()/93.10
+            if self.winfo_screenheight() == 1080:
+                
+                self.valorFigy = self.winfo_screenheight()/93.1
 
-        elif self.winfo_screenheight() == 768:
+            elif self.winfo_screenheight() == 768:
 
-            self.valorFigy = self.winfo_screenheight()/99.74
+                self.valorFigy = self.winfo_screenheight()/100.5
 
-        elif self.winfo_screenheight() == 1024:
+            elif self.winfo_screenheight() == 1024:
 
-            self.valorFigy = self.winfo_screenheight()/94.1
+                self.valorFigy = self.winfo_screenheight()/94.1
 
-        elif self.winfo_screenheight() == 900:
+            elif self.winfo_screenheight() == 900:
 
-            self.valorFigy = self.winfo_screenheight()/96.5
+                self.valorFigy = self.winfo_screenheight()/96.5
 
-        elif self.winfo_screenheight() == 720:
+            elif self.winfo_screenheight() == 720:
 
-            self.valorFigy = self.winfo_screenheight()/101.5
+                self.valorFigy = self.winfo_screenheight()/101.5
 
-        else: # 800
+            else: # 800
 
-            self.valorFigy = self.winfo_screenheight()/99
+                self.valorFigy = self.winfo_screenheight()/99
+
+        elif platform.system() == 'Linux':
+
+            self.valorFigx = self.winfo_screenwidth()/168
+
+            if self.winfo_screenheight() == 1080:
+                
+                self.valorFigy = self.winfo_screenheight()/93.1
+
+            elif self.winfo_screenheight() == 768:
+
+                self.valorFigy = self.winfo_screenheight()/96
+
+            elif self.winfo_screenheight() == 1024:
+
+                self.valorFigy = self.winfo_screenheight()/94.1
+
+            elif self.winfo_screenheight() == 900:
+
+                self.valorFigy = self.winfo_screenheight()/96.5
+
+            elif self.winfo_screenheight() == 720:
+
+                self.valorFigy = self.winfo_screenheight()/101.5
+
+            else: # 800
+
+                self.valorFigy = self.winfo_screenheight()/99
 
         plt.rcParams['keymap.zoom'] = 'z,Z'
         plt.rcParams['keymap.back'] = 'v,V'
@@ -3085,8 +3125,8 @@ class sisref(Tk):
 
             for i in range(len(self.fontes)+len(self.xData[1])):
                     
-                smooth[count][count] = 0.15
-                smooth[count][count+1] = -0.15
+                smooth[count][count] = 0.5
+                smooth[count][count+1] = -0.5
                 count+=1
             
             smooth_G2 = np.concatenate((self.GCamada2,smooth))
@@ -3105,10 +3145,10 @@ class sisref(Tk):
 
             ax2 = fig2.add_subplot(111)
 
-            x_smooth = np.linspace(np.array(temp).min(),np.array(temp).max(), 30)
+            x_smooth = np.linspace(np.array(temp).min(),np.array(temp).max(), 300)
             y_smooth = spline(np.array(temp),-1*(m2[len(self.fontes):-1]*(1/m1[-1])*(1/m2[-1]))/np.sqrt(((1/m2[-1])**2)-(1/m1[-1])**2), x_smooth)
             
-            l, = ax2.plot(x_smooth,y_smooth, linewidth = 2, linestyle ='--', color='black')
+            l, = ax2.plot(x_smooth,y_smooth)
             ax2.set_ylabel('Elevação (m)')
             ax2.set_xlabel('Distância (m)')
             ax2.set_xlim(temp[0],temp[-1])
@@ -3117,8 +3157,10 @@ class sisref(Tk):
             ax2.fill_between(x_smooth, y_smooth, min(l.get_ydata())-2, color = 'blue')
             ax2.text(temp[int(len(temp)/2)], -1, '%.1f km/s'%(round(1/m1[-1],1)), fontsize=18)
             ax2.text(temp[int(len(temp)/2)], min(l.get_ydata())-1, '%.1f km/s'%(round(1/m2[-1],1)), fontsize=18)
+            plt.show()
 
             print(m2)
+            print(1/m1[-1],1/m2[-1])
             #f = open('matriz.txt','w')
            # for i in smooth_G2:
                 
