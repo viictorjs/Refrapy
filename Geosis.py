@@ -2944,35 +2944,67 @@ class sisref(Tk):
                         else:
                                    
                             for bola in self.bolas[linha]:
+
+                                if self.fontes[linha] > float(event.artist.get_offsets()[0][0]):
                             
-                                if float(bola.get_offsets()[0][1]) >= float(event.artist.get_offsets()[0][1]):
+                                    if float(bola.get_offsets()[0][0]) <= float(event.artist.get_offsets()[0][0]):
 
-                                    bola.set_color('#1BB270')
-                                    self.camadas[event.artist] = 2
-                                    self.xDataCamada2[linha].append(float(bola.get_offsets()[0][0]))
-                                    self.yDataCamada2[linha].append(float(bola.get_offsets()[0][1]))
+                                        bola.set_color('#1BB270')
+                                        self.camadas[event.artist] = 2
+                                        self.xDataCamada2[linha].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada2[linha].append(float(bola.get_offsets()[0][1]))
 
-                                    for i in self.cores:
+                                        for i in self.cores:
 
-                                            if i == bola:
+                                                if i == bola:
 
-                                                self.cores[i] = '#1BB270'
-                                                break
+                                                    self.cores[i] = '#1BB270'
+                                                    break
 
-                                elif float(bola.get_offsets()[0][1]) <= float(event.artist.get_offsets()[0][1]):
+                                    elif float(bola.get_offsets()[0][0]) > float(event.artist.get_offsets()[0][0]):
 
-                                    bola.set_color('red')
-                                    self.camadas[event.artist] = 1
-                                    self.xDataCamada1[linha].append(float(bola.get_offsets()[0][0]))
-                                    self.yDataCamada1[linha].append(float(bola.get_offsets()[0][1]))
+                                        bola.set_color('red')
+                                        self.camadas[event.artist] = 1
+                                        self.xDataCamada1[linha].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada1[linha].append(float(bola.get_offsets()[0][1]))
 
-                                    for i in self.cores:
+                                        for i in self.cores:
 
-                                            if i == bola:
+                                                if i == bola:
 
-                                                self.cores[i] = 'red'
-                                                break
-                                            
+                                                    self.cores[i] = 'red'
+                                                    break
+
+                                else:
+
+                                    if float(bola.get_offsets()[0][0]) >= float(event.artist.get_offsets()[0][0]):
+
+                                        bola.set_color('#1BB270')
+                                        self.camadas[event.artist] = 2
+                                        self.xDataCamada2[linha].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada2[linha].append(float(bola.get_offsets()[0][1]))
+
+                                        for i in self.cores:
+
+                                                if i == bola:
+
+                                                    self.cores[i] = '#1BB270'
+                                                    break
+
+                                    elif float(bola.get_offsets()[0][0]) < float(event.artist.get_offsets()[0][0]):
+
+                                        bola.set_color('red')
+                                        self.camadas[event.artist] = 1
+                                        self.xDataCamada1[linha].append(float(bola.get_offsets()[0][0]))
+                                        self.yDataCamada1[linha].append(float(bola.get_offsets()[0][1]))
+
+                                        for i in self.cores:
+
+                                                if i == bola:
+
+                                                    self.cores[i] = 'red'
+                                                    break
+                                                
                         self.tela.show()
                         
                 self.conexao3 = self.fig.canvas.mpl_connect('pick_event', click2)
@@ -3125,8 +3157,8 @@ class sisref(Tk):
 
             for i in range(len(self.fontes)+len(self.xData[1])):
                     
-                smooth[count][count] = 0.5
-                smooth[count][count+1] = -0.5
+                smooth[count][count] = 0.01
+                smooth[count][count+1] = -0.01
                 count+=1
             
             smooth_G2 = np.concatenate((self.GCamada2,smooth))
@@ -3136,8 +3168,8 @@ class sisref(Tk):
             #m2 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(self.GCamada2),self.GCamada2)),np.transpose(self.GCamada2)),self.dCamada2)
             m2 = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(smooth_G2),smooth_G2)),np.transpose(smooth_G2)),smooth_d2)
             
-            messagebox.showinfo('','Velocidades médias: camada 1 = %.2f km/s, camada 2 = %.2f km/s'%(1/m1[-1],1/m2[-1]))
-            xnew = np.linspace(0, 10, num=41, endpoint=True)
+            #messagebox.showinfo('','Velocidades médias: camada 1 = %.2f km/s, camada 2 = %.2f km/s'%(1/m1[-1],1/m2[-1]))
+            #xnew = np.linspace(0, 10, num=41, endpoint=True)
 
             frame2 = Frame(self)
             frame2.grid(row = 1, column = 1)
@@ -3148,25 +3180,28 @@ class sisref(Tk):
             x_smooth = np.linspace(np.array(temp).min(),np.array(temp).max(), 300)
             y_smooth = spline(np.array(temp),-1*(m2[len(self.fontes):-1]*(1/m1[-1])*(1/m2[-1]))/np.sqrt(((1/m2[-1])**2)-(1/m1[-1])**2), x_smooth)
             
-            l, = ax2.plot(x_smooth,y_smooth)
+            ax2.plot(x_smooth[0],x_smooth[-1], color = '#FF00C8', label = str(int(round(1/m1[-1]*1000)))+' m/s',linewidth = 3)
+            l, = ax2.plot(x_smooth,y_smooth, label = str(int(round(1/m2[-1]*1000)))+' m/s', color = 'blue', linewidth = 3)
             ax2.set_ylabel('Elevação (m)')
             ax2.set_xlabel('Distância (m)')
             ax2.set_xlim(temp[0],temp[-1])
-            ax2.set_ylim(min(l.get_ydata())*2,2)
+            ax2.set_ylim(min(l.get_ydata())*3,4)
             ax2.fill_between(x_smooth, y_smooth, 0, color = '#FF00C8')
-            ax2.fill_between(x_smooth, y_smooth, min(l.get_ydata())-2, color = 'blue')
-            ax2.text(temp[int(len(temp)/2)], -1, '%.1f km/s'%(round(1/m1[-1],1)), fontsize=18)
-            ax2.text(temp[int(len(temp)/2)], min(l.get_ydata())-1, '%.1f km/s'%(round(1/m2[-1],1)), fontsize=18)
-            plt.show()
+            ax2.fill_between(x_smooth, y_smooth, min(l.get_ydata())*2, color = 'blue')
+            #ax2.text(temp[int(len(temp)/2)], -1, '%.1f km/s'%(round(1/m1[-1],1)), fontsize=18)
+            #ax2.text(temp[int(len(temp)/2)], min(l.get_ydata())-1, '%.1f km/s'%(round(1/m2[-1],1)), fontsize=18)
+            ax2.grid()
+            ax2.set_title(label='Modelo de velocidade')
+            ax2.legend(loc='best')
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.draw()
 
             print(m2)
             print(1/m1[-1],1/m2[-1])
-            #f = open('matriz.txt','w')
-           # for i in smooth_G2:
-                
-              #  f.write(str(i).strip('[]')+'\n')
-                
-           # print(-1*(m2[len(self.fontes):-1]*(1/m1[-1])*(1/m2[-1]))/np.sqrt(((1/m2[-1])**2)-(1/m1[-1])**2))
+            np.savetxt('G2.txt',smooth_G2,delimiter =' ', fmt='%.1f')
+            np.savetxt('d2.txt',smooth_d2,delimiter =' ', fmt='%.1f')
+            np.savetxt('G1.txt',self.GCamada1,delimiter =' ', fmt='%.1f')
+            np.savetxt('d1.txt',self.dCamada1,delimiter =' ', fmt='%.1f')
 
             tela2 = FigureCanvasTkAgg(fig2, frame2)
             tela2.show()
