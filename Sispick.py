@@ -655,58 +655,63 @@ class Sispick(Frame):
 
                     try:
 
-                        self.coordx.append(event.xdata)
-                        self.coordy.append(event.ydata)
-                        self.linhaPick, = self.axes[self.pagina].plot(self.coordx,self.coordy,color='red')
-                        self.clickOn = True
-                        nearestMagnetValue = min(self.okpicks, key=lambda x: abs(event.xdata - x))
-                        
-                        if nearestMagnetValue in self.picks[self.pagina]:
+                        if event.button == 1:
 
-                            self.picks[self.pagina][nearestMagnetValue] = event.ydata
-                            self.picksArts[self.pagina][nearestMagnetValue].remove()
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
-                            self.picksArts[self.pagina][nearestMagnetValue] = pickline
-                            self.telas[self.pagina].show()
-                                    
-                        else:
+                            nearestMagnetValue = min(self.okpicks, key=lambda x: abs(event.xdata - x))
                             
-                            pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
-                                                                nearestMagnetValue+1,colors='r',linestyle='solid')
-                            self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
-                            self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
-                            self.telas[self.pagina].show()
+                            if nearestMagnetValue in self.picks[self.pagina]:
 
-                        for i in range(len(self.arquivos)):
-
-                            if i != self.pagina:
-
-                                if self.sublinhas[i][self.pagina] == None:
+                                self.picks[self.pagina][nearestMagnetValue] = event.ydata
+                                self.picksArts[self.pagina][nearestMagnetValue].remove()
+                                pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                    nearestMagnetValue+1,colors='r',linestyle='solid')
+                                self.picksArts[self.pagina][nearestMagnetValue] = pickline
+                                self.telas[self.pagina].show()
+                                        
+                            else:
                                 
-                                    sublinha, = self.axes[i].plot([key for key in sorted(self.picks[self.pagina])],
-                                            [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])], color = 'green')
-                                    self.sublinhas[i][self.pagina] = sublinha
+                                pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                    nearestMagnetValue+1,colors='r',linestyle='solid')
+                                self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
+                                self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
+                                self.telas[self.pagina].show()
 
-                                else:
+                            for i in range(len(self.arquivos)):
+
+                                if i != self.pagina:
+
+                                    if self.sublinhas[i][self.pagina] == None:
                                     
-                                    self.sublinhas[i][self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
-                                            [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
-                                    
-                        if self.indicadores[self.pagina]:
+                                        sublinha, = self.axes[i].plot([key for key in sorted(self.picks[self.pagina])],
+                                                [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])], color = 'green')
+                                        self.sublinhas[i][self.pagina] = sublinha
 
-                            for i in self.indicadores[self.pagina]:
+                                    else:
+                                        
+                                        self.sublinhas[i][self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
+                                                [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
+                                        
+                            if self.indicadores[self.pagina]:
 
-                                if float(i.get_offsets()[0][0]) == nearestMagnetValue:
-                                    
-                                    i.remove()
-                                    self.telas[self.pagina].show()
+                                for i in self.indicadores[self.pagina]:
 
-                        if self.linhasPick[self.pagina] != None and bool(self.picks[self.pagina]) == True:
+                                    if float(i.get_offsets()[0][0]) == nearestMagnetValue:
+                                        
+                                        i.remove()
+                                        self.telas[self.pagina].show()
+                                        
+                        elif event.button == 3:
 
-                            self.linhasPick[self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
-                                    [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
-                            self.telas[self.pagina].show()
+                            self.coordx.append(event.xdata)
+                            self.coordy.append(event.ydata)
+                            self.linhaPick, = self.axes[self.pagina].plot(self.coordx,self.coordy,color='red')
+                            self.clickOn = True
+
+                            if self.linhasPick[self.pagina] != None and bool(self.picks[self.pagina]) == True:
+
+                                self.linhasPick[self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
+                                        [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
+                                self.telas[self.pagina].show()
 
                     except:
 
