@@ -1,5 +1,5 @@
-# Geosis
-Geosis is a Python application with a graphic interface for seismic refraction data processing tested on Windows and Linux. It is based on 3 modules: Sispick, Sisref and Sisconv.
+# Refrapy
+Refrapy is a Python 3 application with a graphic interface for seismic refraction data processing tested on Windows and Linux. It is based on 3 modules: Sispick, Sisref and Siscon.
 
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
 
@@ -12,7 +12,7 @@ Author: Victor Guedes, e-mail: vjs279@hotmail.com
 Running the program on Windows:
 
  - Download and install a Python 3 interpreter from the official website (https://www.python.org/).
-    - Recommended: Python 3.4.3
+    - Recommended and tested only in Python 3.4
     - Note: check for system compatibility (32 or 64 bits).
     
  - The developer offers a Python 3 program to make it easier and faster to install all the necessary packages on the following website: https://github.com/viictorjs/Geosis-easy-packages-installer-Windows-. By using this method you will not be getting the lastest versions of each package. If you wish to have those you need to install the packages manually (requires internet connection).
