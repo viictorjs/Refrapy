@@ -15,7 +15,7 @@ Running the program on Windows:
     - Recommended and tested only in Python 3.4
     - Note: check for system compatibility (32 or 64 bits).
     
- - The developer offers a Python 3 program to make it easier and faster to install all the necessary packages on the following website: https://github.com/viictorjs/Geosis-easy-packages-installer-Windows-. By using this method you will not be getting the lastest versions of each package. If you wish to have those you need to install the packages manually (requires internet connection).
+ - The developer offers a Python 3 program to make it easier and faster to install all the necessary packages on the following website: https://github.com/viictorjs/Refrapy-easy-packages-installer-Windows-. By using this method you will not be getting the lastest versions of each package. If you wish to have those you need to install the packages manually (requires internet connection).
  
  - The fastest way to install the necessary packages yourself is by using the Python Package Index. On your command prompt run:
    ```
@@ -25,4 +25,4 @@ Running the program on Windows:
    C:\Python34\Scripts\pip.exe install obspy
    ```
     
-- Once you have all the necessarty packages installed, extract the Geosis.py file and the 'imagens' folder to a directory on your computer then double-click Geosis.py to run the program.
+- Once you have all the necessarty packages installed, extract the Launcher.py file and the 'imagens' folder to a directory on your computer then double-click Launcher.py to run the program.
