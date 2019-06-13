@@ -5,7 +5,7 @@ Author: Victor Guedes, e-mail: vjs279@hotmail.com
 
 - Sispick is a module to process seismic sections. It offers a wide set of tools for trace processing, such as: normalize traces against each traces maximum for a better view on lower amplitudes, apply a gain factor on amplitudes, cut superposition of amplitudes, shade positive/negative sides of amplitudes, low pass/high pass filters, first break pricking and others.
 
-- Sisref is the interpretation module. It offers the application of the time-terms method to create a velocity model of the refractor layer.
+- Sisref is the interpretation module. It offers the application of the time-terms inversion method to create a velocity model up to two layers.
   
 - Sisconv is an individual module which convert SEG2 files into SEGY (header info might be lost).
  
