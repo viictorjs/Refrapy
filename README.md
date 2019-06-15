@@ -1,6 +1,8 @@
 # Refrapy
 Refrapy is a Python 3 application with a graphic interface for seismic refraction data processing tested on Windows and Linux. It is based on 3 modules: Sispick, Sisref and Siscon.
 
+[![Everything Is AWESOME](http://i.imgur.com/Ot5DWAW.png)](https://youtu.be/StTqXEQ2l-Y?t=35s "Everything Is AWESOME")
+
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
 
 - Sispick is a module to process seismic sections. It offers a wide set of tools for trace processing, such as: normalize traces against each traces maximum for a better view on lower amplitudes, apply a gain factor on amplitudes, cut superposition of amplitudes, shade positive/negative sides of amplitudes, low pass/high pass filters, first break pricking and others.
