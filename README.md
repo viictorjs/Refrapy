@@ -7,7 +7,7 @@ If you want a quick tutorial on how to run a time-terms inversion and create a v
    
 If you are having trouble installing all the resources needed to run Refrapy, you can **check the video below about how to run Refrapy on Windows**:
 
-   [![How to run Refrapy on Windows: installing Python and Obspy](https://i.imgur.com/l12FPAN.png)](https://youtu.be/uPeoCkH2ogQ "How to run Refrapy on Windows: installing Python and Obspy")
+   [![How to run Refrapy on Windows: installing Python and Obspy](https://i.imgur.com/8qX8YrM.png)](https://youtu.be/uPeoCkH2ogQ "How to run Refrapy on Windows: installing Python and Obspy")
 
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
 
