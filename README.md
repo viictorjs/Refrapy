@@ -1,9 +1,13 @@
 # Refrapy
 Refrapy is a Python 3 application with a graphic interface for seismic refraction data processing tested on Windows and Linux. It is based on 3 modules: Sispick, Sisref and Siscon.
 
-If you want a quick tutorial on how to run a time-terms inversion and create a velocity model, by processing seismic refraction sections, check the video below:
+If you want a quick tutorial on how to run a time-terms inversion and create a velocity model, by processing seismic refraction sections, **check the video below about how to use Refrapy**:
 
    [![How to use Refrapy - A Python program for seismic refraction data analysis](https://i.imgur.com/50Rbvdh.png)](https://www.youtube.com/watch?v=6bXnMYBM-DU&feature=youtu.be "How to use Refrapy - A Python program for seismic refraction data analysis")
+   
+If you are having trouble installing all the resources needed to run Refrapy, you can **check the video below about how to run Refrapy on Windows**:
+
+   [![How to run Refrapy on Windows: installing Python and Obspy](https://i.imgur.com/l12FPAN.png)](https://youtu.be/uPeoCkH2ogQ "How to run Refrapy on Windows: installing Python and Obspy")
 
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
 
