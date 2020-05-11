@@ -2,9 +2,9 @@ from tkinter import *
 from tkinter import filedialog, messagebox
 from obspy import read
 import matplotlib
-#matplotlib.use('TkAgg')                                                                  
+matplotlib.use('TkAgg')                                                                  
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backend_bases import key_press_handler
 import os                                                                              
 import numpy as np
@@ -400,7 +400,7 @@ class Sispick(Frame):
                     
             self.arquivos = sorted(filedialog.askopenfilenames(title='Abrir',
                                                                filetypes=[('seg2','*.dat'),
-                                                                ('SG2','*.sg2'),('segy','*.sgy')]))
+                                                                ('seg2','*.DAT'),('segy','*.sgy')]))
 
             if len(self.arquivos) > 0:
 
@@ -467,8 +467,8 @@ class Sispick(Frame):
 
                         try:
                             
-                            #self.valordx = float(self.sts[0][1].stats.segy['RECEIVER_LOCATION'][0])-float(self.sts[0][0].stats.segy['RECEIVER_LOCATION'][0])
-                            self.valordx = 0.63
+                            #self.valordx = float(self.sts[0][1].stats.segy['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.segy['RECEIVER_LOCATION'])
+                            self.valordx = 2
                         except:
                             
                             self.configDx()
@@ -503,8 +503,7 @@ class Sispick(Frame):
             frame = Frame(root,bg='#F3F3F3')
             frame.grid(row=1, column=0, sticky = NSEW)
             self.frames.append(frame)
-            fig = plt.figure(i,figsize=(19.35,9.35),facecolor='#F3F3F3')
-            fig.tight_layout()
+            fig = plt.figure(i,figsize=(self.valorFigx,self.valorFigy),facecolor='#F3F3F3')
             self.figs.append(fig)
             ax = self.figs[i].add_subplot(111)
             self.axes.append(ax)
@@ -568,9 +567,9 @@ class Sispick(Frame):
             #plt.xticks(int(self.ticksLabel),self.ticksLabel)     
             tela = FigureCanvasTkAgg(self.figs[i], self.frames[i])
             self.telas.append(tela)
-            self.telas[i].draw()
+            self.telas[i].show()
             self.telas[i].get_tk_widget().pack(fill='both', expand=True)
-            toolbar = NavigationToolbar2Tk(self.telas[i], self.frames[i])
+            toolbar = NavigationToolbar2TkAgg(self.telas[i], self.frames[i])
             self.toolbars.append(toolbar)
             self.toolbars[i].update()
             self.telas[i]._tkcanvas.pack(fill='both', expand=True)
@@ -600,7 +599,7 @@ class Sispick(Frame):
             frame = self.frames[self.pagina+1]
             frame.tkraise()
             self.pagina += 1
-            self.telas[self.pagina].draw()
+            self.telas[self.pagina].show()
 
             if self.filtrosHP[self.pagina] == True:
                 
@@ -625,7 +624,7 @@ class Sispick(Frame):
             frame = self.frames[self.pagina-1] 
             frame.tkraise()
             self.pagina -= 1
-            self.telas[self.pagina].draw()
+            self.telas[self.pagina].show()
 
             if self.filtrosHP[self.pagina] == True:
                 
@@ -664,18 +663,18 @@ class Sispick(Frame):
 
                                 self.picks[self.pagina][nearestMagnetValue] = event.ydata
                                 self.picksArts[self.pagina][nearestMagnetValue].remove()
-                                pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-(self.valordx*0.5),
-                                                                    nearestMagnetValue+(self.valordx*0.5),colors='r',linestyle='solid')
+                                pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                    nearestMagnetValue+1,colors='r',linestyle='solid')
                                 self.picksArts[self.pagina][nearestMagnetValue] = pickline
-                                self.telas[self.pagina].draw()
+                                self.telas[self.pagina].show()
                                         
                             else:
                                 
-                                pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-(self.valordx*0.5),
-                                                                    nearestMagnetValue+(self.valordx*0.5),colors='r',linestyle='solid')
+                                pickline = self.axes[self.pagina].hlines(event.ydata,nearestMagnetValue-1,
+                                                                    nearestMagnetValue+1,colors='r',linestyle='solid')
                                 self.picksArts[self.pagina].update({nearestMagnetValue:pickline})
                                 self.picks[self.pagina].update({nearestMagnetValue:event.ydata})
-                                self.telas[self.pagina].draw()
+                                self.telas[self.pagina].show()
 
                             for i in range(len(self.arquivos)):
 
@@ -699,7 +698,7 @@ class Sispick(Frame):
                                     if float(i.get_offsets()[0][0]) == nearestMagnetValue:
                                         
                                         i.remove()
-                                        self.telas[self.pagina].draw()
+                                        self.telas[self.pagina].show()
                                         
                         elif event.button == 3:
 
@@ -712,7 +711,7 @@ class Sispick(Frame):
 
                                 self.linhasPick[self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
                                         [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
-                                self.telas[self.pagina].draw()
+                                self.telas[self.pagina].show()
 
                     except:
 
@@ -727,7 +726,7 @@ class Sispick(Frame):
                             self.coordx.append(event.xdata)
                             self.coordy.append(event.ydata)
                             self.linhaPick.set_data(self.coordx,self.coordy)
-                            self.telas[self.pagina].draw()
+                            self.telas[self.pagina].show()
                             del self.coordx[1:-1]
                             del self.coordy[1:-1]
 
@@ -758,14 +757,14 @@ class Sispick(Frame):
 
                                             self.picks[self.pagina][i] = m*i+b
                                             self.picksArts[self.pagina][i].remove()
-                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-(self.valordx*0.5),
-                                                                                i+(self.valordx*0.5),colors='r',linestyle='solid')
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                                i+1,colors='r',linestyle='solid')
                                             self.picksArts[self.pagina][i] = pickline
 
                                         else:
 
-                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-(self.valordx*0.5),
-                                                                        i+(self.valordx*0.5),colors='r',linestyle='solid')
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                        i+1,colors='r',linestyle='solid')
                                             self.picksArts[self.pagina].update({i:pickline})
                                             self.picks[self.pagina].update({i:m*i+b})
 
@@ -780,14 +779,14 @@ class Sispick(Frame):
 
                                             self.picks[self.pagina][i] = m*i+b
                                             self.picksArts[self.pagina][i].remove()
-                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-(self.valordx*0.5),
-                                                                                i+(self.valordx*0.5),colors='r',linestyle='solid')
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                                i+1,colors='r',linestyle='solid')
                                             self.picksArts[self.pagina][i] = pickline
 
                                         else:
 
-                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-(self.valordx*0.5),
-                                                                        i+(self.valordx*0.5),colors='r',linestyle='solid')
+                                            pickline = self.axes[self.pagina].hlines(m*i+b,i-1,
+                                                                        i+1,colors='r',linestyle='solid')
                                             self.picksArts[self.pagina].update({i:pickline})
                                             self.picks[self.pagina].update({i:m*i+b})
 
@@ -811,7 +810,7 @@ class Sispick(Frame):
                                 self.linhasPick[self.pagina].set_data([key for key in sorted(self.picks[self.pagina])],
                                         [self.picks[self.pagina][key] for key in sorted(self.picks[self.pagina])])
 
-                            self.telas[self.pagina].draw()
+                            self.telas[self.pagina].show()
                             del self.coordx[:]
                             del self.coordy[:]
                             self.clickOn = False
@@ -892,7 +891,7 @@ class Sispick(Frame):
 
                     for key in sorted(self.picks[i]):
                         
-                        bola = ax.scatter(key, self.picks[i][key],s=40,c = 'white',edgecolors='b',picker = 5)
+                        bola = ax.scatter(key, self.picks[i][key],s=40,c = 'white',picker = 5)
                         self.bolas[i].append(bola)
 
             def click(event):
@@ -913,7 +912,7 @@ class Sispick(Frame):
             plt.ylabel('Tempo (ms)')
             plt.grid()
             canvas = FigureCanvasTkAgg(fig, root)
-            canvas.draw()
+            canvas.show()
             canvas.get_tk_widget().pack(fill='both', expand=True)
             fig.canvas.mpl_connect('pick_event', click)
             root.mainloop()
@@ -965,7 +964,7 @@ class Sispick(Frame):
 
                     self.picks[self.pagina].clear()
                     self.picksArts[self.pagina].clear()
-                    self.telas[self.pagina].draw()
+                    self.telas[self.pagina].show()
 
                     if self.linhasPick[self.pagina] != None:
 
@@ -986,7 +985,7 @@ class Sispick(Frame):
                                 self.sublinhas[i][self.pagina].remove()
                                 self.sublinhas[i][self.pagina] = None
                                 
-                        self.telas[i].draw()
+                        self.telas[i].show()
                     
     def fecharPlot(self):
           
@@ -1128,7 +1127,7 @@ class Sispick(Frame):
                         
                     self.sombArts[i].append(somb)
 
-            self.telas[i].draw()
+            self.telas[i].show()
 
     def ampup(self):
 
@@ -1500,7 +1499,7 @@ class Sispick(Frame):
                 self.freqLP[self.pagina] = 1000
                 self.freqHP[self.pagina] = 5
                 self.conferidorIndividual()
-                self.telas[self.pagina].draw()
+                self.telas[self.pagina].show()
 
     def filtroLP(self):
 
@@ -1547,7 +1546,7 @@ class Sispick(Frame):
             self.filtrosLP[self.pagina] = True        
             self.filtros[self.pagina] = True
             self.conferidorIndividual()
-            self.telas[self.pagina].draw()
+            self.telas[self.pagina].show()
 
     def filtroHP(self):
 
@@ -1594,7 +1593,7 @@ class Sispick(Frame):
             self.filtrosHP[self.pagina] = True
             self.filtros[self.pagina] = True
             self.conferidorIndividual()
-            self.telas[self.pagina].draw()
+            self.telas[self.pagina].show()
 
     def salvargp(self):
 
@@ -1606,12 +1605,11 @@ class Sispick(Frame):
             
             try:
                 
-                arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Refrapy pick', '*.rp')])
+                arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Refrapy pick', '.gp')])
 
                 if platform.system() == 'Windows':
                     
-                    with open(arquivoSaida+'.rp','a') as arqpck:
-                        arqpck.write("%d %d\n%.2f %.2f\n"%(len(self.listSource),self.canais,self.posicaoGeof1,self.valordx))
+                    with open(arquivoSaida+'.gp','a') as arqpck:
 
                         for i in range(len(self.arquivos)):
                                 
@@ -2021,7 +2019,7 @@ class Sispick(Frame):
 
                             plt.figure(i)
                             self.axes[i].set_xlim(self.posicaoGeof1-self.valordx,self.posicaoGeof1+float(entrycomp.get()))
-                            self.telas[i].draw()
+                            self.telas[i].show()
                             
                     except:
 
