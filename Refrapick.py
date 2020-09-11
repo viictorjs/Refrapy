@@ -381,9 +381,7 @@ class Sispick(Frame):
                         
                 if self.ndados[0] > 10000:
                     messagebox.showinfo('Refrapy','Traces have a great ammount of samples.\nTo speed up processing, you might want to consider trimming the sections lenght in Edit > Trim section lenght')
-                    self.listSource.append(999)
-                    self.posicaoGeof1 = 0
-                    self.valordx = 2
+
                 for i in range(len(self.arquivos)):
                     frame = Frame(root,bg='#F3F3F3')
                     frame.grid(row=1, column=0, sticky = NSEW)
@@ -1362,13 +1360,13 @@ class Sispick(Frame):
             pos1 = StringVar()
             main = Label(root, text = 'Dados do cabeçalho (%s)'%os.path.basename(self.arquivos[self.pagina]),font=("Helvetica", 14),
                          fg='green').grid(row = 0, column = 0, sticky='w', padx = 10, pady = 10)
-            fonte = Label(root, text = 'Posição da fonte (atual: %.1f m):'%float(self.listSource[self.pagina]),font=("Helvetica", 10),
+            fonte = Label(root, text = 'Posição da fonte (atual: %.2f m):'%float(self.listSource[self.pagina]),font=("Helvetica", 10),
                          fg='black').grid(row = 1, column = 0, sticky='w', padx = 10, pady = 10)
-            espacamento = Label(root, text = 'Espaçamento entre geofones (atual: %.1f m):'%float(self.valordx),font=("Helvetica", 10),
+            espacamento = Label(root, text = 'Espaçamento entre geofones (atual: %.2f m):'%float(self.valordx),font=("Helvetica", 10),
                          fg='black').grid(row = 2, column = 0, sticky='w', padx = 10, pady = 10)
-            comp = Label(root, text = 'Comprimento do perfil (atual: %.1f m):'%(self.valordx*len(self.sts[self.pagina])),
+            comp = Label(root, text = 'Comprimento do perfil (atual: %.2f m):'%(self.valordx*len(self.sts[self.pagina])),
                          font=("Helvetica", 10),fg='black').grid(row = 3, column = 0, sticky='w', padx = 10, pady = 10)
-            pos = Label(root, text = 'Posiçao do primeiro geofone (atual: %.1f m):'%self.posicaoGeof1,
+            pos = Label(root, text = 'Posiçao do primeiro geofone (atual: %.2f m):'%self.posicaoGeof1,
                            font=("Helvetica", 10),fg='black').grid(row = 4, column = 0, sticky='w', padx = 10, pady = 10)
             entryf = Entry(root, textvariable = fonte, width=10)
             entryf.grid(row = 1, column = 0, sticky = 'w', pady = 10, padx = 250)
@@ -1392,6 +1390,7 @@ class Sispick(Frame):
                 if len(entrydx.get()) > 0:  
                     try:
                         self.valordx = float(entrydx.get())
+                        self.okpicks = [self.posicaoGeof1+self.valordx*j for j in range(self.canais)]
                         warning.configure(text = 'Dados salvos', fg = 'blue')
                         if self.normalizado == True:
                             for i in range(len(self.arquivos)):
@@ -1419,6 +1418,7 @@ class Sispick(Frame):
                         warning.configure(text = 'Comprimento de perfil inválido', fg = 'red')
                 if len(entrypos1.get()) > 0:
                     self.posicaoGeof1 = float(entrypos1.get())
+                    self.okpicks = [self.posicaoGeof1+self.valordx*j for j in range(self.canais)]
                     if self.normalizado == True:
                         for i in range(len(self.arquivos)):
                             for j in range(self.canais):
@@ -1463,14 +1463,14 @@ class Sispick(Frame):
                               font=("Helvetica", 10)).grid(row=2, column=0, sticky="w",padx=20,pady=10)
             entryGain = Entry(root, textvariable = varGain,width=10)
             entryGain.grid(row=2, column=0, sticky="w",padx=235,pady=10)
-            labelFigx = Label(root, text='Tamanho x do plot (atual: %.1f): '%self.valorFigx,
+            '''labelFigx = Label(root, text='Tamanho x do plot (atual: %.1f): '%self.valorFigx,
                               font=("Helvetica", 10)).grid(row=3, column=0, sticky="w",padx=20,pady=10)
             entryFigx = Entry(root, textvariable = varFigx,width=10)
             entryFigx.grid(row=3, column=0, sticky="w",padx=235,pady=10)
             labelFigy = Label(root, text='Tamanho y do plot (atual: %.1f): '%self.valorFigy,
                               font=("Helvetica", 10)).grid(row=4, column=0, sticky="w",padx=20,pady=10)
             entryFigy = Entry(root, textvariable = varFigy,width=10)
-            entryFigy.grid(row=4, column=0, sticky="w",padx=235,pady=10)
+            entryFigy.grid(row=4, column=0, sticky="w",padx=235,pady=10)'''
             warning = Label(root, text='',font=("Helvetica", 12),fg = 'red')
             warning.grid(row=6, column=0, sticky="w",pady=0,padx=140)
 
@@ -1493,7 +1493,7 @@ class Sispick(Frame):
                         warning.configure(text='Configurações aplicadas',fg = 'blue')
                     except:
                         warning.configure(text='Fator de ganho inválido',fg = 'red')
-                if len(entryFigx.get()) > 0:
+                '''if len(entryFigx.get()) > 0:
                     try:
                         self.valorFigx = float(entryFigx.get())
                         warning.configure(text='Configurações aplicadas',fg = 'blue')
@@ -1512,7 +1512,7 @@ class Sispick(Frame):
                             plt.gcf().set_size_inches(self.valorFigx, self.valorFigy,forward=True)
                             self.figs[i].canvas.draw()
                     except:
-                         warning.configure(text='Tamanho y inválido',fg = 'red')
+                         warning.configure(text='Tamanho y inválido',fg = 'red')'''
 
             def cancelar():
 
