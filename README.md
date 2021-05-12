@@ -1,8 +1,12 @@
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/refrapy_logo.png)
 
-Refrapy is a Python software with a graphical interface for seismic refraction data analysis. It is based on two modules: Refrapick and Refrainv.
+Refrapy is a Python software with a graphical interface for seismic refraction data analysis. 
+It is based on two modules: Refrapick and Refrainv.
 
-Dependencies:
+The Refrapick program is used to deal with seismic sections and pick first breaks.
+The Refrainv program is used to run a time-terms and a traveltimes tomography inversion. The latter is powered by pyGIMLi (https://www.pygimli.org/).
+
+The software relies on some packages, listed below:
    ```
    numpy
    matplotlib
