@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 from obspy import read
 import matplotlib                                                                
 from matplotlib import pyplot as plt
@@ -95,7 +95,7 @@ class Sispick(Frame):
         fileMenu.add_command(label='Exit <ALT+S>',
                                       command=self.destroy)
         viewMenu = Menu(menuBar)
-        menuBar.add_cascade(label='View',menu=viewMenu)
+        menuBar.add_cascade(label='Visualization',menu=viewMenu)
         viewMenu.add_command(label='Next <right arrow>',
                                          command=self.nextpage)
         viewMenu.add_command(label='Previous <left arrow>',
@@ -109,7 +109,7 @@ class Sispick(Frame):
         viewMenu.add_command(label='Increase time axis <up arrow>',
                                          command=self.maisy)
         traceMenu = Menu(menuBar)
-        menuBar.add_cascade(label='Traces',menu=traceMenu)
+        menuBar.add_cascade(label='Waveform processing',menu=traceMenu)
         traceMenu.add_command(label='Increase scale gain <SHIFT+right>',
                                      command=self.ampup)
         traceMenu.add_command(label='Decrease scale gain <SHIFT+left>',
@@ -128,7 +128,7 @@ class Sispick(Frame):
         traceMenu.add_command(label='Clip amplitudes <C>',
                                      command=self.clip)
         editMenu = Menu(menuBar)
-        menuBar.add_cascade(label='Edit',menu=editMenu)
+        menuBar.add_cascade(label='Editing',menu=editMenu)
         editMenu.add_command(label='Enable/Disable first breaks picking <P>',
                                      command=self.ativarPick)
         editMenu.add_command(label='Clear picks <CTRL+L>',
@@ -147,12 +147,12 @@ class Sispick(Frame):
         editMenu.add_separator()
         editMenu.add_command(label='Close current sections <CTRL+X>',
                                      command=self.fecharPlot)
-        filterMenu = Menu(menuBar)
+        '''filterMenu = Menu(menuBar)
         menuBar.add_cascade(label='Filtering',menu=filterMenu)
         filterMenu.add_command(label='Low pass filter <Ctrl+L>',command=self.filtroLP)
         filterMenu.add_command(label='High pass filter <CTRL+H>',command=self.filtroHP)
         filterMenu.add_separator()
-        filterMenu.add_command(label='Remove filter <CTRL+C>',command=self.removerFiltros)
+        filterMenu.add_command(label='Remove filter <CTRL+C>',command=self.removerFiltros)'''
         optMenu = Menu(menuBar)
         menuBar.add_cascade(label='Options',menu=optMenu)
         optMenu.add_command(label='Plot options <CTRL+O>',command=self.configPlot)
@@ -344,18 +344,49 @@ class Sispick(Frame):
                         try: 
                             self.listSource.append(self.sts[i][0].stats.seg2['SOURCE_LOCATION'])
                         except:
-                            messagebox.showinfo('Refrapy','Source positions not found, so 999 m will be used.\nTo change values go to Options > Edit section info')
-                            self.listSource.append(999)
+                            sourcep = simpledialog.askfloat("Refrapy", "Source position not found for file %s\nPlease, enter a value below:"%os.path.basename(self.arquivos[i]))
+                            if sourcep == None:
+                                sourcep = 0
+                            self.listSource.append(sourcep)
                         try:
                             self.posicaoGeof1 = float(self.sts[i][0].stats.seg2['RECEIVER_LOCATION'])
                         except:
-                            self.posicaoGeof1 = 0
-                            messagebox.showinfo('Refrapy', 'First geophone position not found, so 0 m will be used.\nTo change values go to Options > Edit section info')
+                            firstgeofpos = simpledialog.askfloat("Refrapy", "First geophone position not found for file %s\nPlease, enter a value below:"%os.path.basename(self.arquivos[i]))
+                            if firstgeofpos == None:
+                                firstgeofpos = 0
+                            self.posicaoGeof1 = firstgeofpos
                         try:
                             self.valordx = float(self.sts[0][1].stats.seg2['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.seg2['RECEIVER_LOCATION'])
                         except:
-                            messagebox.showinfo('Refrapy', 'Geophone spacing not found, so 2 m will be used.\nTo change values go to Options > Edit section info')
-                            self.valordx = 2
+                            spa = simpledialog.askfloat("Refrapy", "Geophones interval not found for file %s\nPlease, enter a value below:"%os.path.basename(self.arquivos[i]))
+                            if spa == None:
+                                spa = 0
+                            self.valordx = spa
+
+                    elif self.sts[i][0].stats._format == 'SU':
+                        self.formato = 'SU'
+                        try: 
+                            self.listSource.append(self.sts[i][0].stats.su['SOURCE_LOCATION'])
+                        except:
+                            sourcep = simpledialog.askfloat("Refrapy", "Source position not found for file %s\nPlease, enter a value below:"%os.path.basename(self.arquivos[i]))
+                            if sourcep == None:
+                                sourcep = 0
+                            self.listSource.append(sourcep)
+                        try:
+                            self.posicaoGeof1 = float(self.sts[i][0].stats.su['RECEIVER_LOCATION'])
+                        except:
+                            firstgeofpos = simpledialog.askfloat("Refrapy", "First geophone position not found for file %s\nPlease, enter a value below:"%os.path.basename(self.arquivos[i]))
+                            if firstgeofpos == None:
+                                firstgeofpos = 0
+                            self.posicaoGeof1 = firstgeofpos
+                        try:
+                            self.valordx = float(self.sts[0][1].stats.su['RECEIVER_LOCATION'])-float(self.sts[0][0].stats.su['RECEIVER_LOCATION'])
+                        except:
+                            spa = simpledialog.askfloat("Refrapy", "Geophones interval not found for file %s\nPlease, enter a value below:"%os.path.basename(self.arquivos[i]))
+                            if spa == None:
+                                spa = 0
+                            self.valordx = spa
+                            
                     elif self.sts[i][0].stats._format == 'SEGY':
                         self.formato = 'segy'
                         try:
@@ -504,7 +535,7 @@ class Sispick(Frame):
         if self.plotExiste == True:
             if self.pickMode == False:
                 self.pickMode = True
-                self.statusPick.configure(text=' Pick ativado',fg='blue')
+                self.statusPick.configure(text=' Pick mode on',fg='blue')
                 
                 def pick(event):
                     try:
@@ -1188,7 +1219,7 @@ class Sispick(Frame):
 
         if self.plotExiste == True:
             if self.pickVelOn == False:
-                self.statusVel.configure(text = 'Velocidade aparente ativada',fg='blue')
+                self.statusVel.configure(text = 'Apparent velocity mode on',fg='blue')
                 def clicar(event):
                     try:
                         self.coordsx[self.pagina].append(event.xdata)

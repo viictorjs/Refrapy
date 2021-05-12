@@ -12,7 +12,7 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 import warnings
 from tkinter import *
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 import datetime
 from pygimli.physics import Refraction
 import pygimli as pg
@@ -106,26 +106,24 @@ class Sisref(Frame):
         tomoinversion.add_command(label="Show fit", command = self.tomo_showFit)
         tomoMenu.add_cascade(label='Edit travel-times', menu = editTTtomo)
         editTTtomo.add_command(label="Open travel-times file", command = self.tomo_editTT)
-        editTTtomo.add_command(label="Save travel-times file", command = self.tomo_saveTT)
+        editTTtomo.add_command(label="Save travel-times file", command = lambda: print(""))
         tomoMenu.add_separator()
         tomoMenu.add_cascade(label='Velocity model plot', menu = tomoVMplot)
         tomoVMplot.add_cascade(label='Colormap', menu = tomocmap)
         tomocmap.add_command(label="jet", command = self.tomo_cmapJet)
         tomocmap.add_command(label="gist rainbow", command = self.tomo_cmapGistr)
-        tomocmap.add_command(label="gist ncar", command = self.tomo_cmapGistn)
-        tomocmap.add_command(label="nipy spectral", command = self.tomo_cmapNipys)
+        tomocmap.add_command(label="viridis", command = self.tomo_cmapGistn)
+        tomocmap.add_command(label="spectral", command = self.tomo_cmapNipys)
         tomocmap.add_command(label="brw", command = self.tomo_cmapbrw)
         tomocmap.add_command(label="greys", command = self.tomo_cmapGreys)
         tomoVMplot.add_separator()
         tomoVMplot.add_command(label="Show triangular mesh model", command = self.tomo_triangular)
         tomoVMplot.add_command(label="Show interpolated model", command = self.tomo_interpolated)
         tomoVMplot.add_separator()
-        tomoVMplot.add_command(label="1D profile", command = self.tomo_profile)
-        tomoVMplot.add_separator()
         tomoVMplot.add_command(label="Plot time-terms results", command = self.tomo_usett)
         tomoVMplot.add_separator()
-        tomoVMplot.add_command(label="Show/hide sources", command = lambda: print(""))
-        tomoVMplot.add_command(label="Show/hide geophones", command = lambda: print(""))
+        tomoVMplot.add_command(label="Show/hide sources", command = self.tomo_VMshowS)
+        tomoVMplot.add_command(label="Show/hide geophones", command = self.tomo_VMshowG)
         tomoVMplot.add_command(label="Show/hide ray path", command = self.tomo_showRP)
         tomoVMplot.add_command(label="Show/hide grid", command = lambda: print(""))
         tomoMenu.add_separator()
@@ -151,6 +149,8 @@ class Sisref(Frame):
         tt_toolbar1.update()
         tt_tela1._tkcanvas.pack(fill='both', expand=True)
 
+        self.tt_ax1.set_title("Traveltime curves panel")
+
         self.tt_frame2 = Frame(self)
         self.tt_frame2.grid(row = 1, column = 2, sticky = NSEW)
         self.tt_fig2 = plt.figure(figsize = (6.85,3.65), facecolor = "white")
@@ -161,6 +161,8 @@ class Sisref(Frame):
         tt_toolbar2 = NavigationToolbar2Tk(tt_tela2, self.tt_frame2)
         tt_toolbar2.update()
         tt_tela2._tkcanvas.pack(fill='both', expand=True)
+
+        self.tt_ax2.set_title("Fit and edditing panel")
 
         self.tt_frame3 = Frame(self)
         self.tt_frame3.grid(row = 2, column = 0, columnspan=3, sticky = NSEW)
@@ -174,6 +176,8 @@ class Sisref(Frame):
         tt_toolbar3.update()
         tt_tela3._tkcanvas.pack(fill='both', expand=True)
 
+        self.tt_ax3.set_title("Time-terms velocity model panel")
+
         #---------------
 
         self.tomo_frame1 = Frame(self)
@@ -186,6 +190,7 @@ class Sisref(Frame):
         tomo_toolbar1 = NavigationToolbar2Tk(tomo_tela1, self.tomo_frame1)
         tomo_toolbar1.update()
         tomo_tela1._tkcanvas.pack(fill='both', expand=True)
+        self.tomo_ax1.set_title("Traveltime curves panel")
 
         self.tomo_frame2 = Frame(self)
         self.tomo_frame2.grid(row = 1, column = 2, sticky = NSEW)
@@ -197,6 +202,7 @@ class Sisref(Frame):
         tomo_toolbar2 = NavigationToolbar2Tk(tomo_tela2, self.tomo_frame2)
         tomo_toolbar2.update()
         tomo_tela2._tkcanvas.pack(fill='both', expand=True)
+        self.tomo_ax2.set_title("Fit and edditing panel")
 
         self.tomo_frame3 = Frame(self)
         self.tomo_frame3.grid(row = 2, column = 0, columnspan=3, sticky = NSEW)
@@ -210,6 +216,8 @@ class Sisref(Frame):
         tomo_toolbar3.update()
         tomo_tela3._tkcanvas.pack(fill='both', expand=True)
 
+        self.tomo_ax3.set_title("Tomography velocity model panel")
+
         self.tomo_frame4 = Frame(self)
         self.tomo_frame4.grid(row = 2, column = 0, columnspan=3, sticky = NSEW)
         self.tomo_fig4 = plt.figure(figsize = (13.7,3.04))
@@ -221,6 +229,8 @@ class Sisref(Frame):
         tomo_toolbar4 = NavigationToolbar2Tk(tomo_tela4, self.tomo_frame4)
         tomo_toolbar4.update()
         tomo_tela4._tkcanvas.pack(fill='both', expand=True)
+
+        self.tomo_ax4.set_title("Tomography velocity model panel")
 
         toolbar_frame = Frame(self)
         toolbar_frame.grid(row = 0, column = 0, columnspan=3, sticky = NSEW)
@@ -272,10 +282,10 @@ class Sisref(Frame):
         VM = Button(toolbar_frame, command = self.tt_invert)
         VM.config(image = self.img_vm)
         VM.grid(row=0,column=8,sticky=W)
-        Edit = Button(toolbar_frame, command = self.tt_editTT)
+        Edit = Button(toolbar_frame, command = self.editTT)
         Edit.config(image = self.img_edit)
         Edit.grid(row=0,column=9,sticky=W)
-        EditOK = Button(toolbar_frame, command = self.tt_saveTT)
+        EditOK = Button(toolbar_frame, command = self.saveTT)
         EditOK.config(image = self.img_editOK)
         EditOK.grid(row=0,column=10,sticky=W)
         Limpar = Button(toolbar_frame, command = self.tt_clearInterpretation)
@@ -306,11 +316,18 @@ class Sisref(Frame):
         self.tt_TTSources = True
         self.tt_VMSources = False
         self.tt_VMGeophones = False
+        self.tt_pltG = False
+        self.tt_pltS = False
+        
         self.cm = False
         self.TTfile = False
         self.TTfile_ext = False
         self.tomo_TTplot = False
-        self.tomo_cmap = plt.cm.get_cmap("nipy_spectral")
+        self.tomo_pltS = False
+        self.tomo_pltG = False
+        self.tomo_pltG_triang = False
+        self.tomo_pltS_triang = False
+        self.tomo_cmap = plt.cm.get_cmap("Spectral")
         self.tt_frame1.tkraise()
         self.tt_frame2.tkraise()
         self.tt_frame3.tkraise()
@@ -339,13 +356,13 @@ class Sisref(Frame):
     
     def tomo_triangular(self):
         if self.cm:
-            self.tomo_ax4.cla()
-            self.tomo_ax4.set_xlabel("Distance (m)")
-            self.tomo_ax4.set_ylabel("Depth (m)")
-            self.tomo_ax4.set_title("Velocity model")
-            pg.show(self.m, self.vest, label="Velocity [m/s]", cMap = self.tomo_cmap,
-                    ax = self.tomo_ax4, colorBar = False, logScale = False)
-            self.tomo_raise()
+            #self.tomo_ax4.cla()
+            #self.tomo_ax4.set_xlabel("Distance (m)")
+            #self.tomo_ax4.set_ylabel("Elevation (m)")
+            #self.tomo_ax4.set_title("Tomography velocity model panel")
+            #pg.show(self.m, self.vest, label="Velocity [m/s]", cMap = self.tomo_cmap,
+            #        ax = self.tomo_ax4, colorBar = False, logScale = False)
+            #self.tomo_raise()
             self.tomo_frame4.tkraise()
 
     def tomo_showRP(self):
@@ -357,16 +374,16 @@ class Sisref(Frame):
 
     def tomo_updateCmap(self):
         if self.cm:
-            self.cm.set_cmap(self.tomo_cmap)
-            self.tomo_ax4.cla()
-            pg.show(self.m, self.vest, label="Velocity [m/s]", cMap = self.tomo_cmap,
+            self.cm.set_cmap(self.tomo_cmap) #update cmap of interpolated tomogram
+            #self.tomo_ax4.cla()
+            pg.show(self.m, self.vest, label="Velocity [m/s]", cMap = self.tomo_cmap, #overlap the triang mesh result with this new plot
                     ax = self.tomo_ax4, colorBar = False, logScale = False)
             self.tomo_fig3.canvas.draw()
             self.tomo_fig4.canvas.draw()
     
     def tomo_cmapNipys(self):
         if self.cm:
-            self.tomo_cmap = plt.cm.get_cmap("nipy_spectral")
+            self.tomo_cmap = plt.cm.get_cmap("Spectral")
             self.tomo_updateCmap()
 
 
@@ -392,17 +409,25 @@ class Sisref(Frame):
 
     def tomo_cmapGistn(self):
         if self.cm:
-            self.tomo_cmap = plt.cm.get_cmap("gist_ncar")
+            self.tomo_cmap = plt.cm.get_cmap("viridis")
             self.tomo_updateCmap()
 
     def tomo_usett(self):
         if self.tt_pltVM and self.cm:
             if self.layer2:
-                self.tomo_ax3.scatter(self.gp, self.depthLayer2, c="k", marker = "x", s = 10)
-                self.tomo_ax4.scatter(self.gp, self.depthLayer2, c="k", marker = "x", s = 10)
+                self.tomo_ax3.plot(self.gp, self.depthLayer2, '--', c="k")
+                self.tomo_ax4.plot(self.gp, self.depthLayer2, '--', c="k")
+                
+                #artigo
+                from scipy.interpolate import interp1d
+                f = interp1d([0,14,32,50,64], [-10,-12,-18,-12,-10], kind="cubic")
+                y = f(np.arange(0,64,1))
+                self.tomo_ax4.plot(np.arange(0,64,1),y, c = "k")
+                self.tomo_ax3.plot(np.arange(0,64,1),y, c = "k")
+                
             if self.layer3:
-                self.tomo_ax3.scatter(self.gp, self.depthLayer3, c="k", marker = "x", s = 10)
-                self.tomo_ax4.scatter(self.gp, self.depthLayer3, c="k", marker = "x", s = 10)
+                self.tomo_ax3.plot(self.gp, self.depthLayer3, '--', c="k")
+                self.tomo_ax4.scatter(self.gp, self.depthLayer3, '--', c="k")
             self.tomo_fig3.canvas.draw()
             self.tomo_fig4.canvas.draw()
             #self.tomo_raise()
@@ -488,29 +513,26 @@ class Sisref(Frame):
             self.tomo_TTplot = True
             messagebox.showinfo('Refrapy',"pyGIMLI's travel-times file has been loaded succesfully!")
                 
-    def tomo_saveTT(self):
-        if self.TTfile:
-            out_ttFile = filedialog.asksaveasfilename(title='Save',filetypes=[('Refrapy pick', '*.rp')])
-            with open(out_ttFile+".sgt",'w') as arqpck:
-                arqpck.write("%d %d\n%.2f %.2f\n"%(len(self.sp),self.gn,self.fg,self.gs))
-                for i in range(len(self.sp)):
-                    for j in range(len(self.datax[i][self.sp[i]])):
-                        arqpck.write('%f %f 1\n'%(self.datax[i][self.sp[i]][j],self.datat[i][self.sp[i]][j]*1000))
-                    arqpck.write('/ %f\n'%self.sp[i])
-            messagebox.showinfo('Refrapy',"Travel-times file has been saved succesfully!")
+    
 
     def tomo_showFit(self):
         if self.TTfile:
             self.ra.showData(response = self.ra.inv.response(), ax = self.tomo_ax2)
+            self.tomo_ax2.scatter([], [], marker = '+', s = 20, c = "k", label="Observed traveltimes")
+            self.tomo_ax2.scatter([], [], marker = '_', c = "k", label="Calculated traveltimes")
+
+            self.tomo_ax2.legend(loc='upper right', bbox_to_anchor=(1.01, 1.15))
             self.tomo_raise()
     
     def tomo_editTT(self):
+        
+        self.win.destroy
+        
         if self.TTfile:
-            #self.ra.showData(response = self.ra.inv.response(), ax = self.tomo_ax2)
-            try:
-                ttFile = filedialog.askopenfilename(title='Open',filetypes=[('Refrapy pick','*.rp'),('All files','*.*')])
-            except:
-                pass
+            
+            try: ttFile = filedialog.askopenfilename(title='Open',filetypes=[('Refrapy pick','*.rp')])
+            except: pass
+            
             if ttFile:
                 x, t = np.genfromtxt(ttFile, usecols = (0,1), unpack = True)
                 fg = x[1]
@@ -549,7 +571,7 @@ class Sisref(Frame):
                         s+=1
                 lines = []
                 for i in range(len(sp)):
-                    self.tomo_ax2.scatter(sp[i],0, marker = "*", c = "yellow", edgecolor = "k", s = 200, zorder=10)
+                    self.tomo_ax2.scatter(sp[i],0, marker = "*", c = "yellow", edgecolor = "k", s = 20, zorder=10)
                     l = self.tomo_ax2.plot(self.datax[i][sp[i]],self.datat[i][sp[i]], c = "k", lw = 0.75)
                     lines.append(l)
            
@@ -585,6 +607,7 @@ class Sisref(Frame):
                 event2 = self.tomo_fig2.canvas.mpl_connect('button_release_event', onrelease)
                 self.tomo_ax2.legend(loc="best")
                 self.tomo_raise()
+                self.editTT_panel = 2
                 messagebox.showinfo('Refrapy','Travel-times file loaded successfully!\nDrag and drop travel-times (circles) to edit\nWhen done, save the results into a new file')
 
     def tomo_loadParams(self):
@@ -606,86 +629,6 @@ class Sisref(Frame):
                        np.c_[self.tomo_cellsx, self.tomo_cellsy, self.tomo_cellsv], fmt='%.2f')
             messagebox.showinfo('Refrapy',"The velocity tomogram XYZ file has been saved successfully!")
 
-    def tomo_profile(self):
-        if True:#self.cm:
-            rt = Tk()
-            fr = Frame(master = rt)
-            fr.grid(row = 4, column = 2, sticky = "w")
-            rt.title('REFRAINV') 
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            canvas = FigureCanvasTkAgg(fig, rt)
-            canvas.get_tk_widget().grid(row = 0, column = 2, rowspan = 4, sticky='e', padx = 10)
-            canvas.draw()
-            tb = NavigationToolbar2Tk(canvas, fr)
-            tb.update()
-            
-            vtop, vbottom, vnsamples, vpos = StringVar(),StringVar(),StringVar(),StringVar()
-            top = Label(rt, text = 'Top of profile (m)').grid(row = 0, column = 0, sticky='e')
-            bottom = Label(rt, text = 'Bottom of profile (m)').grid(row = 1, column = 0, sticky='e')
-            nSamples = Label(rt, text = 'Sample number').grid(row = 2, column = 0, sticky='e')
-            pos = Label(rt, text = 'Profile position (m)').grid(row = 3, column = 0, sticky='e')
-
-            etop = Entry(rt, textvariable = vtop, width=10)
-            etop.grid(row = 0, column = 1, sticky = 'w')
-            ebottom = Entry(rt, textvariable = vbottom, width=10)
-            ebottom.grid(row = 1, column = 1, sticky = 'w')
-            enSamples = Entry(rt, textvariable = vnsamples, width=10)
-            enSamples.grid(row = 2, column = 1, sticky = 'w')
-            epos = Entry(rt, textvariable = vpos, width=10)
-            epos.grid(row = 3, column = 1, sticky = 'w')
-
-            rt.resizable(0,0)
-
-            def plot():
-                #try:
-                if etop.get() and ebottom.get() and enSamples.get() and epos.get():
-                    #mask = ((self.tomo_cellsx >= (p*0.8)) & (self.tomo_cellsx <= (p*1.2)))
-                    #f = interp2d(self.tomo_cellsx,self.tomo_cellsy,self.tomo_cellsv, kind='cubic')
-
-                    top_px = self.tomo_ax3.transData.transform((float(epos.get()),float(etop.get())))
-                    bottom_px = self.tomo_ax3.transData.transform((float(epos.get()),float(ebottom.get())))
-               
-
-                    #x, y = np.linspace(0, 100, int(enSamples.get()))*0+top_px[0], np.linspace(top_px[1], bottom_px[1], int(enSamples.get()))
-                
-                    
-                    xnew = np.linspace(float(ebottom.get()), float(etop.get()), int(enSamples.get()))*0+float(epos.get())
-                    ynew = np.linspace(float(etop.get()), float(ebottom.get()), int(enSamples.get()))
-
-                    znew = profile_line(self.zi,top_px,bottom_px)
-                                        #(float(epos.get()),float(ebottom.get())),
-                                        #(float(epos.get()),float(etop.get())))
-                    print(znew)
-                    print(len(znew))
-
-                    
-                    
-                    
-                    #znew = scipy.ndimage.map_coordinates(self.zi.T, np.vstack((x,y)))
-                    
-                    
-                    #znew = f(xnew, ynew)
-                    ax.cla()
-                    ax.set_title('1D velocity profile')    
-                    ax.set_xlabel('Velocity (m/s)')
-                    ax.set_ylabel('Depth (m)')
-                    ax.grid(ls = "--", alpha = 0.75)
-                    ax.plot(znew, ynew, c = "k")
-                    #ax.plot(znew[np.where(znew > 0)], ynew[np.where(znew > 0)], c = "k")
-                    fig.canvas.draw()
-                else:
-                    messagebox.showinfo('Refrapy',"Please, enter all values before plotting!")
-                #except:
-                 #   messagebox.showinfo('Refrapy',"Invalid values for profile plotting!")
-
-            def save():
-                np.savetxt("teste_1d.txt",znew)
-            
-            plotp = Button(rt, text = 'Plot', command = plot).grid(row = 4, column = 0)
-            savep = Button(rt, text = 'Save', command = save).grid(row = 4, column = 1)
-            rt.mainloop()
-
     def tomo_invert(self):
         if self.TTfile_ext == ".sgt":
             self.tomo_ax3.cla()
@@ -695,13 +638,56 @@ class Sisref(Frame):
             data = pg.DataContainer(self.TTfile, 's g')
             ra = Refraction(data)
             self.ra = ra
-            if len(self.pars) == 0:
+
+            meshpar = simpledialog.askstring("Refrapy", "Enter mesh parameters separated by comma (e.g. 1,2,3) or cancel for default:\n\nOrder: maxDepth,meshDx,maxCellSize\n\n")
+
+            if meshpar == None:
+
+                m = ra.createMesh()
+            
+            elif len(meshpar.split(",")) == 3:
+
+                maxDepth = int(meshpar.split(",")[0])
+                meshDx = float(meshpar.split(",")[1])
+                maxCellSize = float(meshpar.split(",")[2])
+
+                m = ra.createMesh(data=data,paraMaxCellSize=maxCellSize,paraDX=meshDx, depth=maxDepth)
+
+            else:
+
+                messagebox.showinfo('Refrapy',"Values were not properly assigned. A default mesh will be used.")
+
+            invpar = simpledialog.askstring("Refrapy", "Enter inversion parameters separated by comma (e.g. 1,2,3) or cancel for default:\n\nOrder: smoothing,vertWeight,minVel,maxVel,secNodes,maxIterations\n\n")
+
+            if invpar == None:
+
+                vest = ra.invert(mesh=m)
+                
+            elif len(invpar.split(",")) == 6:
+
+                smoothing = float(invpar.split(",")[0])
+                vertWeight = float(invpar.split(",")[1])
+                minVel = float(invpar.split(",")[2])
+                maxVel = float(invpar.split(",")[3])
+                sNodes = int(invpar.split(",")[4])
+                maxIterations = int(invpar.split(",")[5])
+
+                vest = ra.invert(mesh=m,lam=smoothing,zWeight=vertWeight,useGradient=True,vTop=minVel,vBottom=maxVel,verbose=False,maxIter=maxIterations,secNodes=sNodes)
+
+            else:
+
+                messagebox.showinfo('Refrapy',"Values were not properly assigned. A default inversion will be executed.")
+
+            
+
+            
+            '''if len(self.pars) == 0:
                 m = ra.createMesh()
                 vest = ra.invert()
             else:
                 m = ra.createMesh(paraMaxCellSize=float(self.pars[2]), secNodes=int(self.pars[3]))
                 vest = ra.invert(mesh = m, useGradient = True, vtop = self.pars[0], vbottom = self.pars[1],
-                                 zWeight=self.pars[4], lam = float(self.pars[6]), verbose = int(self.pars[5]))
+                                 zWeight=self.pars[4], lam = float(self.pars[6]), verbose = int(self.pars[5]))'''
                     
                     #except:
                      #   messagebox.showinfo('Refrapy',"Invalid parameters! Please, check the file (in doubt view the Help menu)")
@@ -709,7 +695,13 @@ class Sisref(Frame):
             self.vest = vest
             rrms = ra.inv.relrms() # relative RMS
             arms = ra.inv.absrms() # Absolute RMS
-            messagebox.showinfo('Refrapy',"Relative RMS = %.2f%%\nAbsolute RMS = %.6f ms"%(rrms,1000*arms))
+            chi2 = ra.inv.chi2() # chi2
+
+            print("maxDepth %.2f\nmeshDx %.2f\nmaxCellSize %.2f\nlam %.2f\nzW %.2f\nminVel %.2f\nmaxVal %.2f\nsecNodes %.2f\nmaxIter %.5f\narms %.2f\nrrms %.2f\nchi2 %.2f\n"%(maxDepth, meshDx, maxCellSize,
+                                                                                                                                            smoothing,vertWeight,minVel,maxVel,sNodes,
+                                                                                                                                            maxIterations, arms,rrms,chi2))
+            
+            messagebox.showinfo('Refrapy',"Relative RMS = %.2f%%\nAbsolute RMS = %.2f ms\nChi-square = %.2f"%(rrms,1000*arms,chi2))
             x = np.array([i for i in pg.x(m.cellCenters())])
             y = np.array([i for i in pg.y(m.cellCenters())])
             v = np.array([i for i in vest])
@@ -718,7 +710,9 @@ class Sisref(Frame):
             gi = np.unique(ra.dataContainer("g"), return_inverse=False)
             a = np.genfromtxt(self.TTfile, usecols = (0), skip_header = 2, unpack = True)
             sp = [a[:len(spi)+len(gi)][int(i)] for i in spi]
+            self.tomo_sp = sp
             gp = [a[:len(spi)+len(gi)][int(i)] for i in gi]
+            self.tomo_gp = gp
             x_grid = np.linspace(x.min(), x.max(), 500)
             y_grid = np.linspace(y.min(), y.max(), 500)
             xi,yi = np.meshgrid(x_grid,y_grid)
@@ -737,22 +731,24 @@ class Sisref(Frame):
             p = head+list(reversed(tail))
             poly = plt.Polygon(p, ec="none", fc="none")
             self.tomo_ax3.add_patch(poly)
-            cm = self.tomo_ax3.imshow(zi, cmap = "nipy_spectral", origin='lower', interpolation = 'spline36',
-                         vmin = vmin, vmax = max(v),
-                         extent=[x.min(),x.max(),y.min(),y.max()], clip_path=poly, clip_on=True)
+            #cm = self.tomo_ax3.imshow(zi, cmap = "Spectral", origin='lower', interpolation = 'spline36',
+            #             vmin = vmin, vmax = max(v),
+            #             extent=[x.min(),x.max(),y.min(),y.max()], clip_path=poly, clip_on=True)
+            cm =self.tomo_ax3.contourf(zi, cmap = "jet", levels = 20, origin='lower', extent=[x.min(),x.max(),y.min(),y.max()])
+            #cm2 =self.tomo_ax3.contourf(xi,yi,zi, levels = [2100], origin='lower', extent=[x.min(),x.max(),y.min(),y.max()])
             pg.show(self.m, self.vest, label="Velocity [m/s]", cMap = self.tomo_cmap,
                     ax = self.tomo_ax4, colorBar = False, logScale = False)
             self.tomo_ax4.set_xlabel("Distance (m)")
-            self.tomo_ax4.set_ylabel("Depth (m)")
-            self.tomo_ax4.set_title("Velocity model")
+            self.tomo_ax4.set_ylabel("Elevation (m)")
+            self.tomo_ax4.set_title("Tomography velocity model panel")
             #gx = np.linspace(0,63,24)
             #self.tomo_ax3.plot(gx, [-5+(i*0) for i in range(len(gx))], lw = 1, ls = "--", c = "black")
             #self.tomo_ax3.plot(gx, [-10+(i*0) for i in range(len(gx))],lw = 1, ls = "--", c = "black")
             #cm = self.tomo_ax3.imshow(zi, norm=LogNorm(vmin = vmin, vmax= max(v)), cmap = "gist_rainbow", origin='lower', interpolation = 'spline36',
             #             extent=[x.min(),x.max(),y.min(),y.max()], clip_path=poly, clip_on=True)
             self.cm = cm
-            ge = [e[np.where(np.array(sgp) == np.array(gp)[i])[0]][0] for i in range(len(gp))]
-            se = [e[np.where(np.array(sgp) == np.array(sp)[i])[0]][0] for i in range(len(sp))]
+            self.tomo_ge = [e[np.where(np.array(sgp) == np.array(gp)[i])[0]][0] for i in range(len(gp))]
+            self.tomo_se = [e[np.where(np.array(sgp) == np.array(sp)[i])[0]][0] for i in range(len(sp))]
             divider = make_axes_locatable(self.tomo_ax3)
             divider2 = make_axes_locatable(self.tomo_ax4)
             cax = divider.append_axes("right", size="1%", pad=0.05)
@@ -765,8 +761,10 @@ class Sisref(Frame):
                          cax = cax2, label = "Velocity (m/s)")
             self.tomo_ax3.set_xlabel("Distance (m)")
             self.tomo_ax3.set_ylabel("Elevation (m)")
-            self.tomo_ax3.set_title("Velocity model")
-        
+            self.tomo_ax3.set_title("Tomography velocity model panel")
+            self.tomo_ax3.grid(ls = '--', lw = 0.5)
+            self.tomo_pltVM = True
+            self.tomo_showFit()
             self.tomo_raise()
 
     def restart(self):
@@ -778,8 +776,8 @@ class Sisref(Frame):
         self.tt_vmGrid = True
         self.tt_TTGrid = True
         self.tt_TTSources = True
-        self.tt_VMSources = False
-        self.tt_VMGeophones = False
+        self.tt_pltG = False
+        self.tt_pltS = False
         self.tomo_ax1.cla()
         self.tomo_ax2.cla()
         self.tomo_ax3.cla()
@@ -790,10 +788,22 @@ class Sisref(Frame):
         self.tomo_ax3.set_aspect("equal")
         self.tomo_ax4 = self.tomo_fig4.add_subplot(111)
         self.tomo_ax4.set_aspect("equal")
+        self.tomo_pltVM = False
+        self.tomo_pltS = False
+        self.tomo_pltG = False
+        self.tomo_pltS_triang = False
+        self.tomo_pltG_triang = False
         self.TTfile = False
         self.TTfile_ext = False
         self.pars = []
         self.tt_raise()
+        self.tomo_ax4.set_title("Tomography velocity model panel")
+        self.tomo_ax3.set_title("Tomography velocity model panel")
+        self.tomo_ax2.set_title("Fit and edditing panel")
+        self.tomo_ax1.set_title("Traveltime curves panel")
+        self.tt_ax3.set_title("Time-terms velocity model panel")
+        self.tt_ax2.set_title("Fit and edditing panel")
+        self.tt_ax1.set_title("Traveltime curves panel")
         messagebox.showinfo('Refrapy','All analysis have been restarted!')
 
 
@@ -856,44 +866,64 @@ class Sisref(Frame):
             self.tomo_raise()
 
     def tt_VMshowG(self):
-        if self.tt_pltVM == True:
-            if self.tt_VMGeophones == False:
-                self.tt_vmGeophones = []
+        if self.tt_pltVM:
+            if self.tt_pltG == False:
                 if self.tt_topoFile:
-                    tt_pltG = self.tt_ax3.scatter(self.gp, self.ge ,marker = 7, color = 'k',
-                             edgecolor = "k", s = 100)
-                    self.tt_vmGeophones.append(tt_pltG)
+                    self.tt_pltG = self.tt_ax3.scatter(self.gp, self.ge ,marker = 7, color = 'k',
+                             edgecolor = "k", s = 50)
                 else:
-                    tt_pltG = self.tt_ax3.scatter(self.gp, [i*0 for i in range(len(self.gp))],marker = 7, color = 'k',
-                             edgecolor = "k", s = 100)
-                    self.tt_vmGeophones.append(tt_pltG)
-                
-                self.tt_VMGeophones = True
+                    self.tt_pltG = self.tt_ax3.scatter(self.gp, [i*0 for i in range(len(self.gp))],marker = 7, color = 'k',
+                             edgecolor = "k", s = 50)
             else:
-                for i in self.tt_vmGeophones:
-                    i.set_alpha(0)
-                    self.tt_VMGeophones = False
+                self.tt_pltG.remove()
+                self.tt_pltG = False
+                
             self.tt_fig3.canvas.draw()
 
     def tt_VMshowS(self):
-        if self.tt_pltVM == True:
-            if self.tt_VMSources == False:
-                self.tt_vmSources = []
+        if self.tt_pltVM:
+            if self.tt_pltS == False:
                 if self.tt_topoFile:
-                    tt_pltS = self.tt_ax3.scatter(self.sp, self.se ,marker = "*", color = 'yellow',
+                    self.tt_pltS = self.tt_ax3.scatter(self.sp, self.se ,marker = "*", color = 'yellow',
                              edgecolor = "k", s = 100)
-                    self.tt_vmSources.append(tt_pltS)
                 else:
-                    tt_pltS = self.tt_ax3.scatter(self.sp, [i*0 for i in range(len(self.sp))],marker = "*", color = 'yellow',
+                    self.tt_pltS = self.tt_ax3.scatter(self.sp, [i*0 for i in range(len(self.sp))],marker = "*", color = 'yellow',
                              edgecolor = "k", s = 100)
-                    self.tt_vmSources.append(tt_pltS)
-                self.tt_VMSources = True
             else:
-                for i in self.tt_vmSources:
-                    i.set_alpha(0)
-                    self.tt_VMSources = False
+                self.tt_pltS.remove()
+                self.tt_pltS = False                
                     
             self.tt_fig3.canvas.draw()
+
+    def tomo_VMshowS(self): #show/hide source positions in tomography velocity model panel
+        if self.tomo_pltVM:
+            if self.tomo_pltS:
+                self.tomo_pltS.remove()
+                self.tomo_pltS_triang.remove()
+                self.tomo_pltS = False
+                self.tomo_pltS_triang = False
+            else:
+                self.tomo_pltS = self.tomo_ax3.scatter(self.tomo_sp, self.tomo_se ,marker = "*", color = 'yellow',
+                         edgecolor = "k", s = 100, zorder=10)
+                self.tomo_pltS_triang = self.tomo_ax4.scatter(self.tomo_sp, self.tomo_se ,marker = "*", color = 'yellow',
+                         edgecolor = "k", s = 100, zorder=10)
+            self.tomo_fig3.canvas.draw()
+            self.tomo_fig4.canvas.draw()
+
+    def tomo_VMshowG(self): #show/hide geophone positions in tomography velocity model panel
+        if self.tomo_pltVM:
+            if self.tomo_pltG:
+                self.tomo_pltG.remove()
+                self.tomo_pltG_triang.remove()
+                self.tomo_pltG = False
+                self.tomo_pltG_triang = False
+            else:
+                self.tomo_pltG = self.tomo_ax3.scatter(self.tomo_gp, self.tomo_ge ,marker = 7, color = 'k',
+                         edgecolor = "k", s = 50, zorder=10)
+                self.tomo_pltG_triang = self.tomo_ax4.scatter(self.tomo_gp, self.tomo_ge ,marker = 7, color = 'k',
+                         edgecolor = "k", s = 50, zorder=10)    
+            self.tomo_fig3.canvas.draw()
+            self.tomo_fig4.canvas.draw()
 
     def tt_TTshowGrid(self):
         if self.tt_pltTT == True:
@@ -984,7 +1014,7 @@ class Sisref(Frame):
             self.gp = np.arange(self.fg,self.fg+self.gn*self.gs,self.gs)
             self.tt_ax1.grid(ls = '--', lw = 0.5)
             self.tt_ax1.set_xlabel("Distance (m)")
-            self.tt_ax1.set_ylabel("Time (ms)")
+            self.tt_ax1.set_ylabel("Traveltime (ms)")
             datax, datat = [], []
             self.artb = []
             for i in range(len(self.sp)):
@@ -1006,7 +1036,7 @@ class Sisref(Frame):
             self.tt_TTlines = []
             self.tt_S = []
             for i in range(len(self.sp)):
-                sPlot = self.tt_ax1.scatter(self.sp[i],0, marker = "*", c = 'white', edgecolor = "k", s = 200)
+                sPlot = self.tt_ax1.scatter(self.sp[i],0, marker = "*", c = 'white', edgecolor = "k", s = 100)
                 self.tt_S.append(sPlot)
                 l = self.tt_ax1.plot(datax[i][self.sp[i]],datat[i][self.sp[i]], c = colors[i], lw = 0.75)
                 self.tt_TTlines.append(l)
@@ -1026,19 +1056,19 @@ class Sisref(Frame):
     def tt_L1(self):
         if self.tt_interpretation:
             self.layer = 1
-            self.tt_ax1.set_title('Layer %d interpratation activated!'%self.layer)
+            self.tt_ax1.set_title('Traveltime curves panel - Layer %d interpratation activated!'%self.layer)
             self.tt_fig1.canvas.draw()
 
     def tt_L2(self):
         if self.tt_interpretation:
             self.layer = 2
-            self.tt_ax1.set_title('Layer %d interpratation activated!'%self.layer)
+            self.tt_ax1.set_title('Traveltime curves panel - Layer %d interpratation activated!'%self.layer)
             self.tt_fig1.canvas.draw()
 
     def tt_L3(self):
         if self.tt_interpretation:
             self.layer = 3
-            self.tt_ax1.set_title('Layer %d interpratation activated!'%self.layer)
+            self.tt_ax1.set_title('Traveltime curves panel - Layer %d interpratation activated!'%self.layer)
             self.tt_fig1.canvas.draw()
 
     def tt_clearInterpretation(self):
@@ -1058,7 +1088,7 @@ class Sisref(Frame):
 
         if self.tt_interpretation == False:
             self.tt_interpretation = True
-            self.tt_ax1.set_title('Layer %d interpratation activated!'%self.layer)
+            self.tt_ax1.set_title('Traveltime curves panel - Layer %d interpratation activated!'%self.layer)
                 
             def onpick(event):
                 art = event.artist
@@ -1146,25 +1176,44 @@ class Sisref(Frame):
             self.tt_raise()
             self.tt_interpretation = False
 
-    def tt_saveTT(self):
+    def saveTT(self):
         
-        out_ttFile = filedialog.asksaveasfilename(title='Save',filetypes=[('Refrapy pick', '*.rp')])
-        with open(out_ttFile+".rp",'w') as arqpck:
-            arqpck.write("%d %d\n%.2f %.2f\n"%(len(self.spED),self.gnED,self.fgED,self.gsED))
-            for i in range(len(self.spED)):
-                for j in range(len(self.dataxED[i][self.spED[i]])):
-                    arqpck.write('%f %f 1\n'%(self.dataxED[i][self.spED[i]][j],self.datatED[i][self.spED[i]][j]))
-                arqpck.write('/ %f\n'%self.spED[i])
-        messagebox.showinfo('Refrapy',"%s was saved!"%out_ttFile)
+        if self.editTT_panel == 1:
+            out_ttFile = filedialog.asksaveasfilename(title='Save',filetypes=[('Refrapy pick', '*.rp')])
+            with open(out_ttFile+".rp",'w') as arqpck:
+                arqpck.write("%d %d\n%.2f %.2f\n"%(len(self.spED),self.gnED,self.fgED,self.gsED))
+                for i in range(len(self.spED)):
+                    for j in range(len(self.dataxED[i][self.spED[i]])):
+                        arqpck.write('%f %f 1\n'%(self.dataxED[i][self.spED[i]][j],self.datatED[i][self.spED[i]][j]))
+                    arqpck.write('/ %f\n'%self.spED[i])
+        elif self.editTT_panel == 2:
+            if self.TTfile:
+                out_ttFile = filedialog.asksaveasfilename(title='Save',filetypes=[('Refrapy pick', '*.rp')])
+                with open(out_ttFile+".sgt",'w') as arqpck:
+                    arqpck.write("%d %d\n%.2f %.2f\n"%(len(self.sp),self.gn,self.fg,self.gs))
+                    for i in range(len(self.sp)):
+                        for j in range(len(self.datax[i][self.sp[i]])):
+                            arqpck.write('%f %f 1\n'%(self.datax[i][self.sp[i]][j],self.datat[i][self.sp[i]][j]*1000))
+                        arqpck.write('/ %f\n'%self.sp[i])
+            
+        messagebox.showinfo('Refrapy',"%s was saved!"%out_ttFile)      
+
+    def editTT(self):
+
+        self.win = Toplevel()
+        self.win.geometry("250x75")
+        self.win.resizable(0,0)
+        self.win.title('Refrainv')
+        message = "This will delete stuff"
+        Label(self.win, text="Choose the edditing panel").grid(row=0,column=0,columnspan=2)
+        Button(self.win, text='Time-terms panel', command= self.tt_editTT).grid(row=1,column=0, pady=10, padx=10)
+        Button(self.win, text='Tomograpy panel', command = self.tomo_editTT).grid(row=1,column=1, padx= 10)
+        self.win.mainloop()
 
     def tt_editTT(self):
-
-        try:
-            ttFile = filedialog.askopenfilename(title='Open',filetypes=[('Refrapy pick','*.rp'),
-                                                                        ('Refrapy pick old','*.gp'),
-                                                                ('All files','*.*')])
-        except:
-            pass
+        self.win.destroy
+        try: ttFile = filedialog.askopenfilename(title='Open',filetypes=[('Refrapy pick','*.rp')])
+        except: pass
 
         if ttFile:
             self.tt_ax2.cla()
@@ -1241,21 +1290,8 @@ class Sisref(Frame):
             event = self.tt_fig2.canvas.mpl_connect('pick_event', onpick)
             event2 = self.tt_fig2.canvas.mpl_connect('button_release_event', onrelease)
             self.tt_raise()
+            self.editTT_panel = 1
             messagebox.showinfo('Refrapy','Travel-times file loaded successfully!\nDrag and drop travel-times (circles) to edit\nWhen done, save the results into a new file')
-
-    '''def tt_topo(self):
-
-        if self.tt_pltTT:
-            try:
-                self.tt_topoFile = filedialog.askopenfilename(title='Open',filetypes=[('Elevation file','*.txt'), ('All files','*.*')])
-            except:
-                pass
-            
-            if self.tt_topoFile:
-                self.p, self.e = np.loadtxt(self.tt_topoFile, usecols = (0,1), unpack = True)
-                self.ge = [self.e[np.where(np.array(self.p) == np.array(self.gp)[i])[0]][0] for i in range(len(self.gp))]
-                self.se = [self.e[np.where(np.array(self.p) == np.array(self.sp)[i])[0]][0] for i in range(len(self.sp))]
-                messagebox.showinfo('Refrapy','Elevation data loaded successfully!')'''
     
     def tt_invert(self):
 
@@ -1271,7 +1307,14 @@ class Sisref(Frame):
                     self.ge = [self.e[np.where(np.array(self.p) == np.array(self.gp)[i])[0]][0] for i in range(len(self.gp))]
                     self.se = [self.e[np.where(np.array(self.p) == np.array(self.sp)[i])[0]][0] for i in range(len(self.sp))]
                     messagebox.showinfo('Refrapy','Elevation data loaded successfully!')
+                    
             self.tt_ax3.cla()
+
+            regw = simpledialog.askfloat("Refrapy", "Enter lambda (regularization weight) or cancel for default (0.1)")
+            
+            if regw == None:
+                regw = 0.1
+                
             def solve(layer, G, d, w):
                 rMs = np.zeros((int(len(layer)), int(len(self.sp)+self.gn+1)))
                 r = 0
@@ -1306,6 +1349,9 @@ class Sisref(Frame):
                 rd = np.hstack((d, [i*0 for i in range(np.shape(rM)[0])]))
                 rG = np.concatenate((G, rM))
                 sol, sse, rank, sv = np.linalg.lstsq(rG, rd)
+                #self.rd = rd
+                #self.rG = rG
+                #np.savetxt("rG.txt",rG,fmt="%.1f")
                 return sol, sse[0]
 
             if self.layer1:
@@ -1313,14 +1359,30 @@ class Sisref(Frame):
                 G1 = np.array([self.layer1[i][3] for i in range(len(self.layer1))])
                 G1 = np.reshape(G1, (len(G1),1))
 
-                with open("dados_camada1_Nogueira.txt","w") as arq:
-                    for i in range(len(d1)):
-                        arq.write("%.5f %.5f\n"%(d1[i], G1[i][0]))
-
-                sol_layer1, res1, rank1, sv1 = np.linalg.lstsq(G1, d1)
+                sol_layer1, sse1, rank1, sv1 = np.linalg.lstsq(G1, d1)
                 v1 = 1000/sol_layer1[0] #m/s
                 self.velocity1 = v1
-                rms1 = np.sqrt(res1/len(sol_layer1))
+
+                list_ot1, list_pt1 = [],[]
+                    
+                for p in self.layer1:
+                    s = p[-2]
+                    g = p[-1]
+                    x = p[-3]
+                    ot = p[1] #observed traveltime
+                    pt = sol_layer1[-1]*x #predicted traveltime
+                    geop = p[0]
+                    list_ot1.append(ot)
+                    list_pt1.append(pt)
+
+                    if self.layer1.index(p) == 0:
+                        self.tt_ax2.scatter([], [], marker = 'o', s = 20, c = "k", label="Observed traveltimes")
+                        self.tt_ax2.scatter([], [], marker = '+', s = 20, c = "k", label="Calculated traveltimes")
+
+                    self.tt_ax2.scatter(geop, pt,s = 20,marker="+",zorder=10, c = "darkred")
+                    self.tt_ax2.scatter(geop,ot,marker = "o",s = 20, c = "red")
+                    
+                self.tt_ax2.scatter(self.sp, [i*0 for i in range(len(self.sp))],marker = "*",zorder=11, color = 'white',edgecolor = "k", s = 100)
 
                 if self.layer2:
                     d2 = np.array([self.layer2[i][1] for i in range(len(self.layer2))])
@@ -1332,10 +1394,9 @@ class Sisref(Frame):
                         G2[i][self.layer2[i][-1]+len(self.sp)] = 1
                         G2[i][-1] = self.layer2[i][-3]
 
-                    sol_layer2, sse = solve(self.layer2, G2, d2, 0.1)
+                    sol_layer2, sse2 = solve(self.layer2, G2, d2, regw)
                     v2 = 1000/sol_layer2[-1] #m/s
                     self.velocity2 = v2
-                    rms2 = np.sqrt(sse/len(sol_layer2))
 
                 if self.layer3:
                     d3 = np.array([self.layer3[i][1] for i in range(len(self.layer3))])
@@ -1347,15 +1408,12 @@ class Sisref(Frame):
                         G3[i][self.layer3[i][-1]+len(self.sp)] = 1
                         G3[i][-1] = self.layer3[i][-3]
 
-                    sol_layer3, sse = solve(self.layer3, G3, d3, 0.1)
+                    sol_layer3, sse3 = solve(self.layer3, G3, d3, regw)
                     v3 = 1000/sol_layer3[-1] #m/s
                     self.velocity3 = v3
-                    rms3 = np.sqrt(sse/len(sol_layer3))
-                    rmsMed = (rms2+rms3)/2
-
-                
+                 
                 self.tt_ax3.grid(lw = .5, ls = "-", color = "grey", alpha = .35)
-                self.tt_ax3.set_title(label='Velocity model')
+                self.tt_ax3.set_title(label='Time-terms velocity model panel')
                 self.tt_ax3.set_xlabel("Distance (m)")
                 self.tt_ax3.set_aspect('equal', adjustable='box')
                 self.sgp = np.sort(np.concatenate((np.arange(self.fg,self.fg+self.gn*self.gs,self.gs),np.array(self.sp))))
@@ -1363,6 +1421,23 @@ class Sisref(Frame):
                 if self.layer1 and self.layer2 and not self.layer3:
                     
                     dtg = np.array([i for i in sol_layer2[len(self.sp):-1]]) #delay-time of all geophones
+                    dts = np.array([i for i in sol_layer2[:len(self.sp)]]) #delay-time of all sources
+
+                    list_ot2, list_pt2 = [],[]
+                    
+                    for p in self.layer2:
+                        s = p[-2]
+                        g = p[-1]
+                        x = p[-3]
+                        ot = p[1] #observed traveltime
+                        geop = p[0]
+                        pt = dts[s]+dtg[g]+sol_layer2[-1]*x #predicted traveltime
+                        list_ot2.append(ot)
+                        list_pt2.append(pt)
+
+                        self.tt_ax2.scatter(geop, pt,marker="+",zorder=10,s = 20, c = "darkgreen")
+                        self.tt_ax2.scatter(geop,ot,marker = "o",s = 20, c = "lightgreen")
+                    
                     if self.tt_topoFile:
                         self.tt_ax3.set_ylabel("Elevation (m)")
                         dlayer2 = self.ge-((dtg*v1*v2)/(np.sqrt((v2**2)-(v1**2)))/1000)
@@ -1402,16 +1477,51 @@ class Sisref(Frame):
                             self.tt_layer2 = self.tt_ax3.fill_between(self.gp,dlayer2, min(dlayer2)*1.1, alpha = .5,edgecolor = "k",
                                               color = "green", label = "%.0f m/s"%v2)
 
-                    self.tt_ax3.legend(loc="best")
-                    #axvm.set_ylim((min(sdlayer2)*1.1-5,5))
-                    messagebox.showinfo('Refrapy','The velocity model was created!\n RMS = %.5f ms'%rms2)
-                    self.tt_pltVM = True
-                    self.tt_raise()
                             
                 elif self.layer1 and self.layer2 and self.layer3:
-                    dtg2 = np.array([i for i in sol_layer2[len(self.sp):-1]]) #delay-time of all geophones
-                    dtg3 = np.array([i for i in sol_layer3[len(self.sp):-1]]) #delay-time of all geophones
+                    dtg2 = np.array([i for i in sol_layer2[len(self.sp):-1]]) #delay-time of all geophones2
+                    dtg3 = np.array([i for i in sol_layer3[len(self.sp):-1]]) #delay-time of all geophones3
+                    dts2 = np.array([i for i in sol_layer2[:len(self.sp)]]) #delay-time of all sources2
+                    dts3 = np.array([i for i in sol_layer3[:len(self.sp)]]) #delay-time of all sources3
+
+                    list_ot2, list_pt2 = [],[]
+                    
+                    for p in self.layer2:
+                        s = p[-2]
+                        g = p[-1]
+                        x = p[-3]
+                        ot = p[1] #observed traveltime
+                        geop = p[0]
+                        pt = dts2[s]+dtg2[g]+sol_layer2[-1]*x #predicted traveltime
+                        list_ot2.append(ot)
+                        list_pt2.append(pt)
+
+                        self.tt_ax2.scatter(geop, pt,marker="+",zorder=10,s = 20, c = "darkgreen")
+                        self.tt_ax2.scatter(geop,ot,marker = "o",s = 20, c = "lightgreen")
+
+                    #rmse2 = np.sqrt(np.mean((np.array(list_pt)-np.array(list_ot))**2))
+                    #relrmse2 = (np.sqrt(np.mean(np.square((np.array(list_ot) - np.array(list_pt)) / np.array(list_ot))))) * 100
+
+                    list_ot3, list_pt3 = [],[]
+                    
+                    for p in self.layer3:
+                        s = p[-2]
+                        g = p[-1]
+                        x = p[-3]
+                        ot = p[1] #observed traveltime
+                        geop = p[0]
+                        pt = dts3[s]+dtg3[g]+sol_layer3[-1]*x #predicted traveltime
+                        list_ot3.append(ot)
+                        list_pt3.append(pt)
+
+                        self.tt_ax2.scatter(geop, pt,marker="+",zorder=10,s = 20, c = "darkblue")
+                        self.tt_ax2.scatter(geop,ot,marker = "o",s = 20, c = "blue")
+
+                    #rmse3 = np.sqrt(np.mean((np.array(list_pt)-np.array(list_ot))**2))
+                    #relrmse3 = (np.sqrt(np.mean(np.square((np.array(list_ot) - np.array(list_pt)) / np.array(list_ot))))) * 100
+                                
                     upvmed = (v1+v2)/2
+                    
                     if self.tt_topoFile:
                         dlayer2 = self.ge-((dtg2*v1*v2)/(np.sqrt((v2**2)-(v1**2)))/1000)
                         self.depthLayer2 = dlayer2
@@ -1464,14 +1574,37 @@ class Sisref(Frame):
                                               color = "green", label = "%.0f m/s"%v2)
                             self.tt_layer3 = self.tt_ax3.fill_between(self.gp,dlayer3, min(dlayer3)*1.1, alpha = .5,edgecolor = "k",
                                               color = "blue",label = "%.0f m/s"%v3)
-                        
-                    self.tt_ax3.legend(loc="best")
-                    #axvm.set_ylim((min(sdlayer3)*1.1-5,5))
-                    self.tt_pltVM = True
-                    messagebox.showinfo('Refrapy','The velocity model was created!\nRMS layer 1 = %.5f\nRMS layer 2 = %.5f ms\nRMS layer 3 = %.2f'%(rms1,rms2,rms3))
-                    self.tt_raise()
- 
+     
+                self.tt_ax3.legend(loc="best")
+                self.tt_ax2.legend(loc='upper right', bbox_to_anchor=(1.01, 1.15))
+                self.tt_ax2.grid(ls = '--', lw = 0.5)
+          
+                self.tt_ax2.set_xlabel("Distance (m)")
+                self.tt_ax2.set_ylabel("Traveltime (ms)")
+                
+                #axvm.set_ylim((min(sdlayer3)*1.1-5,5))
+                self.tt_pltVM = True
+                self.tt_raise()
 
+                if self.layer1 and self.layer2 and not self.layer3:
+
+                    pred_tt = list_pt1+list_pt2
+                    obs_tt = list_ot1+list_ot2
+                    rmse = np.sqrt(np.mean((np.array(pred_tt)-np.array(obs_tt))**2))
+                    relrmse = (np.sqrt(np.mean(np.square((np.array(obs_tt) - np.array(pred_tt)) / np.array(obs_tt))))) * 100
+                    #chi2 = np.mean(np.square(np.array(obs_tt)-np.array(pred_tt))/np.array(pred_tt))
+                    messagebox.showinfo('Refrapy','Absolute RMSE = %.2f ms\nRelative RMSE = %.2f%%'%(rmse,relrmse))
+
+                elif self.layer1 and self.layer2 and self.layer3:
+
+                    pred_tt = list_pt1+list_pt2+list_pt3
+                    obs_tt = list_ot1+list_ot2+list_ot3
+                    rmse = np.sqrt(np.mean((np.array(pred_tt)-np.array(obs_tt))**2))
+                    relrmse = (np.sqrt(np.mean(np.square((np.array(obs_tt) - np.array(pred_tt)) / np.array(obs_tt))))) * 100
+                    #chi2 = np.mean(np.square(np.array(obs_tt)-np.array(pred_tt))/np.array(pred_tt))
+                    messagebox.showinfo('Refrapy','The velocity model was created!\nAbsolute RMSE = %.2f ms\nRelative RMSE = %.2f%%'%(rmse,relrmse))
+                    
+ 
 root = Tk()
 Sisref(root)
 root.mainloop()
