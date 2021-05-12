@@ -1,4 +1,4 @@
-![plot](C:\Users\Victor\Desktop\Refrapy\Refrapy)
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/refrapy_logo.png)
 
 Refrapy is a Python software with a graphical interface for seismic refraction data analysis. It is based on two modules: Refrapick and Refrainv.
 
