@@ -4,7 +4,7 @@ Refrapy is a Python software with a graphical interface for seismic refraction d
 
 It is based on two modules: Refrapick and Refrainv.
 
-The Refrapick program is used to deal with seismic sections and pick first breaks. The waveform reading is powered by ObsPy (https://www.obspy.org/).
+The Refrapick program is used to deal with seismic sections and to pick first breaks. The waveform reading is powered by ObsPy (https://www.obspy.org/).
 
 The Refrainv program is used to run a time-terms and a traveltimes tomography inversion. The latter is powered by pyGIMLi (https://www.pygimli.org/).
 
@@ -19,7 +19,7 @@ All dependencies are listed below:
    ```
 
 I recommend installing Anaconda (https://www.anaconda.com/), because it simplifies package management.
-Once you have Anaconda installed, open the Anaconda prompt and run the following commands:
+Once you have it installed, open the Anaconda prompt and run the following commands:
 
    ```
    conda create -n refrapy python=3.7.7
