@@ -1,5 +1,6 @@
-# Refrapy
-Refrapy is a Python 3 application with a graphic interface for seismic refraction data analysis. It is based on two modules: Refrapick and Refrainv.
+![plot](C:\Users\Victor\Desktop\Refrapy\Refrapy)
+
+Refrapy is a Python software with a graphical interface for seismic refraction data analysis. It is based on two modules: Refrapick and Refrainv.
 
 Dependencies:
    ```
