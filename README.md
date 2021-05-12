@@ -36,5 +36,9 @@ You can execute the python files by running:
    python Refrapick.py
    python Refrainv.py
    ```
+   
+Opening waveform files:
+
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/open_waveform.gif)
 
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
