@@ -51,7 +51,7 @@ You can execute the python files by running:
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/filters.gif)
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/trim_samples.gif)
 
-**Get apparent velocity**: An interaction mode can be enabled/disabled to obtain the apparent velocity of a layer (Va), that can be estimated by drawing a straight line on the current section, where the inverse of the calculated slope of the line is plotted as Va.
+**Get apparent velocity**: An interaction mode can be enabled/disabled to obtain the apparent velocity of a layer (Va), that can be estimated by drawing a straight line on the current section. The inverse of the calculated slope of the line is plotted as Va.
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/apparent_velocity.gif)
 
