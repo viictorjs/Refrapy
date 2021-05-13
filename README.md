@@ -1,4 +1,12 @@
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/refrapy_logo.png)
+   
+## Contributors
+
+Victor Guedes (vjs279@hotmail.com)
+
+Susanne Maciel (susanne@unb.br)
+
+Marcelo Rocha (marcelorocha@unb.br)
 
 ## Introduction
 
@@ -34,14 +42,6 @@ You can execute the python files by running:
    python Refrapick.py
    python Refrainv.py
    ```
-   
-## Contributors
-
-Victor Guedes (vjs279@hotmail.com)
-
-Susanne Maciel (susanne@unb.br)
-
-Marcelo Rocha (marcelorocha@unb.br)
 
 ## Refrapick
 
