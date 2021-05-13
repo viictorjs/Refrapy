@@ -912,7 +912,7 @@ class Sispick(Frame):
 
         if self.plotExiste == True:
             if int(self.ndados[self.pagina]) != int(len(self.sts[0][0])): 
-                if messagebox.askyesno('Refrapy - Sispick', 'Atualizar os plots para número de amostras original (%d)?'%int(len(self.sts[0][0]))):
+                if messagebox.askyesno('Refrapy - Sispick', 'Restore to the default number of samples (%d)?'%int(len(self.sts[0][0]))):
                     self.ndados[self.pagina] = int(len(self.sts[0][0]))
                     if self.normalizado == True:
                         for j in range(self.canais):
@@ -1308,14 +1308,14 @@ class Sispick(Frame):
     def pickAmostra(self):
 
         if self.plotExiste == True:
-            self.statusCortador.configure(text=' Corte ativado', fg='blue')
+            self.statusCortador.configure(text=' Trimming on', fg='blue')
             def pick(event):
                 if int((event.ydata/self.sts[0][0].stats.delta)/1000) <= int(len(self.sts[0][0])):
                     marcador = self.axes[self.pagina].hlines(event.ydata,float(self.axes[0].get_xlim()[0]),
                                             float(self.axes[0].get_xlim()[1]),colors='r',linestyle='--',
                                             alpha = 1,linewidth = 3)
                     self.figs[self.pagina].canvas.draw()
-                    if messagebox.askyesno('Refrapy - Sispick', 'Cortar o plot para %d ms?'%int(event.ydata)):
+                    if messagebox.askyesno('Refrapy - Sispick', 'Remove samples after %d ms?'%int(event.ydata)):
                         marcador.remove()
                         self.ndados[self.pagina] = int((event.ydata/self.sts[0][0].stats.delta)/1000)
                         if self.normalizado == True:
@@ -1369,7 +1369,7 @@ class Sispick(Frame):
                 for i in range(len(self.arquivos)):
                     cid = self.figs[i].canvas.mpl_connect('button_press_event', pick)
                     self.conAmostra[i] = cid
-                self.statusCortador.configure(text='Corte ativado', fg='blue')                    
+                self.statusCortador.configure(text='Trimming on', fg='blue')                    
                 self.pickAmostraAtivado = True
             else:
                 for i in range(len(self.arquivos)):
