@@ -1,5 +1,7 @@
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/refrapy_logo.png)
 
+## Introduction
+
 Refrapy is a Python software with a graphical interface for seismic refraction data analysis. 
 
 It is based on two modules: Refrapick and Refrainv.
@@ -36,7 +38,9 @@ You can execute the python files by running:
    python Refrapick.py
    python Refrainv.py
    ```
-   
+
+## Refrapick
+
 Opening waveform files:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/open_waveform.gif)
@@ -56,5 +60,17 @@ Trimming samples:
 Get apparent velocity of layers:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/apparent_velocity.gif)
+
+Picking first breaks:
+
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick.gif)
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick2.gif)
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick3.gif)
+
+Analyze new data:
+
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/reset.gif)
+
+## Refrainv
 
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
