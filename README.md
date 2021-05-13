@@ -30,7 +30,7 @@ Once it is installed, open run the following commands on Anaconda prompt:
    conda install -c gimli -c conda-forge pygimli=1.0.12
    ```
     
-Once all the necessarty packages are installed, extract Refrapick.py, Refrainv.py and the images folder to a directory on your computer. 
+Once all the necessary packages are installed, extract Refrapick.py, Refrainv.py and the images folder to a directory on your computer. 
 
 You can execute the python files by running:
 
