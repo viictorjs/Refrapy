@@ -69,7 +69,7 @@ A trimming mode can be enabled/disabled. Clicking on the plotting screen will as
 
 ### Picking first breaks
 
-An interaction mode can be enabled/disabled for first breaks picking. Picks can be made individually with single clicks or several at once. The latter can be done by drawing a straight line through the section, where intersections with traces will be marked as picks. Only one pick can be created per trace, so that a pick already made will be changed to a new y value if a new click occurs. 
+An interaction mode can be enabled/disabled for first breaks picking. Picks can be made individually with single clicks or several at once. The latter can be done by drawing a straight line through the section, where intersections with traces will be marked as picks. To drawn a line, use the right mouse button (click, hold, drag and release). Only one pick can be created per trace, so that a pick already made will be changed to a new y value if a new click occurs. 
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick.gif)
 
@@ -83,7 +83,7 @@ A line connecting all the picks of the current section can be plotted. All picks
 
 ### etc
 
-An interaction mode can be enabled/disabled to obtain the apparent velocity of a layer (Va), that can be estimated by drawing a straight line on the current section. The inverse of the calculated slope of the line is plotted as Va.
+An interaction mode can be enabled/disabled to obtain the apparent velocity of a layer (Va), that can be estimated by drawing a straight line on the current section. To drawn a line, use the left mouse button (click, hold, drag and release). The inverse of the calculated slope of the line is plotted as Va.
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/apparent_velocity.gif)
 
