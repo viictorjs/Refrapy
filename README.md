@@ -97,7 +97,7 @@ The Refrainv program is used to run a time-terms and a traveltimes tomography in
 
 ### Time-terms inversion
 
-The pick file exported from Refrapick can used directly used as input for a time-terms analysis. An intercation mode can be enabled/disabled for layer assignment by clicking on data points (left mouse button).
+The pick file exported from Refrapick can be used directly as input for a time-terms analysis. An intercation mode can be enabled/disabled for layer assignment by clicking on data points (left mouse button).
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/timeterms_inv1.gif)
 
