@@ -38,6 +38,10 @@ You can execute the python files by running:
    python Refrapick.py
    python Refrainv.py
    ```
+   
+## Contributors
+
+Victor Guedes, Susanne Maciel & Marcelo Rocha.
 
 ## Refrapick
 
@@ -81,5 +85,3 @@ The inversion methods of time-terms analysis and traveltime tomography are avail
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv2.gif)
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv3.gif)
 
-
-Author: Victor Guedes, e-mail: vjs279@hotmail.com
