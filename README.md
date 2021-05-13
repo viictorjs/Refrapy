@@ -45,11 +45,11 @@ You can execute the python files by running:
 
 ## Refrapick
 
-The Refrapick program is used for basic waveform processing and for first breaks picking. The waveform reading is powered by ObsPy (https://www.obspy.org/).
+The Refrapick program is used for basic waveform processing and for first breaks picking.
 
 ### Open waveform files
 
-The software is aimed to work mainly around SEG2 files, but all waveform formats readable by ObsPy can be used. However, there are a few conditions that need to be considered when reading multichannel waveform data. Waveform **files with missing data traces cannot be used as input**, which can occur with files that have already passed through some other processing software, where one or more traces were removed manually, probably due to being bad noisy data. Thus, **it is recommended the use of original files (i.e., without any editing)**. Also, receivers and source position may not be well defined in the file header or may fail to be properly read. **In such cases, instead of obtaining this information automatically (conventional attempt), dialog boxes appear so that the user can enter these required values**.
+The software is aimed to work mainly around SEG2 files, but all waveform formats readable by ObsPy (https://www.obspy.org/) can be used. However, there are a few conditions that need to be considered when reading multichannel waveform data. Waveform **files with missing data traces cannot be used as input**, which can occur with files that have already passed through some other processing software, where one or more traces were removed manually, probably due to being bad noisy data. Thus, **it is recommended the use of original files (i.e., without any editing)**. Also, receivers and source position may not be well defined in the file header or may fail to be properly read. **In such cases, instead of obtaining this information automatically (conventional attempt), dialog boxes appear so that the user can enter these required values**.
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/open_waveform.gif)
 
