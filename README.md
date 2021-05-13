@@ -73,11 +73,17 @@ Analyze new data:
 
 ## Refrainv
 
-Run time-terms inversion:
+Run the time-terms inversion:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/timeterms_inv1.gif)
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/timeterms_inv2.gif)
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/timeterms_inv3.gif)
+
+Run the traveltimes tomography inversion:
+
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv1.gif)
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv2.gif)
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv3.gif)
 
 
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
