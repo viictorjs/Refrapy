@@ -41,7 +41,9 @@ You can execute the python files by running:
    
 ## Contributors
 
-Victor Guedes, Susanne Maciel & Marcelo Rocha.
+Victor Guedes (vjs279@hotmail.com)
+Susanne Maciel (susanne@unb.br)
+Marcelo Rocha (marcelorocha@unb.br)
 
 ## Refrapick
 
