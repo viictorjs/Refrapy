@@ -45,4 +45,8 @@ Normalization, gain, fill and clip amplitudes:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/norm_gain_fill.gif)
 
+Filters:
+
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/filters.gif)
+
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
