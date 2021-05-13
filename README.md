@@ -55,7 +55,7 @@ The software is aimed to work mainly around SEG2 files, but all waveform formats
 
 ### Basic waveform processing
 
-Normalization divides amplitudes by each trace’s maximum amplitude. Scale gain divides (decrease gain) or multiplies (increase gain) the amplitudes of the current section by a fixed factor. Traces can be plotted with the filling of the positive/negative side of amplitudes or as simple wiggles (no filling). All amplitudes superposition can be clipped. The times axis can be moved up/down. 
+Normalization divides amplitudes by each trace’s maximum amplitude. Scale gain divides (decrease gain) or multiplies (increase gain) the amplitudes of the current section by a fixed factor. Traces can be plotted with the filling of the positive/negative side of amplitudes or as simple wiggles (no filling). All amplitudes superposition can be clipped. The times axis limit can be increased/decreased. 
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/norm_gain_fill.gif)
 
