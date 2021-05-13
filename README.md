@@ -52,14 +52,17 @@ You can execute the python files by running:
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/trim_samples.gif)
 
 **Get apparent velocity of layers**: An interaction mode can be enable/disable to obtain the apparent velocity of a layer (Va), that can be estimated by drawing a straight line on the current section, where the inverse of the calculated slope of the line is plotted as Va.
+
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/apparent_velocity.gif)
 
 **Picking first breaks**: An interaction mode can be enabled/disabled for first breaks picking. Picks can be made individually with single clicks or several at once. The latter can be done by drawing a straight line through the section, where intersections with traces will be marked as picks. Only one pick can be created per trace, so that a pick already made will be changed to a new y value if a new click occurs. A line connecting all the picks of the current section can be plotted. All picks of the current section can be removed. A preview of the resulting traveltime curves can be checked any time, with an interaction mode to  manually highlight erroneous picks and facilitate its identification between sections. Figure functions (e.g. zoom, pan) are available in the Matplotlib's toolbar.
+
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick.gif)
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick2.gif)
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick3.gif)
 
 If a new data set is to be analyzed or if it is necessary to open more sections in addition to those already read, this function should be used, it is necessary to reset all memory and plotting screens.
+
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/reset.gif)
 
 ## Refrainv
