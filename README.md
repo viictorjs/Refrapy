@@ -38,7 +38,9 @@ You can execute the python files by running:
    python Refrapick.py
    python Refrainv.py
    ```
-   
+
+## Refrapick
+
 Opening waveform files:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/open_waveform.gif)
@@ -65,9 +67,10 @@ Picking first breaks:
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick2.gif)
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick3.gif)
 
-
 Analyze new data:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/reset.gif)
+
+## Refrainv
 
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
