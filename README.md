@@ -53,4 +53,8 @@ Trimming samples:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/trim_samples.gif)
 
+Get apparent velocity of layers:
+
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/apparent_velocity.gif)
+
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
