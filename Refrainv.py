@@ -327,7 +327,7 @@ class Sisref(Frame):
         self.tomo_pltG = False
         self.tomo_pltG_triang = False
         self.tomo_pltS_triang = False
-        self.tomo_cmap = plt.cm.get_cmap("Spectral")
+        self.tomo_cmap = plt.cm.get_cmap("jet")
         self.tt_frame1.tkraise()
         self.tt_frame2.tkraise()
         self.tt_frame3.tkraise()
@@ -418,12 +418,12 @@ class Sisref(Frame):
                 self.tomo_ax3.plot(self.gp, self.depthLayer2, '--', c="k")
                 self.tomo_ax4.plot(self.gp, self.depthLayer2, '--', c="k")
                 
-                #artigo
+                '''#artigo
                 from scipy.interpolate import interp1d
                 f = interp1d([0,14,32,50,64], [-10,-12,-18,-12,-10], kind="cubic")
                 y = f(np.arange(0,64,1))
                 self.tomo_ax4.plot(np.arange(0,64,1),y, c = "k")
-                self.tomo_ax3.plot(np.arange(0,64,1),y, c = "k")
+                self.tomo_ax3.plot(np.arange(0,64,1),y, c = "k")'''
                 
             if self.layer3:
                 self.tomo_ax3.plot(self.gp, self.depthLayer3, '--', c="k")
@@ -734,7 +734,7 @@ class Sisref(Frame):
             #cm = self.tomo_ax3.imshow(zi, cmap = "Spectral", origin='lower', interpolation = 'spline36',
             #             vmin = vmin, vmax = max(v),
             #             extent=[x.min(),x.max(),y.min(),y.max()], clip_path=poly, clip_on=True)
-            cm =self.tomo_ax3.contourf(zi, cmap = "jet", levels = 20, origin='lower', extent=[x.min(),x.max(),y.min(),y.max()])
+            cm =self.tomo_ax3.contourf(zi, cmap = self.tomo_cmap, levels = 20, origin='lower', extent=[x.min(),x.max(),y.min(),y.max()])
             #cm2 =self.tomo_ax3.contourf(xi,yi,zi, levels = [2100], origin='lower', extent=[x.min(),x.max(),y.min(),y.max()])
             pg.show(self.m, self.vest, label="Velocity [m/s]", cMap = self.tomo_cmap,
                     ax = self.tomo_ax4, colorBar = False, logScale = False)
