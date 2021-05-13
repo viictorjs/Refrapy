@@ -1206,8 +1206,14 @@ class Sisref(Frame):
         self.win.title('Refrainv')
         message = "This will delete stuff"
         Label(self.win, text="Choose the edditing panel").grid(row=0,column=0,columnspan=2)
-        Button(self.win, text='Time-terms panel', command= self.tt_editTT).grid(row=1,column=0, pady=10, padx=10)
-        Button(self.win, text='Tomograpy panel', command = self.tomo_editTT).grid(row=1,column=1, padx= 10)
+        Button(self.win, text='Time-terms panel', command= lambda: choose_tt()).grid(row=1,column=0, pady=10, padx=10)
+        Button(self.win, text='Tomograpy panel', command = lambda: choose_tomo()).grid(row=1,column=1, padx= 10)
+        def choose_tt():
+            self.tt_editTT()
+            self.win.destroy
+        def choose_tomo():
+            self.tomo_editTT()
+            self.win.destroy
         self.win.mainloop()
 
     def tt_editTT(self):
