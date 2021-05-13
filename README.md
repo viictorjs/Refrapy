@@ -63,13 +63,13 @@ High pass/low pass filters removes unwanted frequency content of the current sec
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/filters.gif)
 
-A trimming mode can be enabled/disabled. Clicking on the plotting screen will assign the y value of the clicked position as a limit, where all samples in the current section after that time will be removed. This function is particularly useful when there are data sets with high sampling frequency, where **removing samples might speed up the performance of other functions**. The section can be restored for its original number of samples.
+A trimming mode can be enabled/disabled. Clicking with the left mouse button on the plotting screen will assign the y value of the clicked position as a limit, where all samples in the current section after that time will be removed. This function is particularly useful when there are data sets with high sampling frequency, where **removing samples might speed up the performance of other functions**. The section can be restored for its original number of samples.
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/trim_samples.gif)
 
 ### Picking first breaks
 
-An interaction mode can be enabled/disabled for first breaks picking. Picks can be made individually with single clicks or several at once. The latter can be done by drawing a straight line through the section, where intersections with traces will be marked as picks. To drawn a line, use the right mouse button (click, hold, drag and release). Only one pick can be created per trace, so that a pick already made will be changed to a new y value if a new click occurs. 
+An interaction mode can be enabled/disabled for first breaks picking. Picks can be made individually with single clicks (left mouse button) or several at once. The latter can be done by drawing a straight line through the section, where intersections with traces will be marked as picks. To drawn a line, use the right mouse button (click, hold, drag and release). Only one pick can be created per trace, so that a pick already made will be changed to a new y value if a new click occurs. 
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick.gif)
 
@@ -97,17 +97,29 @@ The Refrainv program is used to run a time-terms and a traveltimes tomography in
 
 ### Time-terms inversion
 
-The pick file exported from Refrapick can used directly used as input for a time-terms analysis in Refrainv. To show the y axis of a velocity model as elevation instead of depth, a two-column topography file can be entered right before running the time-terms inversion. A custom regularization weight can be entered (higher the value, smoother the model). The goodness-of-fit can be evaluated graphically and through RMS errors. The time-terms model can be exported as a column file with the geometry and velocity values of the layers. Some plot customizations can be made.
+The pick file exported from Refrapick can used directly used as input for a time-terms analysis. An intercation mode can be enabled/disabled for layer assignment by clicking on data points (left mouse button).
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/timeterms_inv1.gif)
+
+To show the y axis of a velocity model as elevation instead of depth, a two-column topography file can be entered right before running the inversion. A custom regularization weight can be entered (the higher the value, smoother the model). The goodness-of-fit can be evaluated graphically and through RMS errors.
+
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/timeterms_inv2.gif)
+
+ The time-terms model can be exported as a column file with the geometry and velocity values of the layers. Some plot customizations can be made.
+
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/timeterms_inv3.gif)
 
 ### Traveltimes tomography inversion
 
-It is previously necessary to use the implemented conversion function to create a file readable by pyGIMLi’s traveltime manager from the pick file exported in Refrapick. To show the y axis of a velocity model as elevation instead of depth, a two-column topography file can be entered when creating the traveltimes tomography file. The following mesh and inversion parameters can be entered: maximum mesh depth, maximum mesh cell size, relative distance for refinement nodes of a mesh cell, number of secondary nodes in mesh cells, minimum and maximum velocities of a gradient starting model, relative weight in vertical to horizontal direction, total penalty factor for the model roughness and maximum number of iterations. The goodness-of-fit can be evaluated graphically and through RMS errors and Chi² value. The velocity tomogram can be exported as a xyz file, containing the velocity and centers positions of all cells. Some plot customizations can be made.
+It is previously necessary to use the implemented conversion function to create a file readable by pyGIMLi’s traveltime manager from the pick file exported in Refrapick. To show the y axis of a velocity model as elevation instead of depth, a two-column topography file can be entered when creating the traveltimes tomography file.
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv1.gif)
+
+For inversion, the following parameters can be entered: maximum mesh depth, maximum mesh cell size, relative distance for refinement nodes of a mesh cell, number of secondary nodes in mesh cells, minimum and maximum velocities of a gradient starting model, relative weight in vertical to horizontal direction, total penalty factor for the model roughness and maximum number of iterations. The goodness-of-fit can be evaluated graphically and through RMS errors and Chi² value.
+
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv2.gif)
+
+The velocity tomogram can be exported as a xyz file, containing the velocity and centers positions of all cells. Some plot customizations can be made.
+
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv3.gif)
 
