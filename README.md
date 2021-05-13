@@ -60,8 +60,8 @@ Get apparent velocity of layers:
 Picking first breaks:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick.gif)
-[alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick2.gif)
-[alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick3.gif)
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick2.gif)
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/pick3.gif)
 
 
 Analyze new data:
