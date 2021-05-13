@@ -14,7 +14,7 @@ import platform
 
 warnings.filterwarnings('ignore')
 
-class Sispick(Frame):
+class Refrapick(Frame):
 
     def __init__(self, master, *args, **kwargs):                         
 
@@ -688,7 +688,7 @@ class Sispick(Frame):
 
         if self.plotExiste == True:
             root = Tk()
-            root.title('Refrapy - Sispick') 
+            root.title('Refrapy - Refrapick') 
             fig = plt.figure()
             ax = fig.add_subplot(111)
             for i in range(len(self.arquivos)):
@@ -751,7 +751,7 @@ class Sispick(Frame):
 
         if self.plotExiste == True:
             if len(self.picks[self.pagina]) > 0:
-                if messagebox.askyesno("Refrapy - Sispick", "Limpar picks do sismograma atual?"):
+                if messagebox.askyesno("Refrapy - Refrapick", "Clear all picks on current section?"):
                     for i in self.picksArts[self.pagina].values():
                         i.remove()
                     self.picks[self.pagina].clear()
@@ -773,7 +773,7 @@ class Sispick(Frame):
     def fecharPlot(self):
           
         if self.plotExiste == True:
-            if messagebox.askyesno("Refrapy - Sispick", "Fechar o projeto atual?"):
+            if messagebox.askyesno("Refrapy - Refrapick", "Do you want to close?"):
                 for i in self.frames:
                     i.destroy()
                 for i in self.axes:
@@ -912,7 +912,7 @@ class Sispick(Frame):
 
         if self.plotExiste == True:
             if int(self.ndados[self.pagina]) != int(len(self.sts[0][0])): 
-                if messagebox.askyesno('Refrapy - Sispick', 'Restore to the default number of samples (%d)?'%int(len(self.sts[0][0]))):
+                if messagebox.askyesno('Refrapy - Refrapick', 'Restore to the default number of samples (%d)?'%int(len(self.sts[0][0]))):
                     self.ndados[self.pagina] = int(len(self.sts[0][0]))
                     if self.normalizado == True:
                         for j in range(self.canais):
@@ -1163,7 +1163,7 @@ class Sispick(Frame):
     def salvargp(self):
 
         if not self.picks[:]:
-            messagebox.showerror('Refrapy - Sispick','Nao há picks')
+            messagebox.showerror('Refrapy - Refrapick','There are no picks!')
         else:
             try:
                 arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Refrapy pick', '*.rp')])
@@ -1182,14 +1182,14 @@ class Sispick(Frame):
                                 arqpck.write('%f %f 1\n'%(key,self.picks[i][key])) 
                             arqpck.write('/ %f\n'%(float(self.listSource[i])))
                     arqpck.close()  
-                messagebox.showinfo('Refrapy - Sispick','Pick salvo')
+                messagebox.showinfo('Refrapy - Refrapick','Pick saved!')
             except:
                 pass
 
     def salvarpick(self):
 
         if not self.picks[:]:
-            messagebox.showerror('Refrapy - Sispick','Nao há picks')
+            messagebox.showerror('Refrapy - Refrapick','Nao há picks')
         else:  
             try:   
                 arquivoSaida = filedialog.asksaveasfilename(title='Salvar',filetypes=[('Seisimager', '.vs')])
@@ -1211,7 +1211,7 @@ class Sispick(Frame):
                                 arqpck.write('%f %f 1 \n'%(key,self.picks[i][key]))
                         arqpck.write('0 0 \n 0 \n 0 0 \n')
                     arqpck.close()  
-                messagebox.showinfo('Refrapy - Sispick','Pick salvo')
+                messagebox.showinfo('Refrapy - Refrapick','Pick salvo')
             except:
                 pass
 
@@ -1315,7 +1315,7 @@ class Sispick(Frame):
                                             float(self.axes[0].get_xlim()[1]),colors='r',linestyle='--',
                                             alpha = 1,linewidth = 3)
                     self.figs[self.pagina].canvas.draw()
-                    if messagebox.askyesno('Refrapy - Sispick', 'Remove samples after %d ms?'%int(event.ydata)):
+                    if messagebox.askyesno('Refrapy - Refrapick', 'Remove samples after %d ms?'%int(event.ydata)):
                         marcador.remove()
                         self.ndados[self.pagina] = int((event.ydata/self.sts[0][0].stats.delta)/1000)
                         if self.normalizado == True:
@@ -1383,7 +1383,7 @@ class Sispick(Frame):
         if self.plotExiste == True:
             root = Tk()
             root.geometry('430x300')
-            root.title('Refrapy - Sispick')
+            root.title('Refrapy - Refrapick')
             root.resizable(0,0)
             fonte = StringVar()
             dx = StringVar()
@@ -1478,7 +1478,7 @@ class Sispick(Frame):
         if self.plotExiste == True and self.optAberto == False:
             root = Tk()
             root.geometry('420x350+500+250')
-            root.title('Refrapy - Sispick')
+            root.title('Refrapy - Refrapick')
             vardx = StringVar()
             varY = StringVar()
             varGain = StringVar()    
@@ -1564,7 +1564,7 @@ class Sispick(Frame):
         
         root = Tk()   
         root.geometry('455x230+500+250')
-        root.title('Refrapy - Sispick')
+        root.title('Refrapy - Refrapick')
         vardx = StringVar()
         mainLabel = Label(root, text='O espaçamento entre geofones não foi encontrado no cabeçalho\ndo arquivo. Insira manualmente no campo abaixo',
                     font=("Helvetica", 11),fg='red').grid(row=0, column=0, sticky="w",pady=15,padx=5)
@@ -1585,14 +1585,14 @@ class Sispick(Frame):
                 except: 
                     warning.configure(text = 'Valor inválido')
             else:
-                messagebox.showinfo('Refrapy - Sispick', 'Espaçamento entre geofones padrão será usado: 2 m')
+                messagebox.showinfo('Refrapy - Refrapick', 'Espaçamento entre geofones padrão será usado: 2 m')
                 self.valordx = 2
                 root.destroy()
                 self.abrir_pt2()
                                     
         def cancelar():
 
-            messagebox.showinfo('Refrapy - Sispick', 'Espaçamento entre geofones padrão será usado: 2 m')
+            messagebox.showinfo('Refrapy - Refrapick', 'Espaçamento entre geofones padrão será usado: 2 m')
             self.valordx = 2
             root.destroy()
             self.abrir_pt2()
@@ -1608,5 +1608,5 @@ class Sispick(Frame):
         root.mainloop()
 
 root = Tk()
-Sispick(root)
+Refrapick(root)
 root.mainloop()
