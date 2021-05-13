@@ -59,11 +59,11 @@ Normalization divides amplitudes by each trace’s maximum amplitude. Scale gain
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/norm_gain_fill.gif)
 
-High pass/low pass filters removes unwanted frequency content of the current section, where each consecutive application will assign a new frequency limit following a fixed factor.
+High pass/low pass filters removes unwanted frequency content of the current section, where each consecutive application will assign a new frequency limit following a fixed factor. All applied filters can be removed.
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/filters.gif)
 
-A trimming mode can be enabled/disabled. Clicking on the plotting screen will assign the y value of the clicked position as a limit, where all samples in the current section after that time will be removed. This function is particularly useful when there are data sets with high sampling frequency, where **removing samples might speed up the performance of other functions**.
+A trimming mode can be enabled/disabled. Clicking on the plotting screen will assign the y value of the clicked position as a limit, where all samples in the current section after that time will be removed. This function is particularly useful when there are data sets with high sampling frequency, where **removing samples might speed up the performance of other functions**. The section can be restored for its original number of samples.
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/trim_samples.gif)
 
