@@ -49,4 +49,8 @@ Filters:
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/filters.gif)
 
+Trimming samples:
+
+![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/trim_samples.gif)
+
 Author: Victor Guedes, e-mail: vjs279@hotmail.com
