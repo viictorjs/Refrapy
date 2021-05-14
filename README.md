@@ -25,7 +25,7 @@ All dependencies are listed below:
    ```
 
 It is recommended the use of Anaconda (https://www.anaconda.com/), because it simplifies package management.
-Once it is installed, open run the following commands on Anaconda prompt:
+Once it is installed, run the following commands on the Anaconda prompt:
 
    ```
    conda create -n refrapy python=3.7.7
