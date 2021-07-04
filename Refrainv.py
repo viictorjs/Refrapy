@@ -697,9 +697,9 @@ class Sisref(Frame):
             arms = ra.inv.absrms() # Absolute RMS
             chi2 = ra.inv.chi2() # chi2
 
-            print("maxDepth %.2f\nmeshDx %.2f\nmaxCellSize %.2f\nlam %.2f\nzW %.2f\nminVel %.2f\nmaxVal %.2f\nsecNodes %.2f\nmaxIter %.5f\narms %.2f\nrrms %.2f\nchi2 %.2f\n"%(maxDepth, meshDx, maxCellSize,
-                                                                                                                                            smoothing,vertWeight,minVel,maxVel,sNodes,
-                                                                                                                                            maxIterations, arms,rrms,chi2))
+            #print("maxDepth %.2f\nmeshDx %.2f\nmaxCellSize %.2f\nlam %.2f\nzW %.2f\nminVel %.2f\nmaxVal %.2f\nsecNodes %.2f\nmaxIter %.5f\narms %.2f\nrrms %.2f\nchi2 %.2f\n"%(maxDepth, meshDx, maxCellSize,
+            #                                                                                                                                smoothing,vertWeight,minVel,maxVel,sNodes,
+            #                                                                                                                                maxIterations, arms,rrms,chi2))
             
             messagebox.showinfo('Refrapy',"Relative RMS = %.2f%%\nAbsolute RMS = %.2f ms\nChi-square = %.2f"%(rrms,1000*arms,chi2))
             x = np.array([i for i in pg.x(m.cellCenters())])
@@ -1364,10 +1364,20 @@ class Sisref(Frame):
                 d1 = np.array([self.layer1[i][1] for i in range(len(self.layer1))])
                 G1 = np.array([self.layer1[i][3] for i in range(len(self.layer1))])
                 G1 = np.reshape(G1, (len(G1),1))
+                v1 = []
+                for time,delta in zip(d1,G1):
+                    if delta == 0:
+                        pass
+                    else:
+                        v1.append(time/delta)
 
-                sol_layer1, sse1, rank1, sv1 = np.linalg.lstsq(G1, d1)
-                v1 = 1000/sol_layer1[0] #m/s
+                s1 = np.mean(v1)
+                v1 = 1000/s1
                 self.velocity1 = v1
+
+                #sol_layer1, sse1, rank1, sv1 = np.linalg.lstsq(G1, d1)
+                #v1 = 1000/sol_layer1[0] #m/s
+                #self.velocity1 = v1
 
                 list_ot1, list_pt1 = [],[]
                     
@@ -1376,7 +1386,8 @@ class Sisref(Frame):
                     g = p[-1]
                     x = p[-3]
                     ot = p[1] #observed traveltime
-                    pt = sol_layer1[-1]*x #predicted traveltime
+                    #pt = sol_layer1[-1]*x #predicted traveltime
+                    pt = x/(v1/1000) #predicted traveltime
                     geop = p[0]
                     list_ot1.append(ot)
                     list_pt1.append(pt)
