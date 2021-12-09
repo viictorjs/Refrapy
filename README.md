@@ -1,6 +1,16 @@
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/refrapy_logo.png)
 
-[here](#refrainv)
+## Summary
+
+[Introduction to the software and installation](#introduction)
+
+[Using Refrapick](#refrapick)
+
+[Using Refrainv](#refrainv)
+
+[Found a problem?](#reporting-errors)
+
+[Citing Refrapy](#citation)
 
 ## Introduction
 
