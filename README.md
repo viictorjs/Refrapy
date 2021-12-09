@@ -115,6 +115,10 @@ The velocity tomogram can be exported as a xyz file, containing the velocity and
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv3.gif)
 
+## Reporting an issue
+
+We strongly encourge users to open an issue in this repository when encontering an error using the software. Please keep in mind that, in its current state, Refrapy is mantained by few active contributors that are not always available for development, so bug fixing might take some time to be properly adressed.
+
 ## Citation
 
 If you use Refrapy in your work, please consider citing the following paper:
