@@ -2,7 +2,7 @@
 
 ## Summary
 
-[Introduction to the software and installation](#introduction)
+[Introduction to the software and installation of dependencies](#introduction)
 
 [Using Refrapick](#refrapick)
 
