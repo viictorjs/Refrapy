@@ -8,7 +8,7 @@
 
 [Using Refrainv to calculate velocity models](#refrainv)
 
-[Have a question or found a problem?](#reporting-errors)
+[Have a question or found a problem?](#reporting-errors-and-asking-questions)
 
 [Citing Refrapy](#citation)
 
