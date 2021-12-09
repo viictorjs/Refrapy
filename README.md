@@ -1,20 +1,8 @@
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/refrapy_logo.png)
-   
-## Contributors
-
-Victor Guedes (vjs279@hotmail.com)
-
-Susanne Maciel (susanne@unb.br)
-
-Marcelo Rocha (marcelorocha@unb.br)
 
 ## Introduction
 
 Refrapy is a Python software package with a graphical interface for seismic refraction data analysis.
-
-If you use Refrapy in your work, please consider citing the following paper:
-
-*Guedes, V.J.C.B., Maciel, S.T.R., Rocha, M.P., 2022. Refrapy: A Python program for seismic refraction data analysis, Computers and Geosciences. https://doi.org/10.1016/j.cageo.2021.105020.*
 
 It is based on two modules: Refrapick and Refrainv.
 
@@ -127,3 +115,8 @@ The velocity tomogram can be exported as a xyz file, containing the velocity and
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv3.gif)
 
+## Citation
+
+If you use Refrapy in your work, please consider citing the following paper:
+
+*Guedes, V.J.C.B., Maciel, S.T.R., Rocha, M.P., 2022. Refrapy: A Python program for seismic refraction data analysis, Computers and Geosciences. https://doi.org/10.1016/j.cageo.2021.105020.*
