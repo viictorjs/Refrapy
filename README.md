@@ -4,7 +4,7 @@
 
 [Introduction to the software and installation of dependencies](#introduction)
 
-[Using Refrapick for first-breaks picking](#refrapick)
+[Using Refrapick for first-break picking](#refrapick)
 
 [Using Refrainv to calculate velocity models](#refrainv)
 
