@@ -8,7 +8,7 @@
 
 [Using Refrainv to calculate velocity models](#refrainv)
 
-[Found a problem?](#reporting-errors)
+[Have a question or found a problem?](#reporting-errors)
 
 [Citing Refrapy](#citation)
 
@@ -127,9 +127,9 @@ The velocity tomogram can be exported as a xyz file, containing the velocity and
 
 ![alt text](https://github.com/viictorjs/Refrapy/blob/master/gifs/tomography_inv3.gif)
 
-## Reporting errors
+## Reporting errors and asking questions
 
-We strongly encourge users to open an issue in this repository when encontering an error using the software. Please keep in mind that, in its current state, Refrapy is mantained by few active contributors that are not always available for development, so bug fixing might take some time to be properly adressed.
+We strongly encourage users to open an issue in this repository when encountering an error or when in doubt about a functionality or any other subject around the use of the software. Please keep in mind that, in its current state, Refrapy is mantained by few active contributors that are not always available for development, so bug fixing might take some time to be properly adressed.
 
 ## Citation
 
