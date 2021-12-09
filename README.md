@@ -12,11 +12,9 @@ Marcelo Rocha (marcelorocha@unb.br)
 
 Refrapy is a Python software package with a graphical interface for seismic refraction data analysis.
 
-If you use Refrapy for work resulting in an academic publication, please consider citting the following paper:
+If you use Refrapy in your work, please consider citing the following paper:
 
-```
-Guedes, V.J.C.B., Maciel, S.T.R., Rocha, M.P., 2022. Refrapy: A Python program for seismic refraction data analysis, Computers and Geosciences. https://doi.org/10.1016/j.cageo.2021.105020.
-```
+*Guedes, V.J.C.B., Maciel, S.T.R., Rocha, M.P., 2022. Refrapy: A Python program for seismic refraction data analysis, Computers and Geosciences. https://doi.org/10.1016/j.cageo.2021.105020.*
 
 It is based on two modules: Refrapick and Refrainv.
 
