@@ -5,6 +5,8 @@
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.colors import is_color_like
+from matplotlib import lines, markers
 from tkinter import Tk, Toplevel, Frame, Button, Label, filedialog, messagebox, PhotoImage, simpledialog
 from os import path, makedirs, getcwd
 from obspy import read
@@ -12,7 +14,7 @@ from obspy.signal.filter import lowpass, highpass
 from scipy.signal import resample
 from scipy.interpolate import interp1d
 from numpy import array, where, polyfit
-import Pmw
+from Pmw import initialise, Balloon
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -26,19 +28,14 @@ class Refrapick(Tk):
         self.title('Refrapy - Refrapick v2.0.0')
         self.configure(bg = "#F0F0F0")
         self.resizable(0,0)
-
         self.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
-
         photo = PhotoImage(file="%s/images/ico_refrapy.gif"%getcwd())
         labelPhoto = Label(self, image = photo, width = 151)
         labelPhoto.image = photo
         labelPhoto.grid(row=0, column =0, sticky="W")
-
         self.statusLabel = Label(self, text = "Create or load a project to start", font=("Arial", 11))
-        self.statusLabel.grid(row = 0, column = 32, sticky = "W")
-
-        Pmw.initialise(self)
-
+        self.statusLabel.grid(row = 0, column = 33, sticky = "W")
+        initialise(self)
         self.ico_openWaveform = PhotoImage(file="%s/images/abrir.gif"%getcwd())
         self.ico_savePicks = PhotoImage(file="%s/images/salvar.gif"%getcwd())
         self.ico_nextWf = PhotoImage(file="%s/images/proximo.gif"%getcwd())
@@ -70,160 +67,166 @@ class Refrapick(Tk):
         self.ico_allPicks = PhotoImage(file="%s/images/ico_allPicks.gif"%getcwd())
         self.ico_restoreTraces = PhotoImage(file="%s/images/ico_restoreTraces.gif"%getcwd())
         self.ico_help = PhotoImage(file="%s/images/ico_help.gif"%getcwd())
+        self.ico_plotOptions = PhotoImage(file="%s/images/ico_plotOptions.gif"%getcwd())
         
         bt = Button(self,image = self.ico_newProject,command = self.createProject,width=25)
         bt.grid(row = 0, column = 1, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Create new project path")
         
         bt = Button(self,image = self.ico_loadProject,command = self.loadProject,width=25)
         bt.grid(row = 0, column = 2, sticky="W")
-        b = Pmw.Balloon(self)
+        b = Balloon(self)
         b.bind(bt,"Load project path")
         
         bt = Button(self, image = self.ico_openWaveform,command = self.openWaveform)
         bt.grid(row = 0, column = 3, sticky="W")
-        b = Pmw.Balloon(self)
+        b = Balloon(self)
         b.bind(bt,"Open waveform file(s)")
-        
-        bt = Button(self,image = self.ico_nextWf, command = self.nextSection,width=25)
-        bt.grid(row = 0, column = 4, sticky="W")
-        bl = Pmw.Balloon(self)
-        bl.bind(bt,"Next file")
 
         bt = Button(self, image = self.ico_previousWf,command = self.previousSection,width=25)
-        bt.grid(row = 0, column = 5, sticky="W")
-        bl = Pmw.Balloon(self)
+        bt.grid(row = 0, column = 4, sticky="W")
+        bl = Balloon(self)
         bl.bind(bt,"Previous file")
+
+        bt = Button(self,image = self.ico_nextWf, command = self.nextSection,width=25)
+        bt.grid(row = 0, column = 5, sticky="W")
+        bl = Balloon(self)
+        bl.bind(bt,"Next file")
 
         bt = Button(self,image = self.ico_expandY ,command = self.yLimUp,width=25)
         bt.grid(row = 0, column = 6, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Decrease time axis limit")
         
         bt = Button(self,image = self.ico_zoomY,command = self.yLimDown,width=25)
         bt.grid(row = 0, column = 7, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Increase time axis limit")
 
         bt = Button(self,image = self.ico_moreGain,command = self.addGain,width=25)
         bt.grid(row = 0, column = 8, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Increase scale gain")
         
         bt = Button(self,image = self.ico_lessGain ,command = self.removeGain,width=25)
         bt.grid(row = 0, column = 9, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Decrease scale gain")
 
         bt = Button(self,image=self.ico_fillNeg,command = self.fillPositive,width=25)
         bt.grid(row = 0, column = 10, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Fill positive side of amplitudes")
 
         bt = Button(self,image=self.ico_fillPos,command = self.fillNegative,width=25)
         bt.grid(row = 0, column = 11, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Fill negative side of amplitudes")
         
         bt = Button(self,image=self.ico_wiggles,command = self.wigglesOnly,width=25)
         bt.grid(row = 0, column = 12, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"No filling (wiggles only)")
 
-        bt = Button(self,image=self.ico_shotTime,command = self.correctShotTime,width=25)
+        bt = Button(self,image=self.ico_clip,command = self.clipAmplitudes,width=25)
         bt.grid(row = 0, column = 13, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
+        bl.bind(bt,"Clip/unclip amplitudes")
+
+        bt = Button(self,image=self.ico_shotTime,command = self.correctShotTime,width=25)
+        bt.grid(row = 0, column = 14, sticky="W")
+        bl = Balloon(self)
         bl.bind(bt,"Correct shot time (delay)")
 
         bt = Button(self,image=self.ico_filters,command = self.applyFilters,width=25)
-        bt.grid(row = 0, column = 14, sticky="W")
-        bl = Pmw.Balloon(self)
-        bl.bind(bt,"High pass/low pass filters")
-        
-        bt = Button(self,image=self.ico_clip,command = self.clipAmplitudes,width=25)
         bt.grid(row = 0, column = 15, sticky="W")
-        bl = Pmw.Balloon(self)
-        bl.bind(bt,"Clip/unclip amplitudes")
+        bl = Balloon(self)
+        bl.bind(bt,"High pass/low pass filters")
 
         bt = Button(self,image=self.ico_trim,command = self.trimTraces,width=25)
         bt.grid(row = 0, column = 16, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Trim traces")
 
         bt = Button(self,image=self.ico_resample,command = self.resampleTraces,width=25)
         bt.grid(row = 0, column = 17, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Resample traces")
 
         bt = Button(self,image=self.ico_invertY,command = self.invertTimeAxis,width=25)
         bt.grid(row = 0, column = 18, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Invert time axis")
         
         bt = Button(self,image=self.ico_restoreTraces,command = self.restoreTraces,width=25)
         bt.grid(row = 0, column = 19, sticky="W")
-        bl = Pmw.Balloon(self)
-        bl.bind(bt,"Restore to default traces")
+        bl = Balloon(self)
+        bl.bind(bt,"Restore default traces")
         
         bt = Button(self,image=self.ico_pick,command = self.pick,width=25)
         bt.grid(row = 0, column = 20, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Enable/disable pick mode")
         
         bt = Button(self,image=self.ico_connectPick,command = self.drawPicksLine,width=25)
         bt.grid(row = 0, column = 21, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Connect/disconnect picks")
         
         bt = Button(self,image=self.ico_clearPicks,command = self.clearPicks,width=25)
         bt.grid(row = 0, column = 22, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Clear picks")
 
         bt = Button(self,image=self.ico_allPicks,command = self.allPicks,width=25)
         bt.grid(row = 0, column = 23, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Show/hide traveltimes picks from other files")
 
         bt = Button(self,image = self.ico_savePicks, command = self.savePicks,width=25)
         bt.grid(row = 0, column = 24, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Save pick file")
         
         bt = Button(self,image=self.ico_loadPicks,command = self.loadPicks,width=25)
         bt.grid(row = 0, column = 25, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Load pick file)")
 
         bt = Button(self,image=self.ico_velMode,command = self.appVelMode,width=25)
         bt.grid(row = 0, column = 26, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"Enable/disable apparent velocity mode")
         
         bt = Button(self,image = self.ico_tt,command = self.viewTraveltimes,width=25)
         bt.grid(row = 0, column = 27, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"View observed traveltimes")
 
         bt = Button(self,image=self.ico_survey,command = self.viewSurvey,width=25)
         bt.grid(row = 0, column = 28, sticky="W")
-        bl = Pmw.Balloon(self)
+        bl = Balloon(self)
         bl.bind(bt,"View survey geometry")
+
+        bt = Button(self,image = self.ico_plotOptions,command = self.plotOptions,width=25)
+        bt.grid(row = 0, column = 29, sticky="W")
+        bl = Balloon(self)
+        bl.bind(bt,"Plot options")
         
         bt = Button(self,image = self.ico_options,command = self.options,width=25)
-        bt.grid(row = 0, column = 29, sticky="W")
-        bl = Pmw.Balloon(self)
-        bl.bind(bt,"Options")
+        bt.grid(row = 0, column = 30, sticky="W")
+        bl = Balloon(self)
+        bl.bind(bt,"Edit acquisition parameters")
         
         bt = Button(self,image = self.ico_reset,command = self.reset,width=25)
-        bt.grid(row = 0, column = 30, sticky="W")
-        bl = Pmw.Balloon(self)
+        bt.grid(row = 0, column = 31, sticky="W")
+        bl = Balloon(self)
         bl.bind(bt,"Reset all")
 
         bt = Button(self,image=self.ico_help,command = self.help,width=25)
-        bt.grid(row = 0, column = 31, sticky="W")
-        bl = Pmw.Balloon(self)
+        bt.grid(row = 0, column = 32, sticky="W")
+        bl = Balloon(self)
         bl.bind(bt,"Help")
 
         self.protocol("WM_DELETE_WINDOW", self.kill)
@@ -268,6 +271,19 @@ class Refrapick(Tk):
         self.pickConnections = []
         self.velConnections = []
         self.pickLineArts = []
+        self.traceColor = "k"
+        self.fillColor = "k"
+        self.backgroundColor = "white"
+        self.grid = 1
+        self.gridColor = "k"
+        self.gridStyle = "-"
+        self.pickColor = "r"
+        self.pickMarker = "_"
+        self.pickLineColor = "r"
+        self.pickLineStyle = "--"
+        self.traveltimesColor = "g"
+        self.traveltimesStyle = "--"
+        self.pickSize = 1
 
     def kill(self):
 
@@ -319,10 +335,412 @@ class Refrapick(Tk):
                 self.initiateVariables()
                 self.statusLabel.configure(text="Create or load a project to start",font=("Arial", 11))
                 messagebox.showinfo(title="Refrapick", message="All cleared successfully!")
+
+    def plotOptions(self):
+
+        def editTraceColor():
+        
+            new_color = simpledialog.askstring("Refrapick","Enter the new trace color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.traceColor = new_color
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)):
+
+                        for trArt in self.tracesArts[i]:
+
+                            trArt.set_color(self.traceColor)
+
+                        self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The trace color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def editFillColor():
+        
+            new_color = simpledialog.askstring("Refrapick","Enter the new fill color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.fillColor = new_color
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)):
+
+                        if self.fillSide[i] == 1: self.wigglesOnly(); self.fillPositive()
+                        elif self.fillSide[i] == -1: self.wigglesOnly(); self.fillNegative()
+
+                messagebox.showinfo(title="Refrapick", message="The fill color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def editBackgroundColor():
+
+            new_color = simpledialog.askstring("Refrapick","Enter the new background color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.backgroundColor = new_color
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)):
+
+                        self.axs[i].set_facecolor(self.backgroundColor)
+                        self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The plot background color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def gridOnOff():
+            
+            if self.grid:
+
+                if messagebox.askyesno("Refrapick", "Disable grid?"):
+
+                    self.grid = False
+
+                    if self.sts:
+
+                        for i in range(len(self.sts)):
+
+                            self.axs[i].grid(False)
+                            self.figs[i].canvas.draw()
+
+                        messagebox.showinfo(title="Refrapick", message="The grid lines have been disabled")
+
+            else:
+
+                if messagebox.askyesno("Refrapick", "Enable grid?"):
+
+                    self.grid = True
+
+                    if self.sts:
+
+                        for i in range(len(self.sts)):
+
+                            self.axs[i].grid(lw = .5, alpha = .5, c = self.gridColor, ls = self.gridStyle)
+                            self.figs[i].canvas.draw()
+
+                        messagebox.showinfo(title="Refrapick", message="The grid lines have been enabled")
+
+            plotOptionsWindow.tkraise()                
+
+        def editGridStyle():
+        
+            new_style = simpledialog.askstring("Refrapick","Enter the new grid line style (must be accepted by matplotlib):")
+
+            if new_style in lines.lineStyles.keys():
+
+                self.gridStyle = new_style
+                
+                if self.sts:
+
+                    if self.grid:
+
+                        for i in range(len(self.sts)):
+
+                            self.axs[i].grid(lw = .5, alpha = .5, c = self.gridColor, ls = self.gridStyle)
+                            self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The grid line style has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid line style!"); plotOptionsWindow.tkraise()
+
+        def editGridColor():
+        
+            new_color = simpledialog.askstring("Refrapick","Enter the new grid line color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.gridColor = new_color
+                
+                if self.sts:
+
+                    if self.grid:
+
+                        for i in range(len(self.sts)):
+
+                            self.axs[i].grid(lw = .5, alpha = .5, c = self.gridColor, ls = self.gridStyle)
+                            self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The grid line color color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def editPickColor():
+        
+            new_color = simpledialog.askstring("Refrapick","Enter the new pick marker color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.pickColor = new_color
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)):
+
+                        if self.xpicks[i]:
+
+                            for pickArt in self.picksArts[i]: pickArt.set_color(self.pickColor)
+                            
+                        self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The pick marker color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def editPickMarker():
+        
+            new_marker = simpledialog.askstring("Refrapick","Enter the new pick marker style (must be accepted by matplotlib):")
+
+            if new_marker in markers.MarkerStyle.markers.keys():
+
+                new_size = simpledialog.askfloat("Refrapick","Enter the new pick marker size:")
+
+                if new_size:
+
+                    self.pickSize = new_size
+                    self.pickMarker = markers.MarkerStyle(new_marker)
+                    
+                    if self.sts:
+
+                        for i in range(len(self.sts)):
+
+                            if self.xpicks[i]:
+
+                                for pickArt in self.picksArts[i]:
+
+                                    pickArt.set_sizes([self.pickSize])
+                                    pickArt.set_paths((self.pickMarker.get_path(),)); 
+                                
+                            self.figs[i].canvas.draw()
+
+                    messagebox.showinfo(title="Refrapick", message="The pick marker style has been changed")
+                    plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid marker!"); plotOptionsWindow.tkraise()
+
+        def editPickLineColor():
+        
+            new_color = simpledialog.askstring("Refrapick","Enter the new pick line color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.pickLineColor = new_color
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)):
+
+                        if self.pickLineArts[i]:
+
+                            self.pickLineArts[i].set_color(self.pickLineColor)
+                            self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The pick line color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def editPickLineStyle():
+        
+            new_style = simpledialog.askstring("Refrapick","Enter the new pick line style (must be accepted by matplotlib):")
+
+            if new_style in lines.lineStyles.keys():
+
+                self.pickLineStyle = new_style
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)):
+
+                        if self.pickLineArts[i]:
+
+                            self.drawPicksLine()
+                            self.pickLineArts[i] = False
+                            self.drawPicksLine()
+                            self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The pick line style has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid line style!"); plotOptionsWindow.tkraise()
+
+        def editTraveltimeLineColor():
+        
+            new_color = simpledialog.askstring("Refrapick","Enter the new traveltimes line color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.traveltimesColor = new_color
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)-1):
+
+                        if self.ttArts[i]:
+
+                            self.ttArts[i].set_color(self.traveltimesColor)
+                            self.figs[i].canvas.draw()
+
+                messagebox.showinfo(title="Refrapick", message="The traveltimes line color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def editTraveltimeLineStyle():
+        
+            new_style = simpledialog.askstring("Refrapick","Enter the new traveltimes line style (must be accepted by matplotlib):")
+
+            if new_style in lines.lineStyles.keys():
+
+                self.traveltimesStyle = new_style
+                
+                if self.sts:
+
+                    for i in range(len(self.sts)-1):
+
+                        if self.ttArts[i]:
+                    
+                            self.allPicks()
+                            self.figs[i].canvas.draw()
+                            self.allPicks()
+
+                messagebox.showinfo(title="Refrapick", message="The traveltimes line style has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrapick", message="Invalid line style!"); plotOptionsWindow.tkraise()
+
+        def editrGainFactor():
+        
+            new_gainFactor = simpledialog.askfloat("Refrapick","Enter the new gain factor (default is 3):")
+
+            if new_gainFactor:
+
+                self.gainFacotr = new_gainFactor
+                messagebox.showinfo(title="Refrapick", message="The gain factor has been changed")        
+        
+        plotOptionsWindow = Toplevel(self)
+        plotOptionsWindow.title('Refrapick - Edit parameters')
+        plotOptionsWindow.configure(bg = "#F0F0F0")
+        plotOptionsWindow.geometry("350x520")
+        plotOptionsWindow.resizable(0,0)
+        plotOptionsWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        Label(plotOptionsWindow, text = "Plot options",font=("Arial", 11)).grid(row=0,column=0,sticky="EW",pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change trace color", command = editTraceColor, width = 30).grid(row = 1, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change fill color", command = editFillColor, width = 30).grid(row = 2, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change background color", command = editBackgroundColor, width = 30).grid(row = 3, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Enable/disable grid lines", command = gridOnOff, width = 30).grid(row = 4, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change grid lines style", command = editGridStyle, width = 30).grid(row = 5, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change grid lines color", command = editGridColor, width = 30).grid(row = 6, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change pick color", command = editPickColor, width = 30).grid(row = 7, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change pick marker", command = editPickMarker, width = 30).grid(row = 8, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change pick line color", command = editPickLineColor, width = 30).grid(row = 9, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change pick line style", command = editPickLineStyle, width = 30).grid(row = 10, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change traveltimes line color", command = editTraveltimeLineColor, width = 30).grid(row = 11, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change traveltimes line style", command = editTraveltimeLineStyle, width = 30).grid(row = 12, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change scale gain factor", command = editrGainFactor, width = 30).grid(row = 13, column = 0,pady=5,padx=65)
+        
+        plotOptionsWindow.tkraise()
     
     def options(self):
 
-        pass
+        if self.sts:
+            
+            def editdx():
+
+                new_dx = simpledialog.askfloat("Refrapick","Enter the new receiver spacing in meters (for %s):"%self.stNames[self.currentSt])
+
+                if new_dx:
+
+                    if self.xpicks[self.currentSt]: self.clearPicks()
+
+                    self.receiverPositions[self.currentSt] = [i/self.dx for i in self.receiverPositions[self.currentSt]]
+                    self.xends[self.currentSt] = self.xends[self.currentSt]/self.dx                    
+                    self.dx = new_dx
+                    self.receiverPositions[self.currentSt] = [i*self.dx for i in self.receiverPositions[self.currentSt]]
+                    self.xends[self.currentSt] = self.xends[self.currentSt]*self.dx                    
+                    
+                    for i in range(len(self.tracesArts[self.currentSt])):
+
+                        a = self.tracesData[self.currentSt][i]
+                        self.tracesArts[self.currentSt][i].set_xdata(a/max(a)*self.gains[self.currentSt]+self.x1s[self.currentSt]+self.dx*i)
+
+                    self.axs[self.currentSt].set_xlim(self.x1s[self.currentSt]-self.dx/2, self.xends[self.currentSt]+self.dx/2)
+                    self.updatePlotTitle()
+                    
+                    if self.fillSide[self.currentSt] == 1: self.fillPositive()
+                    elif self.fillSide[self.currentSt] == -1: self.fillNegative()
+
+                    if self.amplitudeClip[self.currentSt] == 1: self.amplitudeClip[self.currentSt] = 0; self.clipAmplitudes()
+                
+                    messagebox.showinfo(title="Refrapick", message="The receiver spacing was updated in %s"%self.stNames[self.currentSt])
+                    optionsWindow.tkraise()
+                    
+            def editx1():
+
+                new_x1 = simpledialog.askfloat("Refrapick","Enter the new position for the first receiver in meters (for %s):"%self.stNames[self.currentSt])
+
+                if new_x1:
+
+                    if self.xpicks[self.currentSt]: self.clearPicks()
+                  
+                    self.x1s[self.currentSt] = new_x1
+                    self.xends[self.currentSt] = self.xends[self.currentSt]+new_x1
+                    self.receiverPositions[self.currentSt] = [i+new_x1 for i in self.receiverPositions[self.currentSt]]
+                    
+                    for i in range(len(self.tracesArts[self.currentSt])):
+
+                        a = self.tracesData[self.currentSt][i]
+                        self.tracesArts[self.currentSt][i].set_xdata(a/max(a)*self.gains[self.currentSt]+self.x1s[self.currentSt]+self.dx*i)
+
+                    self.axs[self.currentSt].set_xlim(self.x1s[self.currentSt]-self.dx/2, self.xends[self.currentSt]+self.dx/2)
+                    
+                    if self.fillSide[self.currentSt] == 1: self.fillPositive()
+                    elif self.fillSide[self.currentSt] == -1: self.fillNegative()
+
+                    if self.amplitudeClip[self.currentSt] == 1: self.amplitudeClip[self.currentSt] = 0; self.clipAmplitudes()
+
+                    self.axs[self.currentSt].set_xlim(self.x1s[self.currentSt]-self.dx/2, self.xends[self.currentSt]+self.dx/2)
+                    self.figs[self.currentSt].canvas.draw()
+                    messagebox.showinfo(title="Refrapick", message="The position of the first receiver was updated in %s"%self.stNames[self.currentSt])
+                    optionsWindow.tkraise()
+
+            def editsource():
+
+                new_source = simpledialog.askfloat("Refrapick","Enter the new source position in meters (for %s):"%self.stNames[self.currentSt])
+
+                if new_source:
+                  
+                    self.sources[self.currentSt] = new_source
+                    self.updatePlotTitle()
+                    messagebox.showinfo(title="Refrapick", message="The source position was updated in %s"%self.stNames[self.currentSt])
+                    optionsWindow.tkraise()
+            
+            optionsWindow = Toplevel(self)
+            optionsWindow.title('Refrapick - Edit parameters')
+            optionsWindow.configure(bg = "#F0F0F0")
+            optionsWindow.geometry("350x170")
+            optionsWindow.resizable(0,0)
+            optionsWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+            Label(optionsWindow, text = "Editing parameters in %s"%self.stNames[self.currentSt],font=("Arial", 11)).grid(row=0,column=0,sticky="EW",pady=5,padx=65)
+            Button(optionsWindow,text="Edit receiver spacing", command = editdx, width = 30).grid(row = 1, column = 0,pady=5,padx=65)
+            Button(optionsWindow,text="Edit first receiver position", command = editx1, width = 30).grid(row = 2, column = 0,pady=5,padx=65)
+            Button(optionsWindow,text="Edit source position", command = editsource, width = 30).grid(row = 3, column = 0,pady=5,padx=65)
+            optionsWindow.tkraise()
 
     def correctShotTime(self):
 
@@ -445,6 +863,7 @@ class Refrapick(Tk):
                     canvas._tkcanvas.pack()
                     ax = fig.add_subplot(111)
                     fig.patch.set_facecolor('#F0F0F0')
+                    ax.set_facecolor(self.backgroundColor)
                     self.tracesMaxs.append([])
                     self.tpicks.append([])
                     self.xpicks.append([])
@@ -473,7 +892,7 @@ class Refrapick(Tk):
 
                         tr.data *= -1
                         self.tracesMaxs[i+n].append(max(tr.data))
-                        t, = ax.plot(tr.data/max(tr.data)+x1+self.dx*j, tr.times()+delay, c = "k", lw = .7)
+                        t, = ax.plot(tr.data/max(tr.data)+x1+self.dx*j, tr.times()+delay, c = self.traceColor, lw = .7)
                         self.tracesArts[i+n].append(t)
                         self.tracesData[i+n].append(tr.data)
                         self.tracesTime[i+n].append(tr.times()+delay)
@@ -483,18 +902,19 @@ class Refrapick(Tk):
 
                     ax.set_ylabel("TIME [s]")
                     ax.set_xlabel("RECEIVER POSITION [m]")
-                    ax.grid(lw = .5, alpha = .5)
+                    if self.grid: ax.grid(lw = .5, alpha = .5, c = self.gridColor, ls = self.gridStyle)
                     ax.set_title(path.basename(file)+" | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = no"%(self.dx,source,self.originalSamplingRates[i]))
                     self.stNames.append(path.basename(file))
                     ax.set_ylim(min(tr.times()+delay), max(tr.times()+delay))
                     ax.set_xlim(x1-self.dx/2, xend+self.dx/2)
                     ax.invert_yaxis()
 
-                    fig.canvas.draw()
+                for f in self.figs: f.canvas.draw()
                 
                 self.frames[0].tkraise()
                 self.statusLabel.lift()
                 self.statusLabel.configure(text="Waveform(s) ready!",font=("Arial", 11))
+                self.pickSize = self.dx*100
                 self.currentSt = 0
 
                 if n == 0: messagebox.showinfo('Refrapick','%d file(s) loaded succesfully!'%len(files))
@@ -573,6 +993,20 @@ E-mail: vjs279@hotmail.com
 
             self.figs[self.currentSt].canvas.draw()
 
+    def updatePlotTitle(self):
+
+        if self.filters[self.currentSt][1] and self.filters[self.currentSt][0]: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz - %.2f Hz"%(self.stNames[self.currentSt],
+                                                                                                                                         self.dx,self.sources[self.currentSt],self.samplingRates[self.currentSt],self.filters[self.currentSt][0],self.filters[self.currentSt][1]))
+                    
+        elif self.filters[self.currentSt][1] and not self.filters[self.currentSt][0]: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz (low-pass)"%(self.stNames[self.currentSt],
+                                                                                                                                    self.dx,self.sources[self.currentSt],self.samplingRates[self.currentSt],self.filters[self.currentSt][1]))
+        
+        elif self.filters[self.currentSt][0] and not self.filters[self.currentSt][1]: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz (high-pass)"%(self.stNames[self.currentSt],
+                                                                                                                                     self.dx,self.sources[self.currentSt],self.samplingRates[self.currentSt],self.filters[self.currentSt][0]))
+        else: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = no"%(self.stNames[self.currentSt],self.dx,self.sources[self.currentSt],
+                                                                                                                         self.samplingRates[self.currentSt]))
+        self.figs[self.currentSt].canvas.draw()
+        
     def resampleTraces(self):
 
         if self.sts:
@@ -595,20 +1029,7 @@ E-mail: vjs279@hotmail.com
 
                     self.samplingRates[self.currentSt] = newSamplingFreq
 
-                    if self.filters[self.currentSt][1] and self.filters[self.currentSt][0]: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz - %.2f Hz"%(self.stNames[self.currentSt],
-                                                                                                                                         self.dx,self.sources[self.currentSt],self.samplingRates[self.currentSt],self.filters[self.currentSt][0],self.filters[self.currentSt][1]))
-                    
-                    elif self.filters[self.currentSt][1] and not self.filters[self.currentSt][0]: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz (low-pass)"%(self.stNames[self.currentSt],
-                                                                                                                                                self.dx,self.sources[self.currentSt],self.samplingRates[self.currentSt],self.filters[self.currentSt][1]))
-                    
-                    elif self.filters[self.currentSt][0] and not self.filters[self.currentSt][1]: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz (high-pass)"%(self.stNames[self.currentSt],
-                                                                                                                                                 self.dx,self.sources[self.currentSt],self.samplingRates[self.currentSt],self.filters[self.currentSt][0]))
-
-                    else:
-
-                        self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = no"%(self.stNames[self.currentSt],self.dx,self.sources[self.currentSt],
-                                                                                                                           self.samplingRates[self.currentSt]))
-                    self.figs[self.currentSt].canvas.draw()
+                    self.updatePlotTitle()
                     
                     if self.fillSide[self.currentSt] == 1: self.fillPositive()
                     elif self.fillSide[self.currentSt] == -1: self.fillNegative()
@@ -703,7 +1124,7 @@ E-mail: vjs279@hotmail.com
                                 self.x1s[self.currentSt]+self.dx*i,
                                 self.tracesArts[self.currentSt][i].get_xdata(),
                                 where = self.tracesArts[self.currentSt][i].get_xdata() <= self.x1s[self.currentSt]+i*self.dx,
-                                color='k')     
+                                color=self.fillColor)     
                 self.fillArts[self.currentSt].append(fill)
 
             self.fillSide[self.currentSt] = -1
@@ -728,7 +1149,7 @@ E-mail: vjs279@hotmail.com
                                 self.x1s[self.currentSt]+self.dx*i,
                                 self.tracesArts[self.currentSt][i].get_xdata(),
                                 where = self.tracesArts[self.currentSt][i].get_xdata() >= self.x1s[self.currentSt]+i*self.dx,
-                                color='k')     
+                                color=self.fillColor)     
                 self.fillArts[self.currentSt].append(fill)
 
             self.fillSide[self.currentSt] = 1
@@ -845,54 +1266,44 @@ E-mail: vjs279@hotmail.com
 
                 if self.amplitudeClip[self.currentSt] == 1: self.amplitudeClip[self.currentSt] = 0; self.clipAmplitudes()
 
-                if lp and hp: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz - %.2f Hz"%(self.stNames[self.currentSt],
-                                                                                                                                     self.dx,self.sources[self.currentSt],
-                                                                                                                                    self.samplingRates[self.currentSt],hp,lp))
-                
-                elif lp and not hp: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz (low-pass)"%(self.stNames[self.currentSt],
-                                                                                                                                            self.dx,self.sources[self.currentSt],
-                                                                                                                                            self.samplingRates[self.currentSt],lp))
-                
-                elif hp and not lp: self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = %.2f Hz (high-pass)"%(self.stNames[self.currentSt],
-                                                                                                                                             self.dx,self.sources[self.currentSt],
-                                                                                                                                            self.samplingRates[self.currentSt],hp))
-                
-                self.figs[self.currentSt].canvas.draw()
+                self.updatePlotTitle()
 
     def restoreTraces(self):
 
         if self.sts:
 
-            self.gains[self.currentSt] = 1
-            
-            for i, tr in enumerate(self.tracesArts[self.currentSt]):
+            if messagebox.askyesno("Refrapick", "Restore default traces in %s?"%self.stNames[self.currentSt]):
 
-                amp = self.originalTracesData[self.currentSt][i]
-                tr.set_xdata(amp/max(amp)*self.gains[self.currentSt]+self.x1s[self.currentSt]+self.dx*i)
-                tr.set_ydata(self.originalTracesTimes[self.currentSt][i])
-                self.tracesData[self.currentSt][i] = amp
-                self.tracesTime[self.currentSt][i] = self.originalTracesTimes[self.currentSt][i]
+                self.gains[self.currentSt] = 1
+                
+                for i, tr in enumerate(self.tracesArts[self.currentSt]):
 
-            self.filters[self.currentSt][0] = False
-            self.filters[self.currentSt][1] = False
-            self.samplingRates[self.currentSt] = self.originalSamplingRates[self.currentSt]
-            
-            self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = no"%(self.stNames[self.currentSt],self.dx,self.sources[self.currentSt],
-                                                                                                                       self.originalSamplingRates[self.currentSt]))
+                    amp = self.originalTracesData[self.currentSt][i]
+                    tr.set_xdata(amp/max(amp)*self.gains[self.currentSt]+self.x1s[self.currentSt]+self.dx*i)
+                    tr.set_ydata(self.originalTracesTimes[self.currentSt][i])
+                    self.tracesData[self.currentSt][i] = amp
+                    self.tracesTime[self.currentSt][i] = self.originalTracesTimes[self.currentSt][i]
 
-            if self.invertedTimeAxis[self.currentSt] == 1:
+                self.filters[self.currentSt][0] = False
+                self.filters[self.currentSt][1] = False
+                self.samplingRates[self.currentSt] = self.originalSamplingRates[self.currentSt]
                 
-                self.axs[self.currentSt].set_ylim(max(self.originalTracesTimes[self.currentSt][0]), min(self.originalTracesTimes[self.currentSt][0]))
+                self.axs[self.currentSt].set_title("%s | dx = %.2f m | source = %.2f m | sampling = %d Hz | filters = no"%(self.stNames[self.currentSt],self.dx,self.sources[self.currentSt],
+                                                                                                                           self.originalSamplingRates[self.currentSt]))
+
+                if self.invertedTimeAxis[self.currentSt] == 1:
+                    
+                    self.axs[self.currentSt].set_ylim(max(self.originalTracesTimes[self.currentSt][0]), min(self.originalTracesTimes[self.currentSt][0]))
+                    
+                else:
+                    self.axs[self.currentSt].set_ylim(min(self.originalTracesTimes[self.currentSt][0]), max(self.originalTracesTimes[self.currentSt][0]))
+                    
+                self.axs[self.currentSt].set_xlim(self.x1s[self.currentSt]-self.dx/2, self.xends[self.currentSt]+self.dx/2)
+                self.figs[self.currentSt].canvas.draw()
                 
-            else:
-                self.axs[self.currentSt].set_ylim(min(self.originalTracesTimes[self.currentSt][0]), max(self.originalTracesTimes[self.currentSt][0]))
+                if self.fillSide[self.currentSt] == 1 or self.fillSide[self.currentSt] == -1: self.wigglesOnly()
                 
-            self.axs[self.currentSt].set_xlim(self.x1s[self.currentSt]-self.dx/2, self.xends[self.currentSt]+self.dx/2)
-            self.figs[self.currentSt].canvas.draw()
-            
-            if self.fillSide[self.currentSt] == 1 or self.fillSide[self.currentSt] == -1: self.wigglesOnly()
-            
-            if self.amplitudeClip[self.currentSt] == 1: self.clipAmplitudes()
+                if self.amplitudeClip[self.currentSt] == 1: self.clipAmplitudes()
             
     def pick(self):
 
@@ -904,105 +1315,106 @@ E-mail: vjs279@hotmail.com
 
                 self.statusLabel.configure(text="Pick mode enabled!",font=("Arial", 11))
 
-                for i in range(len(self.sts)):
+                def createPick(x,t):
 
-                    def createPick(x,t):
-
-                        for j in range(len(x)):
-                            
-                            pickline = self.axs[self.currentSt].hlines(t[j], x[j]-(self.dx*0.25),x[j]+(self.dx*0.25),color='r')
-                            self.picksArts[self.currentSt].append(pickline)
-                            self.xpicks[self.currentSt].append(x[j])
-                            self.tpicks[self.currentSt].append(t[j])
-
-                        if self.pickLineArts[self.currentSt]:
-                            
-                            self.drawPicksLine()
-                            self.pickLineArts[self.currentSt] = False
-                            self.drawPicksLine()
-                            
-                        self.figs[self.currentSt].canvas.draw()
+                    for j in range(len(x)):
                         
-                    def reworkPick(x,t):
+                        pickline = self.axs[self.currentSt].scatter(x[j], t[j], marker = self.pickMarker, s = self.pickSize, color=self.pickColor)
+                        pickline.set_sizes([self.pickSize])
+                        self.picksArts[self.currentSt].append(pickline)
+                        self.xpicks[self.currentSt].append(x[j])
+                        self.tpicks[self.currentSt].append(t[j])
 
-                        for j in range(len(x)):
+                    if self.pickLineArts[self.currentSt]:
+                        
+                        self.drawPicksLine()
+                        self.pickLineArts[self.currentSt] = False
+                        self.drawPicksLine()
+                        
+                    self.figs[self.currentSt].canvas.draw()
+                    
+                def reworkPick(x,t):
+
+                    for j in range(len(x)):
+                        
+                        index2remove = self.xpicks[self.currentSt].index(x[j])
+                        self.picksArts[self.currentSt][index2remove].remove()
+                        del self.picksArts[self.currentSt][index2remove]
+                        del self.xpicks[self.currentSt][index2remove]
+                        del self.tpicks[self.currentSt][index2remove]
+                        createPick([x[j]],[t[j]])
+
+                def click1(event):
+
+                    if event.button == 1:
+
+                        x = min(self.receiverPositions[self.currentSt], key = lambda x: abs(event.xdata - x))
+
+                        if x not in self.xpicks[self.currentSt]: createPick([x],[event.ydata])
+                        else: reworkPick([x],[event.ydata])
+
+                def click2(event):
+
+                    if event.button == 3:
+
+                        self.click2on = True
+                        x = min(self.receiverPositions[self.currentSt], key = lambda x: abs(event.xdata - x))
+                        self.pickLine, = self.axs[self.currentSt].plot(x,event.ydata,c=self.pickLineColor,ls=self.pickLineStyle,lw=.7)
+                        self.xpickLine = [x]
+                        self.tpickLine = [event.ydata]
+
+                        if x not in self.xpicks[self.currentSt]: createPick([x],[event.ydata])
+                        else: reworkPick([x],[event.ydata])
+
+                def move(event):
+
+                    if self.click2on:
+
+                        self.xpickLine.append(event.xdata)
+                        self.tpickLine.append(event.ydata)
+                        self.pickLine.set_data(self.xpickLine,self.tpickLine)
+                        self.figs[self.currentSt].canvas.draw()
+                        del self.xpickLine[1:-1]
+                        del self.tpickLine[1:-1]
+                        self.click2on = True
+
+                def release(event):
+
+                    if self.click2on:
+                        
+                        x = min(self.receiverPositions[self.currentSt], key = lambda x: abs(event.xdata - x))
+
+                        if self.xpickLine[0] < x:
                             
-                            index2remove = self.xpicks[self.currentSt].index(x[j])
-                            self.picksArts[self.currentSt][index2remove].remove()
-                            del self.picksArts[self.currentSt][index2remove]
-                            del self.xpicks[self.currentSt][index2remove]
-                            del self.tpicks[self.currentSt][index2remove]
-                            createPick([x[j]],[t[j]])
+                            f = interp1d([self.xpickLine[0],x],[self.tpickLine[0],event.ydata], kind = "linear")
+                            xarray2pick = [j for j in self.receiverPositions[self.currentSt] if j >= self.xpickLine[0] and j <= x]
 
-                    def click1(event):
+                        else:
+    
+                            f = interp1d([x,self.xpickLine[0]],[event.ydata,self.tpickLine[0]], kind = "linear")
+                            xarray2pick = [j for j in self.receiverPositions[self.currentSt] if j >= x and j <= self.xpickLine[0]]
+                        
+                        tarray2pick = f(xarray2pick)
 
-                        if event.button == 1:
+                        xpicks2create, tpicks2create = [], []
+                        xpicks2rework, tpicks2rework = [], []
+                        
+                        for j, x in enumerate(xarray2pick):
 
-                            x = min(self.receiverPositions[i], key = lambda x: abs(event.xdata - x))
+                            if x not in self.xpicks[self.currentSt]: xpicks2create.append(x); tpicks2create.append(tarray2pick[j])
+                            else: xpicks2rework.append(x); tpicks2rework.append(tarray2pick[j])
 
-                            if x not in self.xpicks[self.currentSt]: createPick([x],[event.ydata])
-                            else: reworkPick([x],[event.ydata])
+                        if xpicks2create: createPick(xpicks2create,tpicks2create)
+                        if xpicks2rework: reworkPick(xpicks2rework,tpicks2rework)
+                        
+                        self.pickLine.remove()
+                        self.figs[self.currentSt].canvas.draw()
+                        del self.xpickLine[:]
+                        del self.tpickLine[:]
+                        self.click2on = False
 
-                    def click2(event):
-
-                        if event.button == 3:
-
-                            self.click2on = True
-                            x = min(self.receiverPositions[i], key = lambda x: abs(event.xdata - x))
-                            self.pickLine, = self.axs[self.currentSt].plot(x,event.ydata,c="r",ls="--",lw=.7)
-                            self.xpickLine = [x]
-                            self.tpickLine = [event.ydata]
-
-                            if x not in self.xpicks[self.currentSt]: createPick([x],[event.ydata])
-                            else: reworkPick([x],[event.ydata])
-
-                    def move(event):
-
-                        if self.click2on:
-
-                            self.xpickLine.append(event.xdata)
-                            self.tpickLine.append(event.ydata)
-                            self.pickLine.set_data(self.xpickLine,self.tpickLine)
-                            self.figs[self.currentSt].canvas.draw()
-                            del self.xpickLine[1:-1]
-                            del self.tpickLine[1:-1]
-                            self.click2on = True
-
-                    def release(event):
-
-                        if self.click2on:
-                            
-                            x = min(self.receiverPositions[i], key = lambda x: abs(event.xdata - x))
-
-                            if self.xpickLine[0] < x:
-                                
-                                f = interp1d([self.xpickLine[0],x],[self.tpickLine[0],event.ydata], kind = "linear")
-                                xarray2pick = [j for j in self.receiverPositions[i] if j >= self.xpickLine[0] and j <= x]
-
-                            else:
-        
-                                f = interp1d([x,self.xpickLine[0]],[event.ydata,self.tpickLine[0]], kind = "linear")
-                                xarray2pick = [j for j in self.receiverPositions[i] if j >= x and j <= self.xpickLine[0]]
-                            
-                            tarray2pick = f(xarray2pick)
-
-                            xpicks2create, tpicks2create = [], []
-                            xpicks2rework, tpicks2rework = [], []
-                            
-                            for j, x in enumerate(xarray2pick):
-
-                                if x not in self.xpicks[self.currentSt]: xpicks2create.append(x); tpicks2create.append(tarray2pick[j])
-                                else: xpicks2rework.append(x); tpicks2rework.append(tarray2pick[j])
-
-                            if xpicks2create: createPick(xpicks2create,tpicks2create)
-                            if xpicks2rework: reworkPick(xpicks2rework,tpicks2rework)
-                            
-                            self.pickLine.remove()
-                            self.figs[self.currentSt].canvas.draw()
-                            del self.xpickLine[:]
-                            del self.tpickLine[:]
-                            self.click2on = False
-
+                for i in range(len(self.sts)):
+                    
                     self.click2on = False
                     conPick1 = self.figs[i].canvas.mpl_connect('button_press_event', click1)
                     conPick2 = self.figs[i].canvas.mpl_connect('button_press_event', click2)
@@ -1038,7 +1450,7 @@ E-mail: vjs279@hotmail.com
                     xinds = array(self.xpicks[self.currentSt]).argsort()
                     sortedx = array(self.xpicks[self.currentSt])[xinds]
                     sortedt = array(self.tpicks[self.currentSt])[xinds]             
-                    line, = self.axs[self.currentSt].plot(sortedx,sortedt,c="r",lw=.7)
+                    line, = self.axs[self.currentSt].plot(sortedx,sortedt,c=self.pickLineColor,lw=.7)
                     self.pickLineArts[self.currentSt] = line
 
                 else:
@@ -1062,8 +1474,6 @@ E-mail: vjs279@hotmail.com
       
                 if self.xpicks[i]: pickPresent = True
                 else: pickPresent = False
-
-            pickPresent = True
             
             sgx = list(set(allx+self.sources))
             
@@ -1157,15 +1567,17 @@ E-mail: vjs279@hotmail.com
 
         if self.sts:
 
-            if self.xpicks[self.currentSt]:
+            if messagebox.askyesno("Refrapick", "Clear picks in %s?"%self.stNames[self.currentSt]):
 
-                for pickArt in self.picksArts[self.currentSt]: pickArt.remove()
-                del self.picksArts[self.currentSt][:]
-                del self.xpicks[self.currentSt][:]
-                del self.tpicks[self.currentSt][:]
+                if self.xpicks[self.currentSt]:
 
-                self.figs[self.currentSt].canvas.draw()
-                messagebox.showinfo(title="Refrapick", message="All picks in %s have been deleted!"%self.stNames[self.currentSt])
+                    for pickArt in self.picksArts[self.currentSt]: pickArt.remove()
+                    del self.picksArts[self.currentSt][:]
+                    del self.xpicks[self.currentSt][:]
+                    del self.tpicks[self.currentSt][:]
+
+                    self.figs[self.currentSt].canvas.draw()
+                    messagebox.showinfo(title="Refrapick", message="All picks in %s have been deleted!"%self.stNames[self.currentSt])
     
     def loadPicks(self):
         
@@ -1226,7 +1638,7 @@ E-mail: vjs279@hotmail.com
                             xinds = array(self.xpicks[i]).argsort()
                             sortedxpicks = array(self.xpicks[i])[xinds]
                             sortedtpicks = array(self.tpicks[i])[xinds]
-                            l, = self.axs[self.currentSt].plot(sortedxpicks,sortedtpicks,ls="--",lw=.7,c="g")                    
+                            l, = self.axs[self.currentSt].plot(sortedxpicks,sortedtpicks,ls=self.traveltimesStyle,lw=.7,c=self.traveltimesColor)                    
                             self.ttArts.append(l)
 
                 else:
