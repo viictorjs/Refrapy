@@ -671,31 +671,35 @@ class Refrapick(Tk):
 
                 new_dx = simpledialog.askfloat("Refrapick","Enter the new receiver spacing in meters (for %s):"%self.stNames[self.currentSt])
 
-                if new_dx:
+                if new_dx != None:
 
-                    if self.xpicks[self.currentSt]: self.clearPicks()
+                    if new_dx > 0:
 
-                    self.receiverPositions[self.currentSt] = [i/self.dxs[self.currentSt] for i in self.receiverPositions[self.currentSt]]
-                    self.xends[self.currentSt] = self.xends[self.currentSt]/self.dxs[self.currentSt]                    
-                    self.dxs[self.currentSt] = new_dx
-                    self.receiverPositions[self.currentSt] = [i*self.dxs[self.currentSt] for i in self.receiverPositions[self.currentSt]]
-                    self.xends[self.currentSt] = self.xends[self.currentSt]*self.dxs[self.currentSt]                    
+                        if self.xpicks[self.currentSt]: self.clearPicks()
+
+                        self.receiverPositions[self.currentSt] = [i/self.dxs[self.currentSt] for i in self.receiverPositions[self.currentSt]]
+                        self.xends[self.currentSt] = self.xends[self.currentSt]/self.dxs[self.currentSt]                    
+                        self.dxs[self.currentSt] = new_dx
+                        self.receiverPositions[self.currentSt] = [i*self.dxs[self.currentSt] for i in self.receiverPositions[self.currentSt]]
+                        self.xends[self.currentSt] = self.xends[self.currentSt]*self.dxs[self.currentSt]                    
+                        
+                        for i in range(len(self.tracesArts[self.currentSt])):
+
+                            a = self.tracesData[self.currentSt][i]
+                            self.tracesArts[self.currentSt][i].set_xdata(a/max(a)*self.gains[self.currentSt]+self.x1s[self.currentSt]+self.dxs[self.currentSt]*i)
+
+                        self.axs[self.currentSt].set_xlim(self.x1s[self.currentSt]-self.dxs[self.currentSt]/2, self.xends[self.currentSt]+self.dxs[self.currentSt]/2)
+                        self.updatePlotTitle()
+                        
+                        if self.fillSide[self.currentSt] == 1: self.fillPositive()
+                        elif self.fillSide[self.currentSt] == -1: self.fillNegative()
+
+                        if self.amplitudeClip[self.currentSt] == 1: self.amplitudeClip[self.currentSt] = 0; self.clipAmplitudes()
                     
-                    for i in range(len(self.tracesArts[self.currentSt])):
+                        messagebox.showinfo(title="Refrapick", message="The receiver spacing was updated in %s"%self.stNames[self.currentSt])
+                        optionsWindow.tkraise()
 
-                        a = self.tracesData[self.currentSt][i]
-                        self.tracesArts[self.currentSt][i].set_xdata(a/max(a)*self.gains[self.currentSt]+self.x1s[self.currentSt]+self.dxs[self.currentSt]*i)
-
-                    self.axs[self.currentSt].set_xlim(self.x1s[self.currentSt]-self.dxs[self.currentSt]/2, self.xends[self.currentSt]+self.dxs[self.currentSt]/2)
-                    self.updatePlotTitle()
-                    
-                    if self.fillSide[self.currentSt] == 1: self.fillPositive()
-                    elif self.fillSide[self.currentSt] == -1: self.fillNegative()
-
-                    if self.amplitudeClip[self.currentSt] == 1: self.amplitudeClip[self.currentSt] = 0; self.clipAmplitudes()
-                
-                    messagebox.showinfo(title="Refrapick", message="The receiver spacing was updated in %s"%self.stNames[self.currentSt])
-                    optionsWindow.tkraise()
+                    else: messagebox.showerror(title="Refrapick", message="Invalid dx value!")
                     
             def editx1():
 
@@ -730,7 +734,7 @@ class Refrapick(Tk):
 
                 new_source = simpledialog.askfloat("Refrapick","Enter the new source position in meters (for %s):"%self.stNames[self.currentSt])
 
-                if new_source:
+                if new_source != None:
                   
                     self.sources[self.currentSt] = new_source
                     self.updatePlotTitle()
@@ -837,7 +841,6 @@ class Refrapick(Tk):
             if self.velMode: self.appVelMode()
             
             files = filedialog.askopenfilenames(title='Open', initialdir = self.projPath+"/data/", filetypes=[('SEG2 file', '*.dat'),
-                                                                                                            ('SG2 file', '*.sg2'),
                                                                                                             ('SEGY file', '*.sgy'),
                                                                                                             ('SU file', '*.su')])
 
@@ -860,21 +863,21 @@ class Refrapick(Tk):
                         
                     else:
                         
-                        dx = simpledialog.askfloat("Refrapick","Enter the receiver spacing (in meters) for %s:"%file)
-
-                        if dx == False: dx = 1; messagebox.showinfo('Refrapick','No value entered, dx = 1 m will be assigned to %s'%file)  
+                        dx = simpledialog.askfloat("Refrapick","Enter the receiver spacing (in meters) for %s:"%path.basename(file))
+                   
+                        if dx == None or dx <= 0: dx = 1; messagebox.showinfo('Refrapick','No valid dx entered: dx = 1 m will be assigned to %s'%path.basename(file))  
                             
-                        x1 = simpledialog.askfloat("Refrapick","Enter the first receiver position (in meters) for %s:"%file)
+                        x1 = simpledialog.askfloat("Refrapick","Enter the first receiver position (in meters) for %s:"%path.basename(file))
 
-                        if x1 == False: x1 = 0; messagebox.showinfo('Refrapick','No value entered, x1 = 0 m will be assigned to %s'%file)
+                        if x1 == None: x1 = 0; messagebox.showinfo('Refrapick','No x1 value entered: x1 = 0 m will be assigned to %s'%path.basename(file))
                         
-                        source = simpledialog.askfloat("Refrapick","Enter the source position (in meters) for %s:"%file)
+                        source = simpledialog.askfloat("Refrapick","Enter the source position (in meters) for %s:"%path.basename(file))
 
-                        if source == False: source = -1; messagebox.showinfo('Refrapick','No value entered, source = -1 m will be assigned to %s'%file)
+                        if source == None: source = -1; messagebox.showinfo('Refrapick','No source value entered: source = -1 m will be assigned to %s'%path.basename(file))
 
-                        delay = simpledialog.askfloat("Refrapick","Enter the delay for shot time correction (in seconds) for %s:"%file)
+                        delay = simpledialog.askfloat("Refrapick","Enter the delay for shot time correction (in seconds) for %s:"%path.basename(file))
 
-                        if delay == False: delay = 0; messagebox.showinfo('Refrapick','No delay time entered, delay = 0 s will be used for %s'%file)
+                        if delay == None: delay = 0; messagebox.showinfo('Refrapick','No delay time entered: delay = 0 s will be used for %s'%path.basename(file))
                         
                         xend = x1+dx*(len(st)-1)
 
@@ -931,7 +934,9 @@ class Refrapick(Tk):
                         self.tracesTime[i+n].append(tr.times()+delay)
                         self.originalTracesData[i+n].append(tr.data)
                         self.originalTracesTimes[i+n].append(tr.times()+delay)
-                        self.receiverPositions[i+n].append(float(tr.stats.seg2['RECEIVER_LOCATION']))
+
+                        if st[0].stats._format == "SEG2": self.receiverPositions[i+n].append(float(tr.stats.seg2['RECEIVER_LOCATION']))
+                        else: self.receiverPositions[i+n].append(j*dx)
 
                     ax.set_ylabel("TIME [s]")
                     ax.set_xlabel("RECEIVER POSITION [m]")
