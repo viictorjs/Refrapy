@@ -641,7 +641,7 @@ class Refrapick(Tk):
                 messagebox.showinfo(title="Refrapick", message="The gain factor has been changed")        
         
         plotOptionsWindow = Toplevel(self)
-        plotOptionsWindow.title('Refrapick - Edit parameters')
+        plotOptionsWindow.title('Refrapick - Plot options')
         plotOptionsWindow.configure(bg = "#F0F0F0")
         plotOptionsWindow.geometry("350x520")
         plotOptionsWindow.resizable(0,0)
@@ -1556,7 +1556,11 @@ E-mail: vjs279@hotmail.com
 
                                     outFile.write("%.2f %.2f\n"%(sgx[i],sgz[i]))
 
-                                outFile.write("%d # measurements\n#s g t\n"%(len(sgx)))
+                                nMeasurements = 0
+                                
+                                for i in range(len(self.sts)): nMeasurements+=len(self.xpicks[i])
+                                
+                                outFile.write("%d # measurements\n#s g t\n"%nMeasurements)
 
                                 for i in range(len(self.sts)):
 

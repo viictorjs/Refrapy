@@ -8,6 +8,7 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.lines import Line2D
+from matplotlib.colors import is_color_like
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from tkinter import Tk, Toplevel, Frame, Button, Label, filedialog, messagebox, PhotoImage, simpledialog, Entry
 from os import path, makedirs, getcwd
@@ -124,7 +125,7 @@ class Refrainv(Tk):
         b = Balloon(self)
         b.bind(bt,"Inversion options")
 
-        bt = Button(frame_toolbar, image = self.ico_plotOptions,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_plotOptions,command = self.plotOptions)
         bt.grid(row = 0, column = 14, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Plot options")
@@ -149,6 +150,10 @@ class Refrainv(Tk):
         self.tomoPlot = False
         self.timetermsInv = False
         self.tomoMesh = False
+        self.showRayPath = False
+        self.rayPathColor = 'k'
+        self.colormap = "jet_r"
+        self.cmPlot = None
     
     def kill(self):
 
@@ -350,7 +355,7 @@ class Refrainv(Tk):
             tomoWindow = Toplevel(self)
             tomoWindow.title('Refrainv - Tomography')
             tomoWindow.configure(bg = "#F0F0F0")
-            tomoWindow.geometry("280x610")
+            tomoWindow.geometry("300x610")
             tomoWindow.resizable(0,0)
             tomoWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
@@ -408,12 +413,12 @@ class Refrainv(Tk):
 
                     self.clearTomoPlot()
                     
-                if self.tomoMesh == False:
+                #if self.tomoMesh == False:
 
-                    maxDepth = float(maxDepth_entry.get())
-                    paraDX = float(paraDX_entry.get())
-                    paraMaxCellSize = float(paraMaxCellSize_entry.get())
-                    self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize)
+                maxDepth = float(maxDepth_entry.get())
+                paraDX = float(paraDX_entry.get())
+                paraMaxCellSize = float(paraMaxCellSize_entry.get())
+                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize)
 
                 lam = float(lam_entry.get())
                 zWeigh = float(zWeigh_entry.get())
@@ -446,7 +451,9 @@ class Refrainv(Tk):
                 self.ax_tomography.plot(self.sgx, self.sgz, c= "k", lw = 1.5)
                 
                 cm = self.ax_tomography.contourf(xi, zi, vi, levels=30,
-                                    cmap="jet_r", extend="both")
+                                    cmap=self.colormap, extend="both")
+
+                self.cmPlot = cm
 
                 divider = make_axes_locatable(self.ax_tomography)
                 cax = divider.append_axes("right", size="2%", pad=0.05)
@@ -454,7 +461,12 @@ class Refrainv(Tk):
                 cbar = self.fig_tomography.colorbar(cm,orientation="vertical", label = "[m/s]",
                              format='%d',cax=cax)
 
-                xblank = self.sgx+[self.sgx[-1],self.sgx[0]]
+                x2max = [max(self.sources)]
+                x2min = [min(self.sources)]
+                
+                for i in range(len(self.sources)): x2max.append(max(self.xdata[i])); x2min.append(min(self.xdata[i]))
+                
+                xblank = self.sgx+[max(x2max),min(x2min)]
                 zblank = self.sgz+[self.tomoMesh.yMin(),self.tomoMesh.yMin()]
                 limits = [(i,j) for i,j in zip(xblank,zblank)]
                 
@@ -465,22 +477,30 @@ class Refrainv(Tk):
                 patch = PathPatch(clippath, facecolor='none', alpha = 0)
                 self.ax_tomography.add_patch(patch)
 
-                for c in cm.collections:
-                    c.set_clip_path(patch)
+                for c in cm.collections: c.set_clip_path(patch)
 
-                self.mgr.drawRayPaths(self.ax_tomography,color="k")
-                self.ax_tomography.set_xlim(min(self.sgx),max(self.sgx))
+                if self.showRayPath: self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
+                    
+                self.ax_tomography.set_xlim(min(x2min),max(x2max))
                 self.fig_tomography.canvas.draw()
                 self.tomoPlot = True
                 self.showFit()
                 tomoWindow.destroy()
+
+            offsets = []
+            
+            for i in range(len(self.sources)):
+
+                for x in self.xdata[i]:
+
+                    offsets.append(abs(self.sources[i]-x))
             
             Label(tomoWindow, text="Mesh options", font=("Arial", 11)).grid(row=0,column=0,columnspan=2,pady=10,sticky="E")
             
             Label(tomoWindow, text = "Maximum depth").grid(row=1,column=0,pady=5,sticky="E")
             maxDepth_entry = Entry(tomoWindow,width=6)
             maxDepth_entry.grid(row=1,column=1,pady=5)
-            maxDepth_entry.insert(0,str(int((self.gx[-1]-self.gx[0])*0.4)))
+            maxDepth_entry.insert(0, str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
 
             Label(tomoWindow, text = "# of nodes between receivers").grid(row=2,column=0,pady=5,sticky="E")
             paraDX_entry = Entry(tomoWindow,width=6)
@@ -554,7 +574,7 @@ class Refrainv(Tk):
 
     def showFit(self):
 
-        if self.tomoPlot:
+        if self.data_pg:
 
             fitWindow = Toplevel(self)
             fitWindow.title('Refrainv - Fit')
@@ -580,23 +600,120 @@ class Refrainv(Tk):
 
             ax_fitTomography = fig.add_subplot(122)
             
-            pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, marker="o", lw = 0)
-            pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, tt= self.mgr.inv.response, marker="", linestyle = "--")
+            if self.tomoPlot:
 
-            for art in ax_fitTomography.get_lines(): art.set_color("k")
+                pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, marker="o", lw = 0)
+                pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, tt= self.mgr.inv.response, marker="", linestyle = "--")
+                legend_elements = [Line2D([0], [0], marker='o', color='k', label='Observed data', markerfacecolor='k', markersize=7),
+                                   Line2D([0], [0], color='k', lw=1, ls = "--", label='Model response')]
+                ax_fitTomography.legend(handles=legend_elements, loc='best')
+                
+            else:
 
-            legend_elements = [Line2D([0], [0], marker='o', color='k', label='Observed data', markerfacecolor='k', markersize=7),
-                               Line2D([0], [0], color='k', lw=1, ls = "--", label='Model response')]
-                   
+                pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, marker="o", lw = 1)
+
+            for art in ax_fitTomography.get_lines(): art.set_color("k")    
             
-            ax_fitTomography.legend(handles=legend_elements, loc='best')
             ax_fitTomography.set_ylabel("TRAVELTIME [s]")
             ax_fitTomography.set_xlabel("POSITION [m]")
             ax_fitTomography.grid(lw = .5, alpha = .5)
-            ax_fitTomography.set_title("Tomography inversion fit\n%d iterations | RRMSE = %.2f%%"%(self.mgr.inv.maxIter,self.mgr.inv.relrms())) #mgr.absrms() mgr.chi2()
+
+            if self.tomoPlot: ax_fitTomography.set_title("Tomography inversion fit\n%d iterations | RRMSE = %.2f%%"%(self.mgr.inv.maxIter,self.mgr.inv.relrms())) #mgr.absrms() mgr.chi2()
+            else: ax_fitTomography.set_title("Observed traveltimes")
        
             fig.canvas.draw()
             fitWindow.tkraise()
+            
+    def plotOptions(self):
+
+        def rayPath():
+            
+            if self.showRayPath == False:
+
+                show = messagebox.askyesno("Refrainv", "Do you want to show the ray path?")
+
+                if show:
+
+                    self.showRayPath = True
+
+                    if self.tomoPlot:
+
+                        self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
+                        self.fig_tomography.canvas.draw()
+
+                    messagebox.showinfo(title="Refrainv", message="The ray path view has been enabled!")
+                    plotOptionsWindow.tkraise()
+
+            else:
+
+                hide = messagebox.askyesno("Refrainv", "Do you want to hide the ray path?")
+
+                if hide:
+
+                    self.showRayPath = False
+
+                    if self.tomoPlot:
+                        
+                        for art in self.ax_tomography.collections:
+
+                            if str(type(art)) == "<class 'matplotlib.collections.LineCollection'>": art.remove()
+
+                        self.fig_tomography.canvas.draw()
+
+                    messagebox.showinfo(title="Refrainv", message="The ray path view has be disabled!")
+                    plotOptionsWindow.tkraise()
+
+        def rayPathLineColor():
+
+            new_color = simpledialog.askstring("Refrainv","Enter the new ray path line color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.rayPathColor = new_color
+                
+                if self.tomoPlot:
+
+                    messagebox.showinfo(title="Refrainv", message="To update the ray path color you must now hide and show the ray path!")
+                    self.showRayPath = True
+                    rayPath() #force removal of ray paths
+                    rayPath() #plot it
+                    
+                messagebox.showinfo(title="Refrainv", message="The ray path line color has been changed")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrainv", message="Invalid color!"); plotOptionsWindow.tkraise()
+            
+        def colormap():
+
+            new_cmap = simpledialog.askstring("Refrainv","Enter the new color map to be used (must be accepted by matplotlib):")
+
+            if new_cmap in plt.colormaps():
+
+                self.colormap = new_cmap
+
+                if self.tomoPlot:
+
+                    self.cmPlot.set_cmap(self.colormap)
+                    self.fig_tomography.canvas.draw()
+
+                messagebox.showinfo(title="Refrainv", message="The color map has been changed!")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrainv", message="Invalid color map!"); plotOptionsWindow.tkraise()
+        
+        plotOptionsWindow = Toplevel(self)
+        plotOptionsWindow.title('Refrainv - Plot options')
+        plotOptionsWindow.configure(bg = "#F0F0F0")
+        plotOptionsWindow.geometry("350x520")
+        plotOptionsWindow.resizable(0,0)
+        plotOptionsWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        Label(plotOptionsWindow, text = "Plot options",font=("Arial", 11)).grid(row=0,column=0,sticky="EW",pady=5,padx=65)
+        Label(plotOptionsWindow, text = "Tomography velocity model",bg="white",font=("Arial", 11)).grid(row=1,column=0,sticky="EW",pady=5,padx=65)
+        Button(plotOptionsWindow,text="Show/hide ray path", command = rayPath, width = 30).grid(row = 2, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change ray path line color", command = rayPathLineColor, width = 30).grid(row = 3, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change colormap", command = colormap, width = 30).grid(row = 4, column = 0,pady=5,padx=65)
+        
+        plotOptionsWindow.tkraise()
         
 app = Refrainv()
 app.mainloop()
