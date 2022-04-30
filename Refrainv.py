@@ -16,7 +16,7 @@ from obspy import read
 from obspy.signal.filter import lowpass, highpass
 from scipy.signal import resample
 from scipy.interpolate import interp1d,griddata
-from numpy import array, where, polyfit, linspace, meshgrid, column_stack
+from numpy import array, where, polyfit, linspace, meshgrid, column_stack, c_, savetxt
 from Pmw import initialise, Balloon
 import pygimli as pg
 from pygimli.physics import TravelTimeManager
@@ -40,7 +40,7 @@ class Refrainv(Tk):
         labelPhoto.image = photo
         labelPhoto.grid(row=0, column =0, sticky="W")
         self.statusLabel = Label(frame_toolbar, text = "Create or load a project to start", font=("Arial", 11))
-        self.statusLabel.grid(row = 0, column = 16, sticky = "W")
+        self.statusLabel.grid(row = 0, column = 18, sticky = "W")
 
         initialise(self)
 
@@ -59,6 +59,8 @@ class Refrainv(Tk):
         self.ico_save = PhotoImage(file="%s/images/salvar.gif"%getcwd())
         self.ico_fit = PhotoImage(file="%s/images/ico_fit.gif"%getcwd())
         self.ico_invOptions = PhotoImage(file="%s/images/opt.gif"%getcwd())
+        self.ico_velmesh = PhotoImage(file="%s/images/ico_velmesh.gif"%getcwd())
+        self.ico_3d = PhotoImage(file="%s/images/ico_3d.gif"%getcwd())
 
         bt = Button(frame_toolbar,image = self.ico_newProject,command = self.createProject,width=25)
         bt.grid(row = 0, column = 1, sticky="W")
@@ -113,25 +115,35 @@ class Refrainv(Tk):
         bt = Button(frame_toolbar, image = self.ico_fit,command = self.showFit)
         bt.grid(row = 0, column = 11, sticky="W")
         b = Balloon(self)
-        b.bind(bt,"Show fit and errors")
+        b.bind(bt,"Show model response (fit)")
+
+        bt = Button(frame_toolbar, image = self.ico_velmesh,command = self.showPgResult)
+        bt.grid(row = 0, column = 12, sticky="W")
+        b = Balloon(self)
+        b.bind(bt,"Show tomography velocity model with mesh")
+
+        bt = Button(frame_toolbar, image = self.ico_3d,command = self.build3d)
+        bt.grid(row = 0, column = 13, sticky="W")
+        b = Balloon(self)
+        b.bind(bt,"3D view of velocity model")
 
         bt = Button(frame_toolbar, image = self.ico_save,command = self.loadPick)
-        bt.grid(row = 0, column = 12, sticky="W")
+        bt.grid(row = 0, column = 14, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Save results")
 
         bt = Button(frame_toolbar, image = self.ico_invOptions,command = self.loadPick)
-        bt.grid(row = 0, column = 13, sticky="W")
+        bt.grid(row = 0, column = 15, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Inversion options")
 
         bt = Button(frame_toolbar, image = self.ico_plotOptions,command = self.plotOptions)
-        bt.grid(row = 0, column = 14, sticky="W")
+        bt.grid(row = 0, column = 16, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Plot options")
 
         bt = Button(frame_toolbar, image = self.ico_reset,command = self.loadPick)
-        bt.grid(row = 0, column = 15, sticky="W")
+        bt.grid(row = 0, column = 17, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Reset all")
 
@@ -154,6 +166,7 @@ class Refrainv(Tk):
         self.rayPathColor = 'k'
         self.colormap = "jet_r"
         self.cmPlot = None
+        self.coords_3d = []
     
     def kill(self):
 
@@ -330,7 +343,6 @@ class Refrainv(Tk):
 
     def clearTomoPlot(self):
 
-        #self.ax_tomography.cla()
         self.fig_tomography.clf()
         self.ax_tomography = self.fig_tomography.add_subplot(111)
         self.fig_tomography.patch.set_facecolor('#F0F0F0')
@@ -355,7 +367,7 @@ class Refrainv(Tk):
             tomoWindow = Toplevel(self)
             tomoWindow.title('Refrainv - Tomography')
             tomoWindow.configure(bg = "#F0F0F0")
-            tomoWindow.geometry("300x610")
+            tomoWindow.geometry("300x640")
             tomoWindow.resizable(0,0)
             tomoWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
@@ -426,6 +438,8 @@ class Refrainv(Tk):
                 vBottom = float(vBottom_entry.get())
                 minVelLimit = float(minVelLimit_entry.get())
                 maxVelLimit = float(maxVelLimit_entry.get())
+                self.minVelLimit = minVelLimit
+                self.maxVelLimit = maxVelLimit
                 secNodes = int(secNodes_entry.get())
                 maxIter = int(maxIter_entry.get())
                     
@@ -440,6 +454,10 @@ class Refrainv(Tk):
                 x = (xzv[:,0])
                 z = (xzv[:,1])
                 v = (xzv[:,3])
+
+                self.tomoModel_x = x
+                self.tomoModel_z = z
+                self.tomoModel_v = v
                 
                 nx = int(xngrid_entry.get())
                 ny = int(yngrid_entry.get())
@@ -449,8 +467,10 @@ class Refrainv(Tk):
                 vi = griddata((x, z), v,(xi,zi), method = 'linear')
 
                 self.ax_tomography.plot(self.sgx, self.sgz, c= "k", lw = 1.5)
+
+                nlevels = int(nlevels_entry.get())
                 
-                cm = self.ax_tomography.contourf(xi, zi, vi, levels=30,
+                cm = self.ax_tomography.contourf(xi, zi, vi, levels=nlevels,
                                     cmap=self.colormap, extend="both")
 
                 self.cmPlot = cm
@@ -497,7 +517,7 @@ class Refrainv(Tk):
             
             Label(tomoWindow, text="Mesh options", font=("Arial", 11)).grid(row=0,column=0,columnspan=2,pady=10,sticky="E")
             
-            Label(tomoWindow, text = "Maximum depth").grid(row=1,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Maximum depth (max offset = %.2f m)"%max(offsets)).grid(row=1,column=0,pady=5,sticky="E")
             maxDepth_entry = Entry(tomoWindow,width=6)
             maxDepth_entry.grid(row=1,column=1,pady=5)
             maxDepth_entry.insert(0, str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
@@ -511,6 +531,7 @@ class Refrainv(Tk):
             paraMaxCellSize_entry = Entry(tomoWindow,width=6)
             paraMaxCellSize_entry.grid(row=3,column=1,pady=5)
             paraMaxCellSize_entry.insert(0,str((self.gx[1]-self.gx[0])))
+            self.dx = self.gx[1]-self.gx[0]
             
             button = Button(tomoWindow, text="View mesh", command=viewMesh).grid(row=4,column=0,columnspan=2,pady=5,sticky="E")
 
@@ -526,12 +547,12 @@ class Refrainv(Tk):
             zWeigh_entry.grid(row=7,column=1,pady=5)
             zWeigh_entry.insert(0,"0.2")
 
-            Label(tomoWindow, text = "Minimum velocity (top of the model)").grid(row=8,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Velocity at the top of the model").grid(row=8,column=0,pady=5,sticky="E")
             vTop_entry = Entry(tomoWindow,width=6)
             vTop_entry.grid(row=8,column=1,pady=5)
             vTop_entry.insert(0,"300")
             
-            Label(tomoWindow, text = "Maximum velocity (bottom of the model)").grid(row=9,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Velocity at the bottom of the model").grid(row=9,column=0,pady=5,sticky="E")
             vBottom_entry = Entry(tomoWindow,width=6)
             vBottom_entry.grid(row=9,column=1,pady=5)
             vBottom_entry.insert(0,"3000")
@@ -567,8 +588,13 @@ class Refrainv(Tk):
             yngrid_entry = Entry(tomoWindow,width=6)
             yngrid_entry.grid(row=16,column=1,pady=5)
             yngrid_entry.insert(0,"1000")
+
+            Label(tomoWindow, text = "# of contour levels").grid(row=17,column=0,pady=5,sticky="E")
+            nlevels_entry = Entry(tomoWindow,width=6)
+            nlevels_entry.grid(row=17,column=1,pady=5)
+            nlevels_entry.insert(0,"20")
             
-            button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=17,column=0,columnspan=2,pady=5,sticky="E")
+            button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=18,column=0,columnspan=2,pady=5,sticky="E")
 
             tomoWindow.tkraise()
 
@@ -623,7 +649,177 @@ class Refrainv(Tk):
        
             fig.canvas.draw()
             fitWindow.tkraise()
+
+    def showPgResult(self):
+
+        if self.tomoPlot:
+
+            pgWindow = Toplevel(self)
+            pgWindow.title('Refrainv - Velocity model with mesh')
+            pgWindow.configure(bg = "#F0F0F0")
+            pgWindow.resizable(0,0)
+            pgWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+
+            frame = Frame(pgWindow)
+            frame.grid(row = 0, column = 0)
+            fig = plt.figure(figsize = (14.2,8.62))
+            fig.patch.set_facecolor('#F0F0F0')
+            canvas = FigureCanvasTkAgg(fig, frame)
+            canvas.draw()
+            toolbar = NavigationToolbar2Tk(canvas, frame)
+            toolbar.update()
+            canvas._tkcanvas.pack()
+            ax_pg = fig.add_subplot(111)
             
+            pg.show(self.tomoMesh, self.mgr.model, label = "[m/s]",
+                    cMin=self.minVelLimit,cMax=self.maxVelLimit,cMap=self.colormap,ax = ax_pg)
+
+            if self.showRayPath: self.mgr.drawRayPaths(ax = ax_pg,color=self.rayPathColor)
+
+            ax_pg.set_ylabel("DEPTH [m]")
+            ax_pg.set_xlabel("DISTANCE [m]")
+            ax_pg.grid(lw = .5, alpha = .5)
+            ax_pg.set_title("Tomography velocity model")
+            
+            fig.canvas.draw()
+            pgWindow.tkraise()
+
+    def build3d(self):
+            
+        if self.tomoPlot:
+
+            def save3dtomo():
+
+                tomo3dfile_out = filedialog.asksaveasfilename(title='Save',initialdir = self.projPath+"/models/",filetypes=[('Text file', '*.txt')])
+
+                if tomo3dfile_out:
+
+                    savetxt(tomo3dfile_out+".txt",c_[new_x,new_y,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
+                    messagebox.showinfo(title="Refrainv", message="File saved!")
+                    plot3dwindow.tkraise()
+        
+            plot3dwindow = Toplevel(self)
+            plot3dwindow.title('Refrainv - 3D view')
+            plot3dwindow.configure(bg = "#F0F0F0")
+            plot3dwindow.geometry("1600x900")
+            plot3dwindow.resizable(0,0)
+            plot3dwindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+
+            frame_buttons = Frame(plot3dwindow)
+            frame_buttons.grid(row = 0, column = 0, columnspan=100,sticky="W")
+
+            Button(frame_buttons,text="Save time-terms model 3D file",command=save3dtomo).grid(row=0,column=0,sticky="W")
+            Button(frame_buttons,text="Save tomography model 3D file",command=save3dtomo).grid(row=0,column=1,sticky="W")
+            
+            frame1 = Frame(plot3dwindow)
+            frame1.grid(row = 1, column = 0, rowspan=2)
+            frame2 = Frame(plot3dwindow)
+            frame2.grid(row = 1, column = 1)
+            frame3 = Frame(plot3dwindow)
+            frame3.grid(row = 2, column = 1)
+            
+            fig1 = plt.figure(figsize = (5,5))
+            fig1.patch.set_facecolor('#F0F0F0')
+            canvas1 = FigureCanvasTkAgg(fig1, frame1)
+            canvas1.draw()
+            toolbar1 = NavigationToolbar2Tk(canvas1, frame1)
+            toolbar1.update()
+            canvas1._tkcanvas.pack()
+
+            fig2 = plt.figure(figsize = (11.1,3.95))
+            fig2.patch.set_facecolor('#F0F0F0')
+            canvas2 = FigureCanvasTkAgg(fig2, frame2)
+            canvas2.draw()
+            toolbar2 = NavigationToolbar2Tk(canvas2, frame2)
+            toolbar2.update()
+            canvas2._tkcanvas.pack()
+
+            fig3 = plt.figure(figsize = (11.1,3.95))
+            fig3.patch.set_facecolor('#F0F0F0')
+            canvas3 = FigureCanvasTkAgg(fig3, frame3)
+            canvas3.draw()
+            toolbar3 = NavigationToolbar2Tk(canvas3, frame3)
+            toolbar3.update()
+            canvas3._tkcanvas.pack()
+
+            ax_coords = fig1.add_subplot(111, aspect = "equal")
+            ax_coords.set_ylabel("Y [m]")
+            ax_coords.set_xlabel("X [m]")
+            ax_coords.grid(lw = .5, alpha = .5)
+            ax_coords.set_title("Survey coordinates")
+            ax_coords.set_facecolor('#F0F0F0')
+            
+            ax_3d_timeterms = fig2.add_subplot(111, projection = "3d")
+            ax_3d_timeterms.set_box_aspect((1, 1, 1))
+
+            ax_3d_tomo = fig3.add_subplot(111, projection = "3d")
+            #ax_3d_tomo.set_box_aspect((1, 1, 1))
+
+            ax_3d_timeterms.set_ylabel("Y [m]")
+            ax_3d_timeterms.set_xlabel("X [m]")
+            ax_3d_timeterms.set_zlabel("ELEVATION [m]")
+            ax_3d_timeterms.grid(lw = .5, alpha = .5)
+            ax_3d_timeterms.set_title("Time-terms velocity model")
+            ax_3d_timeterms.set_facecolor('#F0F0F0')
+            
+            ax_3d_tomo.set_ylabel("Y [m]")
+            ax_3d_tomo.set_xlabel("X [m]")
+            ax_3d_tomo.set_zlabel("ELEVATION [m]")
+            ax_3d_tomo.grid(lw = .5, alpha = .5)
+            ax_3d_tomo.set_title("Tomography velocity model")
+            ax_3d_tomo.set_facecolor('#F0F0F0')
+
+            ax_coords.ticklabel_format(useOffset=False, style='plain')
+            ax_3d_timeterms.ticklabel_format(useOffset=False, style='plain')
+            ax_3d_tomo.ticklabel_format(useOffset=False, style='plain')
+            
+            fig1.canvas.draw()
+            fig2.canvas.draw()
+            fig3.canvas.draw()
+            #plot3dwindow.tkraise()
+
+            if not self.coords_3d:
+
+                messagebox.showinfo(title="Refrainv", message="Select now the file containing the survey line coordinates (4-column file: distance,x,y,elevation)")
+
+                file_3d = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/gps/", filetypes=[('Text file', '*.txt'),('CSV file', '*.csv')])
+                d,x,y,z = [],[],[],[]
+                
+                with open(file_3d, "r") as file:
+
+                    lines = file.readlines()
+
+                    for l in lines:
+
+                        dist = l.replace(' ', ',').replace('	',',').replace(';',',').replace('\n','').split(',')[0]
+                        xcoord = l.replace(' ', ',').replace('	',',').replace(';',',').replace('\n','').split(',')[1]
+                        ycoord = l.replace(' ', ',').replace('	',',').replace(';',',').replace('\n','').split(',')[2]
+                        elev = l.replace(' ', ',').replace('	',',').replace(';',',').replace('\n','').split(',')[3]
+                        d.append(float(dist))
+                        x.append(float(xcoord))
+                        y.append(float(ycoord))
+                        z.append(float(elev))
+
+                self.coords_3d.append(d)
+                self.coords_3d.append(x)
+                self.coords_3d.append(y)
+                self.coords_3d.append(z)
+
+            if self.coords_3d:
+
+                fx = interp1d(self.coords_3d[0],self.coords_3d[1], kind = "linear", fill_value = "extrapolate")
+                fy = interp1d(self.coords_3d[0],self.coords_3d[2], kind = "linear", fill_value = "extrapolate")
+                new_x = fx(self.tomoModel_x)
+                new_y = fy(self.tomoModel_x)
+                #print(len(new_x),len(new_y),len(self.coords_3d[3]),len(self.tomoModel_v))
+                ax_coords.plot(self.coords_3d[1],self.coords_3d[2])
+                ax_3d_tomo.scatter(new_x,new_y,self.tomoModel_z,c = self.tomoModel_v, cmap = self.colormap, s = self.dx)
+                
+                fig1.canvas.draw()
+                fig2.canvas.draw()
+                fig3.canvas.draw()
+                plot3dwindow.tkraise()
+    
     def plotOptions(self):
 
         def rayPath():

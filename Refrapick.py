@@ -1544,7 +1544,7 @@ E-mail: vjs279@hotmail.com
                         xinds = array(sgx).argsort()
                         sgx = array(sgx)[xinds]
                         sgz = array(sgz)[xinds]
-                        pickFile = filedialog.asksaveasfilename(title='Salvar',initialdir = self.projPath+"/picks/",filetypes=[('Pick file', '*.sgt')])
+                        pickFile = filedialog.asksaveasfilename(title='Save',initialdir = self.projPath+"/picks/",filetypes=[('Pick file', '*.sgt')])
 
                         if pickFile:
 
