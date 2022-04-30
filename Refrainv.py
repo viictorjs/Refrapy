@@ -16,7 +16,8 @@ from obspy import read
 from obspy.signal.filter import lowpass, highpass
 from scipy.signal import resample
 from scipy.interpolate import interp1d,griddata
-from numpy import array, where, polyfit, linspace, meshgrid, column_stack, c_, savetxt
+from numpy import array, where, polyfit, linspace, meshgrid, column_stack, c_, savetxt, shape,reshape,concatenate, hstack, linalg, mean, sqrt, zeros, arange, linspace, square, sort, unique
+from numpy import all as np_all
 from Pmw import initialise, Balloon
 import pygimli as pg
 from pygimli.physics import TravelTimeManager
@@ -77,32 +78,32 @@ class Refrainv(Tk):
         b = Balloon(self)
         b.bind(bt,"Load pick file")
 
-        bt = Button(frame_toolbar, image = self.ico_layerMode,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_layerMode,command = self.layersInterpretation)
         bt.grid(row = 0, column = 4, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Enable/disable layer assignmet mode (time-terms inversion)")
 
-        bt = Button(frame_toolbar, image = self.ico_layer1,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_layer1,command = self.assignLayer1)
         bt.grid(row = 0, column = 5, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Assign layer 1 (direct wave)")
 
-        bt = Button(frame_toolbar, image = self.ico_layer2,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_layer2,command = self.assignLayer2)
         bt.grid(row = 0, column = 6, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Assign layer 2 (refracted wave)")
 
-        bt = Button(frame_toolbar, image = self.ico_layer3,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_layer3,command = self.assignLayer3)
         bt.grid(row = 0, column = 7, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Assign layer 3 (refracted wave)")
 
-        bt = Button(frame_toolbar, image = self.ico_clearLayers,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_clearLayers,command = self.clearLayerAssignment)
         bt.grid(row = 0, column = 8, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Clear layer assignment")
 
-        bt = Button(frame_toolbar, image = self.ico_invTimeterms,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_invTimeterms,command = self.runTimeTerms)
         bt.grid(row = 0, column = 9, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Run time-terms inversion")
@@ -127,7 +128,7 @@ class Refrainv(Tk):
         b = Balloon(self)
         b.bind(bt,"3D view of velocity model")
 
-        bt = Button(frame_toolbar, image = self.ico_save,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_save,command = self.saveResults)
         bt.grid(row = 0, column = 14, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Save results")
@@ -160,6 +161,7 @@ class Refrainv(Tk):
         self.data_sourcesArts = []
         self.data_pg = False
         self.tomoPlot = False
+        self.timetermsPlot = False
         self.timetermsInv = False
         self.tomoMesh = False
         self.showRayPath = False
@@ -167,6 +169,9 @@ class Refrainv(Tk):
         self.colormap = "jet_r"
         self.cmPlot = None
         self.coords_3d = []
+        self.layerInterpretationMode = False
+        self.layer2interpretate = 1
+        self.layer1, self.layer2, self.layer3 = [],[],[]
     
     def kill(self):
 
@@ -174,6 +179,45 @@ class Refrainv(Tk):
 
         if out: self.destroy(); self.quit()
 
+    def assignLayer1(self):
+
+        if self.layerInterpretationMode:
+            
+            self.layer2interpretate = 1    
+            self.statusLabel.configure(text = 'Layer %d interpratation enabled!'%self.layer2interpretate)
+
+    def assignLayer2(self):
+
+        if self.layerInterpretationMode:
+            
+            self.layer2interpretate = 2 
+            self.statusLabel.configure(text = 'Layer %d interpratation enabled!'%self.layer2interpretate)
+
+    def assignLayer3(self):
+
+        if self.layerInterpretationMode:
+            
+            self.layer2interpretate = 3   
+            self.statusLabel.configure(text = 'Layer %d interpratation enabled!'%self.layer2interpretate)
+
+    def clearLayerAssignment(self):
+
+        if messagebox.askyesno("Refrainv", "Clear layer interpretation?"):
+                            
+            del self.layer1[:]
+            del self.layer2[:]
+            del self.layer3[:]
+            
+            for i in range(len(self.sources)):
+                
+                for b in self.dataArts[i][self.sources[i]]:
+                    
+                    b.set_color("white")
+                    b.set_edgecolor("k")
+
+            self.fig_data.canvas.draw()
+            messagebox.showinfo(title="Refrapick", message="Layer assignment was cleared!")
+        
     def createPanels(self):
 
         self.frame_plots = Frame(self, bg = "white")
@@ -298,6 +342,7 @@ class Refrainv(Tk):
         if self.projReady:
 
             pickFile = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/picks/", filetypes=[('Pick file', '*.sgt')])
+            self.lineName = path.basename(pickFile)[:-4]
 
             if pickFile:
 
@@ -315,16 +360,23 @@ class Refrainv(Tk):
                     t = [float(i.split()[2]) for i in lines[sgtindx+1:]]
                     sx = [sgx[i-1] for i in s]
                     gx = [sgx[i-1] for i in g]
+                    gz = [sgz[i-1] for i in g]
                     self.gx = gx
+                    self.gz = gz
+                    print(gz)
                     self.sgx = sgx
                     self.sgz = sgz
+                    self.dx = self.gx[1]-self.gx[0]
 
                     for i,src in enumerate(list(set(sx))):
     
                         self.sources.append(src)
-                        self.xdata.append([])
-                        self.tdata.append([])
-                        self.dataArts.append([])
+                        #self.xdata.append([])
+                        #self.tdata.append([])
+                        #self.dataArts.append([])
+                        self.xdata.append({src:[]})
+                        self.tdata.append({src:[]})
+                        self.dataArts.append({src:[]})
                         sourcePlot = self.ax_data.scatter(src,0,c="y",edgecolor="k",s=100,marker="*",zorder=99)
                         self.data_sourcesArts.append(sourcePlot)
 
@@ -332,15 +384,407 @@ class Refrainv(Tk):
 
                             if sx[j] == src:
 
-                                self.xdata[i].append(x)
-                                self.tdata[i].append(t[j])
-                                dataPlot = self.ax_data.scatter(x,t[j],facecolors='none',edgecolor="k",picker=5,zorder=99)
-                                self.dataArts[i].append(dataPlot)
+                                self.xdata[i][src].append(x)
+                                self.tdata[i][src].append(t[j])
+                                dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=self.dx*4,edgecolor="k",picker=5,zorder=99)
+                                self.dataArts[i][src].append(dataPlot)
                             
-                        self.ax_data.plot(self.xdata[i], self.tdata[i], c = "k")
+                        self.ax_data.plot(self.xdata[i][src], self.tdata[i][src], c = "k")
 
                     self.fig_data.canvas.draw()
 
+    def runTimeTerms(self):
+
+        if self.data_pg:
+                    
+            self.clearTimeTermsPlot()
+
+            regw = simpledialog.askfloat("Refrainv", "Enter the regularization weight to be used for data inversion or cancel for default (lambda = 0.1)")
+            
+            if regw == None: regw = 0.1
+
+            gx = list(set(self.gx))
+            gz = self.gz[:len(gx)]
+            
+            def solve(layer, G, d, w):
+                
+                rMs = zeros((int(len(layer)), int(len(self.sources)+len(gx)+1)))
+                r = 0
+                
+                for i in range(len(gx)):
+                    
+                    for j in range(len(self.sources)):
+                        
+                        if  self.sources[j] > min(gx) and self.sources[j] < max(gx): #se for fonte intermediaria
+                            
+                            if gx[i]+self.dx >= self.sources[j] and gx[i]-self.dx <= self.sources[j]:
+                                
+                                rMs[r][j] = w
+                                rMs[r][len(self.sources)+i] = -w
+                                r += 1
+                                
+                        elif self.sources[j] <= min(gx):
+                            
+                            if gx[i]-self.dx <= self.sources[j]:
+                                
+                                rMs[r][j] = w
+                                rMs[r][len(self.sources)+i] = -w
+                                r += 1
+                                
+                        elif self.sources[j] >= max(gx):
+                            
+                            if gx[i]+self.dx >= self.sources[j]:
+                                
+                                rMs[r][j] = w
+                                rMs[r][len(self.sources)+i] = -w
+                                r += 1
+                                
+                rMs = rMs[~np_all(rMs == 0, axis=1)] #regularization matrix of time-terms from sources
+                rMg = zeros((int(len(layer)), int(len(self.sources)+len(gx)+1)))
+                
+                for i,j in zip(range(shape(rMg)[0]), range(shape(rMg)[1])):
+                    
+                    try:
+                        
+                        rMg[i][len(self.sources)+j] = w
+                        rMg[i][len(self.sources)+j+1] = -w
+                        
+                    except: pass
+                   
+                rMg = rMg[~np_all(rMg == 0, axis=1)][:-2] #regularization matrix of time-terms from geophones
+                rM = concatenate((rMs, rMg))
+                rd = hstack((d, [i*0 for i in range(shape(rM)[0])]))
+                rG = concatenate((G, rM))
+                sol, sse, rank, sv = linalg.lstsq(rG, rd)
+                
+                return sol
+
+            if self.layer1:
+                
+                d1 = array([self.layer1[i][1] for i in range(len(self.layer1))])
+                G1 = array([self.layer1[i][3] for i in range(len(self.layer1))])
+                G1 = reshape(G1, (len(G1),1))
+                v1 = []
+                
+                for time,delta in zip(d1,G1):
+                    
+                    if delta == 0: pass
+                    else: v1.append(time/delta)
+
+                s1 = mean(v1)
+                v1 = 1/s1
+                self.velocity1 = v1
+                list_ot1, list_pt1 = [],[]
+                    
+                for p in self.layer1:
+                    
+                    s = p[-2]
+                    g = p[-1]
+                    x = p[-3]
+                    ot = p[1] #observed traveltime
+                    pt = x/v1 #predicted traveltime
+                    geop = p[0]
+                    list_ot1.append(ot)
+                    list_pt1.append(pt)
+
+                self.timeterms_respLayer1 = list_pt1
+
+                if self.layer2:
+                    
+                    d2 = array([self.layer2[i][1] for i in range(len(self.layer2))])
+                    G2 = zeros((int(len(self.layer2)),
+                                   int(len(self.sources)+len(gx)+1)))
+
+                    for i in range(len(self.layer2)):
+                        
+                        G2[i][self.layer2[i][-2]] = 1
+                        G2[i][self.layer2[i][-1]+len(self.sources)] = 1
+                        G2[i][-1] = self.layer2[i][-3]
+
+                    sol_layer2 = solve(self.layer2, G2, d2, regw)
+                    v2 = 1/sol_layer2[-1] #m/s
+                    self.velocity2 = v2
+
+                if self.layer3:
+                    
+                    d3 = array([self.layer3[i][1] for i in range(len(self.layer3))])
+                    G3 = zeros((int(len(self.layer3)),
+                                   int(len(self.sources)+len(gx)+1)))
+
+                    for i in range(len(self.layer3)):
+                        
+                        G3[i][self.layer3[i][-2]] = 1
+                        G3[i][self.layer3[i][-1]+len(self.sources)] = 1
+                        G3[i][-1] = self.layer3[i][-3]
+
+                    sol_layer3 = solve(self.layer3, G3, d3, regw)
+                    v3 = 1/sol_layer3[-1] #m/s
+                    self.velocity3 = v3
+                 
+                #self.sgp = sort(concatenate((arange(gx[0],gx[0]+len(gx)*self.dx,self.dx),array(self.sources))))
+            
+                if self.layer1 and self.layer2 and not self.layer3:
+                    
+                    dtg = array([i for i in sol_layer2[len(self.sources):-1]]) #delay-time of all geophones
+                    dts = array([i for i in sol_layer2[:len(self.sources)]]) #delay-time of all sources
+
+                    list_ot2, list_pt2 = [],[]
+                    
+                    for p in self.layer2:
+                        
+                        s = p[-2]
+                        g = p[-1]
+                        x = p[-3]
+                        ot = p[1] #observed traveltime
+                        geop = p[0]
+                        pt = dts[s]+dtg[g]+sol_layer2[-1]*x #predicted traveltime
+                        list_ot2.append(ot)
+                        list_pt2.append(pt)
+                        
+                    self.timeterms_respLayer2 = list_pt2
+                        
+                    dlayer2 = gz-((dtg*v1*v2)/(sqrt((v2**2)-(v1**2))))
+                    self.depthLayer2 = dlayer2
+                    
+                    try:
+                        
+                        #self.ax_timeterms.plot(gx,gz,c="r")
+                        #self.ax_timeterms.plot(gx,dlayer2,c="b")
+                        f = interp1d(gx, dlayer2, kind = 'linear', fill_value='extrapolate')
+                        sdlayer2 = f(linspace(gx[0], gx[-1], 1000))
+                        f = interp1d(gx, gz, kind = 'linear', fill_value='extrapolate')
+                        s_surf = f(linspace(gx[0], gx[-1], 1000))
+                        self.tt_layer1 = self.ax_timeterms.fill_between(linspace(gx[0], gx[-1], 1000),sdlayer2,s_surf, color = "red",
+                                          alpha = .5,edgecolor = "k", label = "%.0f m/s"%v1)
+                        self.tt_layer2 = self.ax_timeterms.fill_between(linspace(gx[0], gx[-1], 1000),sdlayer2, min(sdlayer2)*0.99,
+                                          alpha = .5,edgecolor = "k", color = "green",
+                                          label = "%.0f m/s"%v2)
+                        
+                    except:
+                        
+                        self.tt_layer1 = self.ax_timeterms.fill_between(gx,dlayer2, gz, color = "red", alpha = .5,edgecolor = "k",
+                                          label = "%.0f m/s"%v1)
+                        self.tt_layer2 = self.ax_timeterms.fill_between(gx,dlayer2, min(dlayer2)*0.99, alpha = .5,edgecolor = "k",
+                                          color = "green", label = "%.0f m/s"%v2)
+        
+                elif self.layer1 and self.layer2 and self.layer3:
+                                      
+                    dtg2 = array([i for i in sol_layer2[len(self.sources):-1]]) #delay-time of all geophones2
+                    dtg3 = array([i for i in sol_layer3[len(self.sources):-1]]) #delay-time of all geophones3
+                    dts2 = array([i for i in sol_layer2[:len(self.sources)]]) #delay-time of all sources2
+                    dts3 = array([i for i in sol_layer3[:len(self.sources)]]) #delay-time of all sources3
+
+                    list_ot2, list_pt2 = [],[]
+                    
+                    for p in self.layer2:
+                        
+                        s = p[-2]
+                        g = p[-1]
+                        x = p[-3]
+                        ot = p[1] #observed traveltime
+                        geop = p[0]
+                        pt = dts2[s]+dtg2[g]+sol_layer2[-1]*x #predicted traveltime
+                        list_ot2.append(ot)
+                        list_pt2.append(pt)
+
+                    list_ot3, list_pt3 = [],[]
+                    
+                    for p in self.layer3:
+                        
+                        s = p[-2]
+                        g = p[-1]
+                        x = p[-3]
+                        ot = p[1] #observed traveltime
+                        geop = p[0]
+                        pt = dts3[s]+dtg3[g]+sol_layer3[-1]*x #predicted traveltime
+                        list_ot3.append(ot)
+                        list_pt3.append(pt)
+
+                    self.timeterms_respLayer2 = list_pt2
+                    self.timeterms_respLayer3 = list_pt3
+                    upvmed = (v1+v2)/2
+                        
+                    #dlayer2 = gz-((dtg2*v1*v2)/(sqrt((v2**2)-(v1**2)))/1000)
+                    dlayer2 = gz-((dtg2*v1*v2)/(sqrt((v2**2)-(v1**2))))
+                    self.depthLayer2 = dlayer2
+                    #dlayer3 = gz-((dtg3*upvmed*v3)/(sqrt((v3**2)-(upvmed**2)))/1000)
+                    dlayer3 = gz-((dtg3*upvmed*v3)/(sqrt((v3**2)-(upvmed**2))))
+                    self.depthLayer3 = dlayer3
+                        
+                    try:
+                        
+                        s_surf = f(linspace(gx[0], gx[-1], 1000))
+                        f2 = interp1d(arange(gx[0], (len(gx)*self.dx)+gx[0], self.dx), dlayer2, kind = 'cubic', fill_value='extrapolate')
+                        sdlayer2 = f2(linspace(gx[0], gx[0]+(len(gx)*self.dx)-self.dx, 1000))
+                        f3 = interp1d(arange(gx[0], (len(gx)*self.dx)+gx[0], self.dx), dlayer3, kind = 'cubic', fill_value='extrapolate')
+                        sdlayer3 = f3(linspace(gx[0], gx[0]+(len(gx)*self.dx)-self.dx, 1000))
+                        self.tt_layer1 = self.tt_ax3.fill_between(linspace(gx[0], gx[-1], 1000),sdlayer2,s_surf, color = "red",
+                                          alpha = .5,edgecolor = "k", label = "%.0f m/s"%v1)
+                        self.tt_layer2 = self.ax_timeterms.fill_between(linspace(gx[0], gx[-1], 1000),sdlayer2, sdlayer3, alpha = .5,
+                                          edgecolor = "k", color = "green", label = "%.0f m/s"%v2)
+                        self.tt_layer3 = self.ax_timeterms.fill_between(linspace(gx[0], gx[-1], 1000),sdlayer3, min(sdlayer3)*1.1,
+                                          alpha = .5,edgecolor = "k", color = "blue",
+                                          label = "%.0f m/s"%v3)
+                        
+                    except:
+                        
+                        self.tt_layer1 = self.ax_timeterms.fill_between(gx,dlayer2,gz, color = "red", alpha = .5,edgecolor = "k",
+                                          label = "%.0f m/s"%v1)
+                        self.tt_layer2 = self.ax_timeterms.fill_between(gx,dlayer2, dlayer3, alpha = .5,edgecolor = "k", color = "green",
+                                          label = "%.0f m/s"%v2)
+                        self.tt_layer3 = self.ax_timeterms.fill_between(gx,dlayer3, min(dlayer3)*1.1, alpha = .5,edgecolor = "k",
+                                          color = "blue", label = "%.0f m/s"%v3)
+
+     
+                self.ax_timeterms.legend(loc="best")
+                self.timetermsPlot = True
+                self.fig_timeterms.canvas.draw()
+
+                if self.layer1 and self.layer2 and not self.layer3:
+
+                    self.timeterms_response = self.timeterms_respLayer1+self.timeterms_respLayer2
+                    obs_tt = list_ot1+list_ot2
+                    rmse = sqrt(mean((array(self.timeterms_response)-array(obs_tt))**2))
+                    relrmse = (sqrt(mean(square((array(obs_tt) - array(self.timeterms_response)) / array(obs_tt))))) * 100
+                    messagebox.showinfo('Refrainv','Absolute RMSE = %.2f ms\nRelative RMSE = %.2f%%'%(rmse,relrmse))
+
+                elif self.layer1 and self.layer2 and self.layer3:
+
+                    self.timeterms_response = self.timeterms_respLayer1+self.timeterms_respLayer2+self.timeterms_respLayer3
+                    obs_tt = list_ot1+list_ot2+list_ot3
+                    rmse = sqrt(mean((array(self.timeterms_response)-array(obs_tt))**2))
+                    relrmse = (sqrt(mean(square((array(obs_tt) - array(self.timeterms_response)) / array(obs_tt))))) * 100
+                    messagebox.showinfo('Refrainv','The velocity model was created!\nAbsolute RMSE = %.2f ms\nRelative RMSE = %.2f%%'%(rmse,relrmse))
+    
+    def layersInterpretation(self):
+
+        if self.data_pg:
+
+            if self.layerInterpretationMode == False:
+                
+                self.layerInterpretationMode = True
+                self.statusLabel.configure(text = 'Layer %d interpratation enabled!'%self.layer2interpretate)
+                    
+                def onpick(event):
+                    
+                    art = event.artist
+                    artx = art.get_offsets()[0][0]
+                    artt = art.get_offsets()[0][1]
+
+                    for i in range(len(self.sources)):
+                        
+                        if art in self.dataArts[i][self.sources[i]]:
+                            
+                            arts = self.sources[i]
+                            iS = i 
+                            
+                    if artx >= arts:
+                        
+                        for b in self.dataArts[iS][arts]:
+                            
+                            bx = b.get_offsets()[0][0]
+                            iG = where(array(self.dataArts[iS][arts]) == b)[0][0]
+                            
+                            if arts <= bx <= artx:
+                                
+                                bt = b.get_offsets()[0][1]
+                                
+                                if self.layer2interpretate == 1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1:
+                                    
+                                    b.set_color("red")
+                                    self.layer1.append((bx,bt,arts,abs(arts-bx),iS, iG))#geophone_position , arrival_time , source_poisition , offset , index_source , index_geophone
+
+                                    if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer2:
+                                        
+                                        self.layer2.remove((bx,bt,arts,abs(arts-bx),iS, iG))
+                                        
+                                elif self.layer2interpretate == 2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2:
+                                    
+                                    b.set_color("lightgreen")
+                                    self.layer2.append((bx,bt,arts,abs(arts-bx),iS, iG))
+                                    
+                                    if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer3:
+                                        
+                                        self.layer3.remove((bx,bt,arts,abs(arts-bx),iS, iG))
+                                        
+                                elif self.layer2interpretate == 3 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer3:
+
+                                    b.set_color("blue")
+                                    self.layer3.append((bx,bt,arts,abs(arts-bx),iS, iG))
+                                    
+                    elif artx <= arts:
+                        
+                        for b in self.dataArts[iS][arts]:
+                            
+                            bx = b.get_offsets()[0][0]
+                            iG = where(array(self.dataArts[iS][arts]) == b)[0][0]
+                            
+                            if arts >= bx >= artx:
+                                
+                                bt = b.get_offsets()[0][1]
+                                
+                                if self.layer2interpretate == 1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1:
+                                    
+                                    b.set_color("red")
+                                    self.layer1.append((bx,bt,arts,abs(arts-bx),iS, iG))
+                                    
+                                    if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer2:
+                                        
+                                        self.layer2.remove((bx,bt,arts,abs(arts-bx),iS, iG))
+                                        
+                                elif self.layer2interpretate == 2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2:
+                                    
+                                    b.set_color("lightgreen")
+                                    self.layer2.append((bx,bt,arts,abs(arts-bx),iS, iG))
+                                    
+                                    if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer3:
+                                        
+                                        self.layer3.remove((bx,bt,arts,abs(arts-bx),iS, iG))
+                                        
+                                elif self.layer2interpretate == 3 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer3:
+
+                                    b.set_color("blue")
+                                    self.layer3.append((bx,bt,arts,abs(arts-bx),iS, iG))
+                    
+                    self.fig_data.canvas.draw()
+
+                def onkey(event):
+                    
+                    if event.key == "1": self.layer2interpretate = 1
+                    elif event.key == "2": self.layer2interpretate = 2
+                    elif event.key == "3": self.layer2interpretate = 3
+                    
+                    self.statusLabel.configure(text = 'Layer %d interpratation enabled!'%self.layer2interpretate)
+                    
+                    if event.key == "C" or event.key == "c":
+                        
+                        if messagebox.askyesno("Refrainv", "Clear layer interpretation?"):
+                            
+                            del self.layer1[:]
+                            del self.layer2[:]
+                            del self.layer3[:]
+                            
+                            for i in range(len(self.sources)):
+                                
+                                for b in self.dataArts[i][self.sources[i]]:
+                                    
+                                    b.set_color("white")
+                                    b.set_edgecolor("k")
+
+                            self.fig_data.canvas.draw()
+
+                self.timeterms_pickEvent = self.fig_data.canvas.mpl_connect('pick_event', onpick)
+                self.timeterms_keyEvent = self.fig_data.canvas.mpl_connect('key_press_event', onkey)
+                messagebox.showinfo('Refrapy','Layer interpretation enabled!')
+
+            else:
+                
+                self.fig_data.canvas.mpl_disconnect(self.timeterms_pickEvent)
+                self.fig_data.canvas.mpl_disconnect(self.timeterms_keyEvent)
+                self.statusLabel.configure(text = 'Layer interpratation disabled')
+                messagebox.showinfo('Refrainv','Layer interpretation disabled!')
+                self.layerInterpretationMode = False
+    
     def clearTomoPlot(self):
 
         self.fig_tomography.clf()
@@ -357,6 +801,23 @@ class Refrainv(Tk):
         self.ax_tomography.xaxis.set_ticks_position('bottom')
         self.tomoPlot = False
         self.fig_tomography.canvas.draw()
+
+    def clearTimeTermsPlot(self):
+
+        self.fig_timeterms.clf()
+        self.ax_timeterms = self.fig_timeterms.add_subplot(111)
+        self.fig_timeterms.patch.set_facecolor('#F0F0F0')
+        self.ax_timeterms.set_title("Time-terms velocity model")
+        self.ax_timeterms.set_xlabel("POSITION [m]")
+        self.ax_timeterms.set_ylabel("DEPTH [m]")
+        self.ax_timeterms.grid(lw = .5, alpha = .5)
+        self.ax_timeterms.set_aspect("equal")
+        self.ax_timeterms.spines['right'].set_visible(False)
+        self.ax_timeterms.spines['top'].set_visible(False)
+        self.ax_timeterms.yaxis.set_ticks_position('left')
+        self.ax_timeterms.xaxis.set_ticks_position('bottom')
+        self.timetermsPlot = False
+        self.fig_timeterms.canvas.draw()
                 
     def runTomography(self):
 
@@ -442,10 +903,13 @@ class Refrainv(Tk):
                 self.maxVelLimit = maxVelLimit
                 secNodes = int(secNodes_entry.get())
                 maxIter = int(maxIter_entry.get())
-                    
+   
                 vest = self.mgr.invert(data=self.data_pg,mesh=self.tomoMesh,verbose=False,lam=lam,zWeight=zWeigh,useGradient=True,
                                vTop=vTop,vBottom=vBottom,maxIter=maxIter,limits=[minVelLimit,maxVelLimit],secNodes=secNodes)
                 
+                self.parameters_tomo = [maxDepth,paraDX,paraMaxCellSize,lam,zWeigh,vTop,vBottom,minVelLimit,maxVelLimit,secNodes,maxIter,
+                                        int(xngrid_entry.get()),int(yngrid_entry.get()),int(nlevels_entry.get()),
+                                        self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2()]
                 plotContourModel()
 
             def plotContourModel():
@@ -466,8 +930,6 @@ class Refrainv(Tk):
                 xi,zi = meshgrid(x_grid,y_grid)
                 vi = griddata((x, z), v,(xi,zi), method = 'linear')
 
-                self.ax_tomography.plot(self.sgx, self.sgz, c= "k", lw = 1.5)
-
                 nlevels = int(nlevels_entry.get())
                 
                 cm = self.ax_tomography.contourf(xi, zi, vi, levels=nlevels,
@@ -486,8 +948,26 @@ class Refrainv(Tk):
                 
                 for i in range(len(self.sources)): x2max.append(max(self.xdata[i])); x2min.append(min(self.xdata[i]))
                 
-                xblank = self.sgx+[max(x2max),min(x2min)]
-                zblank = self.sgz+[self.tomoMesh.yMin(),self.tomoMesh.yMin()]
+                xlim = self.sgx+[max(x2max),min(x2min)]
+                zlim = self.sgz+[self.tomoMesh.yMin(),self.tomoMesh.yMin()]
+
+                self.topographyx, self.topographyz = [], []
+
+                for i in range(len(self.sgx)):
+
+                    if self.sgx[i] <= max(x2max) and self.sgx[i] >= min(x2min): self.topographyx.append(self.sgx[i]); self.topographyz.append(self.sgz[i])
+
+                xblank, zblank = [], []
+
+                for i in range(len(xlim)):
+
+                    if xlim[i] <= max(x2max) and xlim[i] >= min(x2min): xblank.append(xlim[i]); zblank.append(zlim[i])
+                
+                self.xbln = xblank
+                self.zbln = zblank
+
+                self.ax_tomography.plot(self.topographyx, self.topographyz, c= "k", lw = 1.5)
+                
                 limits = [(i,j) for i,j in zip(xblank,zblank)]
                 
                 clippath = Path(limits)
@@ -511,7 +991,7 @@ class Refrainv(Tk):
             
             for i in range(len(self.sources)):
 
-                for x in self.xdata[i]:
+                for x in self.xdata[i][self.sources[i]]:
 
                     offsets.append(abs(self.sources[i]-x))
             
@@ -531,7 +1011,6 @@ class Refrainv(Tk):
             paraMaxCellSize_entry = Entry(tomoWindow,width=6)
             paraMaxCellSize_entry.grid(row=3,column=1,pady=5)
             paraMaxCellSize_entry.insert(0,str((self.gx[1]-self.gx[0])))
-            self.dx = self.gx[1]-self.gx[0]
             
             button = Button(tomoWindow, text="View mesh", command=viewMesh).grid(row=4,column=0,columnspan=2,pady=5,sticky="E")
 
@@ -598,6 +1077,51 @@ class Refrainv(Tk):
 
             tomoWindow.tkraise()
 
+    def saveResults(self):
+
+        if self.tomoPlot:
+
+            savetxt(self.projPath+"/models/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x z velocity",comments="")
+            self.fig_tomoFit.savefig(self.projPath+"/models/%s_tomography_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_tomography.savefig(self.projPath+"/models/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            savetxt(self.projPath+"/models/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
+            savetxt(self.projPath+"/models/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
+
+            if self.coords_3d: savetxt(self.projPath+"/models/%s_tomography_xyzv.txt"%(self.lineName),c_[self.new_x,self.new_y,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
+
+            with open(self.projPath+"/models/%s_tomography_parameters.txt"%(self.lineName),"w") as outFile:
+
+                outFile.write("%s - Traveltimes tomography parameters\n\n"%self.lineName)
+                outFile.write("Mesh options\n")
+                outFile.write("Maximum depth %.2f\n"%(self.parameters_tomo[0]))
+                outFile.write("# of nodes between receivers %.2f\n"%(self.parameters_tomo[1]))
+                outFile.write("Maximum cell size %.2f\n\n"%(self.parameters_tomo[2]))
+                outFile.write("Inversion options\n")
+                outFile.write("Smoothing (lam) %.2f\n"%(self.parameters_tomo[3]))
+                outFile.write("Vertical to horizontal smoothing (zweigh) %.2f\n"%(self.parameters_tomo[4]))
+                outFile.write("Velocity at the top of the model %.2f\n"%(self.parameters_tomo[5]))
+                outFile.write("Velocity at the bottom of the model %.2f\n"%(self.parameters_tomo[6]))
+                outFile.write("Minimum velocity limit %.2f\n"%(self.parameters_tomo[7]))
+                outFile.write("Maximum velocity limit %.2f\n"%(self.parameters_tomo[8]))
+                outFile.write("# of secondary nodes %d\n"%(self.parameters_tomo[9]))
+                outFile.write("Maximum # of iterations %d\n\n"%(self.parameters_tomo[10]))
+                outFile.write("Contour plot options\n")
+                outFile.write("# of nodes for gridding (x) %d\n"%(self.parameters_tomo[11]))
+                outFile.write("# of nodes for gridding (y) %d\n"%(self.parameters_tomo[12]))
+                outFile.write("# of contour levels %d\n\n"%(self.parameters_tomo[13]))
+                outFile.write("Model response\n")
+                outFile.write("Final iteration %d\n"%(self.parameters_tomo[14]))
+                outFile.write("Relative RMSE %.2f\n"%(self.parameters_tomo[15]))
+                outFile.write("Chi² %.2f\n"%(self.parameters_tomo[16]))
+
+        if self.timetermsPlot:
+
+            self.fig_data.savefig(self.projPath+"/models/%s_layers_assignment.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_timetermsFit.savefig(self.projPath+"/models/%s_timeterms_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_timeterms.savefig(self.projPath+"/models/%s_timeterms_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+
+        if self.timetermsPlot or self.tomoPlot: messagebox.showinfo(title="Refrainv", message="All results saved in %s"%(self.projPath+"/models/"))
+    
     def showFit(self):
 
         if self.data_pg:
@@ -608,23 +1132,33 @@ class Refrainv(Tk):
             fitWindow.resizable(0,0)
             fitWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
-            frame = Frame(fitWindow)
-            frame.grid(row = 0, column = 0)
-            fig = plt.figure(figsize = (14.2,8.62))
-            fig.patch.set_facecolor('#F0F0F0')
-            canvas = FigureCanvasTkAgg(fig, frame)
-            canvas.draw()
-            toolbar = NavigationToolbar2Tk(canvas, frame)
-            toolbar.update()
-            canvas._tkcanvas.pack()
+            frame1 = Frame(fitWindow)
+            frame1.grid(row = 0, column = 0)
+            fig1 = plt.figure(figsize = (7.1,8.62))
+            fig1.patch.set_facecolor('#F0F0F0')
+            canvas1 = FigureCanvasTkAgg(fig1, frame1)
+            canvas1.draw()
+            toolbar1 = NavigationToolbar2Tk(canvas1, frame1)
+            toolbar1.update()
+            canvas1._tkcanvas.pack()
+
+            frame2 = Frame(fitWindow)
+            frame2.grid(row = 0, column = 1)
+            fig2 = plt.figure(figsize = (7.1,8.62))
+            fig2.patch.set_facecolor('#F0F0F0')
+            canvas2 = FigureCanvasTkAgg(fig2, frame2)
+            canvas2.draw()
+            toolbar2 = NavigationToolbar2Tk(canvas2, frame2)
+            toolbar2.update()
+            canvas2._tkcanvas.pack()
             
-            ax_fitTimeterms = fig.add_subplot(121)
+            ax_fitTimeterms = fig1.add_subplot(111)
             ax_fitTimeterms.set_ylabel("TRAVELTIME [s]")
             ax_fitTimeterms.set_xlabel("POSITION [m]")
             ax_fitTimeterms.grid(lw = .5, alpha = .5)
             ax_fitTimeterms.set_title("Time-terms inversion fit")
 
-            ax_fitTomography = fig.add_subplot(122)
+            ax_fitTomography = fig2.add_subplot(111)
             
             if self.tomoPlot:
 
@@ -647,7 +1181,10 @@ class Refrainv(Tk):
             if self.tomoPlot: ax_fitTomography.set_title("Tomography inversion fit\n%d iterations | RRMSE = %.2f%%"%(self.mgr.inv.maxIter,self.mgr.inv.relrms())) #mgr.absrms() mgr.chi2()
             else: ax_fitTomography.set_title("Observed traveltimes")
        
-            fig.canvas.draw()
+            fig1.canvas.draw()
+            fig2.canvas.draw()
+            self.fig_tomoFit = fig2
+            self.fig_timetermsFit = fig1
             fitWindow.tkraise()
 
     def showPgResult(self):
@@ -688,96 +1225,6 @@ class Refrainv(Tk):
             
         if self.tomoPlot:
 
-            def save3dtomo():
-
-                tomo3dfile_out = filedialog.asksaveasfilename(title='Save',initialdir = self.projPath+"/models/",filetypes=[('Text file', '*.txt')])
-
-                if tomo3dfile_out:
-
-                    savetxt(tomo3dfile_out+".txt",c_[new_x,new_y,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
-                    messagebox.showinfo(title="Refrainv", message="File saved!")
-                    plot3dwindow.tkraise()
-        
-            plot3dwindow = Toplevel(self)
-            plot3dwindow.title('Refrainv - 3D view')
-            plot3dwindow.configure(bg = "#F0F0F0")
-            plot3dwindow.geometry("1600x900")
-            plot3dwindow.resizable(0,0)
-            plot3dwindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
-
-            frame_buttons = Frame(plot3dwindow)
-            frame_buttons.grid(row = 0, column = 0, columnspan=100,sticky="W")
-
-            Button(frame_buttons,text="Save time-terms model 3D file",command=save3dtomo).grid(row=0,column=0,sticky="W")
-            Button(frame_buttons,text="Save tomography model 3D file",command=save3dtomo).grid(row=0,column=1,sticky="W")
-            
-            frame1 = Frame(plot3dwindow)
-            frame1.grid(row = 1, column = 0, rowspan=2)
-            frame2 = Frame(plot3dwindow)
-            frame2.grid(row = 1, column = 1)
-            frame3 = Frame(plot3dwindow)
-            frame3.grid(row = 2, column = 1)
-            
-            fig1 = plt.figure(figsize = (5,5))
-            fig1.patch.set_facecolor('#F0F0F0')
-            canvas1 = FigureCanvasTkAgg(fig1, frame1)
-            canvas1.draw()
-            toolbar1 = NavigationToolbar2Tk(canvas1, frame1)
-            toolbar1.update()
-            canvas1._tkcanvas.pack()
-
-            fig2 = plt.figure(figsize = (11.1,3.95))
-            fig2.patch.set_facecolor('#F0F0F0')
-            canvas2 = FigureCanvasTkAgg(fig2, frame2)
-            canvas2.draw()
-            toolbar2 = NavigationToolbar2Tk(canvas2, frame2)
-            toolbar2.update()
-            canvas2._tkcanvas.pack()
-
-            fig3 = plt.figure(figsize = (11.1,3.95))
-            fig3.patch.set_facecolor('#F0F0F0')
-            canvas3 = FigureCanvasTkAgg(fig3, frame3)
-            canvas3.draw()
-            toolbar3 = NavigationToolbar2Tk(canvas3, frame3)
-            toolbar3.update()
-            canvas3._tkcanvas.pack()
-
-            ax_coords = fig1.add_subplot(111, aspect = "equal")
-            ax_coords.set_ylabel("Y [m]")
-            ax_coords.set_xlabel("X [m]")
-            ax_coords.grid(lw = .5, alpha = .5)
-            ax_coords.set_title("Survey coordinates")
-            ax_coords.set_facecolor('#F0F0F0')
-            
-            ax_3d_timeterms = fig2.add_subplot(111, projection = "3d")
-            ax_3d_timeterms.set_box_aspect((1, 1, 1))
-
-            ax_3d_tomo = fig3.add_subplot(111, projection = "3d")
-            #ax_3d_tomo.set_box_aspect((1, 1, 1))
-
-            ax_3d_timeterms.set_ylabel("Y [m]")
-            ax_3d_timeterms.set_xlabel("X [m]")
-            ax_3d_timeterms.set_zlabel("ELEVATION [m]")
-            ax_3d_timeterms.grid(lw = .5, alpha = .5)
-            ax_3d_timeterms.set_title("Time-terms velocity model")
-            ax_3d_timeterms.set_facecolor('#F0F0F0')
-            
-            ax_3d_tomo.set_ylabel("Y [m]")
-            ax_3d_tomo.set_xlabel("X [m]")
-            ax_3d_tomo.set_zlabel("ELEVATION [m]")
-            ax_3d_tomo.grid(lw = .5, alpha = .5)
-            ax_3d_tomo.set_title("Tomography velocity model")
-            ax_3d_tomo.set_facecolor('#F0F0F0')
-
-            ax_coords.ticklabel_format(useOffset=False, style='plain')
-            ax_3d_timeterms.ticklabel_format(useOffset=False, style='plain')
-            ax_3d_tomo.ticklabel_format(useOffset=False, style='plain')
-            
-            fig1.canvas.draw()
-            fig2.canvas.draw()
-            fig3.canvas.draw()
-            #plot3dwindow.tkraise()
-
             if not self.coords_3d:
 
                 messagebox.showinfo(title="Refrainv", message="Select now the file containing the survey line coordinates (4-column file: distance,x,y,elevation)")
@@ -807,13 +1254,101 @@ class Refrainv(Tk):
 
             if self.coords_3d:
 
+                def save3dtomo():
+
+                    tomo3dfile_out = filedialog.asksaveasfilename(title='Save',initialdir = self.projPath+"/models/",filetypes=[('Text file', '*.txt')])
+
+                    if tomo3dfile_out:
+
+                        savetxt(tomo3dfile_out+".txt",c_[self.new_x,self.new_y,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
+                        messagebox.showinfo(title="Refrainv", message="File saved!")
+                        plot3dwindow.tkraise()
+
+                plot3dwindow = Toplevel(self)
+                plot3dwindow.title('Refrainv - 3D view')
+                plot3dwindow.configure(bg = "#F0F0F0")
+                plot3dwindow.geometry("1600x900")
+                plot3dwindow.resizable(0,0)
+                plot3dwindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+
+                frame_buttons = Frame(plot3dwindow)
+                frame_buttons.grid(row = 0, column = 0, columnspan=100,sticky="W")
+
+                Button(frame_buttons,text="Save time-terms model 3D file",command=save3dtomo).grid(row=0,column=0,sticky="W")
+                Button(frame_buttons,text="Save tomography model 3D file",command=save3dtomo).grid(row=0,column=1,sticky="W")
+                
+                frame1 = Frame(plot3dwindow)
+                frame1.grid(row = 1, column = 0, rowspan=2)
+                frame2 = Frame(plot3dwindow)
+                frame2.grid(row = 1, column = 1)
+                frame3 = Frame(plot3dwindow)
+                frame3.grid(row = 2, column = 1)
+                
+                fig1 = plt.figure(figsize = (5,5))
+                fig1.patch.set_facecolor('#F0F0F0')
+                canvas1 = FigureCanvasTkAgg(fig1, frame1)
+                canvas1.draw()
+                toolbar1 = NavigationToolbar2Tk(canvas1, frame1)
+                toolbar1.update()
+                canvas1._tkcanvas.pack()
+
+                fig2 = plt.figure(figsize = (11.1,3.95))
+                fig2.patch.set_facecolor('#F0F0F0')
+                canvas2 = FigureCanvasTkAgg(fig2, frame2)
+                canvas2.draw()
+                toolbar2 = NavigationToolbar2Tk(canvas2, frame2)
+                toolbar2.update()
+                canvas2._tkcanvas.pack()
+
+                fig3 = plt.figure(figsize = (11.1,3.95))
+                fig3.patch.set_facecolor('#F0F0F0')
+                canvas3 = FigureCanvasTkAgg(fig3, frame3)
+                canvas3.draw()
+                toolbar3 = NavigationToolbar2Tk(canvas3, frame3)
+                toolbar3.update()
+                canvas3._tkcanvas.pack()
+
+                ax_coords = fig1.add_subplot(111, aspect = "equal")
+                ax_coords.set_ylabel("Y [m]")
+                ax_coords.set_xlabel("X [m]")
+                ax_coords.grid(lw = .5, alpha = .5)
+                ax_coords.set_title("Survey coordinates")
+                ax_coords.set_facecolor('#F0F0F0')
+                
+                ax_3d_timeterms = fig2.add_subplot(111, projection = "3d")
+                ax_3d_timeterms.set_box_aspect((1, 1, 1))
+
+                ax_3d_tomo = fig3.add_subplot(111, projection = "3d")
+                ax_3d_tomo.set_box_aspect((1, 1, 1))
+
+                ax_3d_timeterms.set_ylabel("Y [m]")
+                ax_3d_timeterms.set_xlabel("X [m]")
+                ax_3d_timeterms.set_zlabel("ELEVATION [m]")
+                ax_3d_timeterms.grid(lw = .5, alpha = .5)
+                ax_3d_timeterms.set_title("Time-terms velocity model")
+                ax_3d_timeterms.set_facecolor('#F0F0F0')
+                
+                ax_3d_tomo.set_ylabel("Y [m]")
+                ax_3d_tomo.set_xlabel("X [m]")
+                ax_3d_tomo.set_zlabel("ELEVATION [m]")
+                ax_3d_tomo.grid(lw = .5, alpha = .5)
+                ax_3d_tomo.set_title("Tomography velocity model")
+                ax_3d_tomo.set_facecolor('#F0F0F0')
+
+                ax_coords.ticklabel_format(useOffset=False, style='plain')
+                ax_3d_timeterms.ticklabel_format(useOffset=False, style='plain')
+                ax_3d_tomo.ticklabel_format(useOffset=False, style='plain')
+                
+                fig1.canvas.draw()
+                fig2.canvas.draw()
+                fig3.canvas.draw()
+
                 fx = interp1d(self.coords_3d[0],self.coords_3d[1], kind = "linear", fill_value = "extrapolate")
                 fy = interp1d(self.coords_3d[0],self.coords_3d[2], kind = "linear", fill_value = "extrapolate")
-                new_x = fx(self.tomoModel_x)
-                new_y = fy(self.tomoModel_x)
-                #print(len(new_x),len(new_y),len(self.coords_3d[3]),len(self.tomoModel_v))
-                ax_coords.plot(self.coords_3d[1],self.coords_3d[2])
-                ax_3d_tomo.scatter(new_x,new_y,self.tomoModel_z,c = self.tomoModel_v, cmap = self.colormap, s = self.dx)
+                self.new_x = fx(self.tomoModel_x)
+                self.new_y = fy(self.tomoModel_x)
+                ax_coords.plot(self.coords_3d[1],self.coords_3d[2],c="k")
+                cm = ax_3d_tomo.scatter(self.new_x,self.new_y,self.tomoModel_z,c = self.tomoModel_v, cmap = self.colormap, s = self.dx)
                 
                 fig1.canvas.draw()
                 fig2.canvas.draw()
