@@ -13,7 +13,7 @@ from obspy import read
 from obspy.signal.filter import lowpass, highpass
 from scipy.signal import resample
 from scipy.interpolate import interp1d
-from numpy import array, where, polyfit
+from numpy import array, where, polyfit, isclose
 from Pmw import initialise, Balloon
 import warnings
 
@@ -936,7 +936,7 @@ class Refrapick(Tk):
                         self.originalTracesTimes[i+n].append(tr.times()+delay)
 
                         if st[0].stats._format == "SEG2": self.receiverPositions[i+n].append(float(tr.stats.seg2['RECEIVER_LOCATION']))
-                        else: self.receiverPositions[i+n].append(j*dx)
+                        else: self.receiverPositions[i+n].append(x1+j*dx)
 
                     ax.set_ylabel("TIME [s]")
                     ax.set_xlabel("RECEIVER POSITION [m]")
@@ -953,7 +953,7 @@ class Refrapick(Tk):
                 self.statusLabel.lift()
                 self.statusLabel.configure(text="Waveform(s) ready!",font=("Arial", 11))
                 self.currentSt = 0
-
+            
                 if n == 0: messagebox.showinfo('Refrapick','%d file(s) loaded succesfully!'%len(files))
                 else: messagebox.showinfo('Refrapick','%d new file(s) loaded succesfully!'%len(files))
 
@@ -1539,7 +1539,7 @@ E-mail: vjs279@hotmail.com
                                 xtopo.append(float(pos))
                                 ztopo.append(float(elev))
                             
-                        f = interp1d(xtopo,ztopo, kind = "cubic", fill_value="extrapolate")
+                        f = interp1d(xtopo,ztopo, kind = "cubic", fill_value=(ztopo[0], ztopo[-1]), bounds_error=False)#, fill_value="extrapolate")
                         sgz = f(sgx)
                         xinds = array(sgx).argsort()
                         sgx = array(sgx)[xinds]
@@ -1570,8 +1570,10 @@ E-mail: vjs279@hotmail.com
 
                                     for xpick, tpick in zip(sortedxpicks, sortedtpicks):
 
-                                        s = where(sgx == self.sources[i])[0][0]+1
-                                        g = where(sgx == xpick)[0][0]+1
+                                        #s = where(sgx == self.sources[i])[0][0]+1
+                                        #g = where(sgx == xpick)[0][0]+1
+                                        s = isclose(array(sgx), array(self.sources[i])).nonzero()[0]+1
+                                        g = isclose(array(sgx), array(xpick)).nonzero()[0]+1
                                         t = tpick
                                         outFile.write("%d %d %.6f\n"%(s,g,t))
 
@@ -1590,7 +1592,11 @@ E-mail: vjs279@hotmail.com
 
                                 outFile.write("%.2f 0.00\n"%sgx[i])
 
-                            outFile.write("%d # measurements\n#s g t\n"%(len(sgx)))
+                            nMeasurements = 0
+                                
+                            for i in range(len(self.sts)): nMeasurements+=len(self.xpicks[i])
+                            
+                            outFile.write("%d # measurements\n#s g t\n"%nMeasurements)
 
                             for i in range(len(self.sts)):
 
@@ -1600,10 +1606,13 @@ E-mail: vjs279@hotmail.com
 
                                 for xpick, tpick in zip(sortedxpicks, sortedtpicks):
 
-                                    s = where(sgx == self.sources[i])[0][0]+1
-                                    g = where(sgx == xpick)[0][0]+1
+                                    #s = where(sgx == self.sources[i])[0][0]+1
+                                    #g = where(sgx == xpick)[0][0]+1
+                                    s = isclose(array(sgx), array(self.sources[i])).nonzero()[0]+1
+                                    g = isclose(array(sgx), array(xpick)).nonzero()[0]+1
                                     t = tpick
                                     outFile.write("%d %d %.6f\n"%(s,g,t))
+                                    
                                     
                 messagebox.showinfo(title="Refrapick", message="The pick file has been saved!")
                 

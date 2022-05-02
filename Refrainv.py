@@ -10,6 +10,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.lines import Line2D
 from matplotlib.colors import is_color_like
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from tkinter import Tk, Toplevel, Frame, Button, Label, filedialog, messagebox, PhotoImage, simpledialog, Entry
 from os import path, makedirs, getcwd
 from obspy import read
@@ -41,7 +42,7 @@ class Refrainv(Tk):
         labelPhoto.image = photo
         labelPhoto.grid(row=0, column =0, sticky="W")
         self.statusLabel = Label(frame_toolbar, text = "Create or load a project to start", font=("Arial", 11))
-        self.statusLabel.grid(row = 0, column = 18, sticky = "W")
+        self.statusLabel.grid(row = 0, column = 19, sticky = "W")
 
         initialise(self)
 
@@ -59,9 +60,10 @@ class Refrainv(Tk):
         self.ico_plotOptions = PhotoImage(file="%s/images/ico_plotOptions.gif"%getcwd())
         self.ico_save = PhotoImage(file="%s/images/salvar.gif"%getcwd())
         self.ico_fit = PhotoImage(file="%s/images/ico_fit.gif"%getcwd())
-        self.ico_invOptions = PhotoImage(file="%s/images/opt.gif"%getcwd())
+        self.ico_mergeResults = PhotoImage(file="%s/images/ico_mergeResults.gif"%getcwd())
         self.ico_velmesh = PhotoImage(file="%s/images/ico_velmesh.gif"%getcwd())
         self.ico_3d = PhotoImage(file="%s/images/ico_3d.gif"%getcwd())
+        self.ico_help = PhotoImage(file="%s/images/ico_help.gif"%getcwd())
 
         bt = Button(frame_toolbar,image = self.ico_newProject,command = self.createProject,width=25)
         bt.grid(row = 0, column = 1, sticky="W")
@@ -133,24 +135,70 @@ class Refrainv(Tk):
         b = Balloon(self)
         b.bind(bt,"Save results")
 
-        bt = Button(frame_toolbar, image = self.ico_invOptions,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_mergeResults,command = self.mergeResults)
         bt.grid(row = 0, column = 15, sticky="W")
         b = Balloon(self)
-        b.bind(bt,"Inversion options")
+        b.bind(bt,"View layers (time-terms) on tomography model")
 
         bt = Button(frame_toolbar, image = self.ico_plotOptions,command = self.plotOptions)
         bt.grid(row = 0, column = 16, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Plot options")
 
-        bt = Button(frame_toolbar, image = self.ico_reset,command = self.loadPick)
+        bt = Button(frame_toolbar, image = self.ico_reset,command = self.reset)
         bt.grid(row = 0, column = 17, sticky="W")
         b = Balloon(self)
         b.bind(bt,"Reset all")
 
+        bt = Button(frame_toolbar,image=self.ico_help,command = self.help)
+        bt.grid(row = 0, column = 18, sticky="W")
+        bl = Balloon(self)
+        bl.bind(bt,"Help")
+
         self.protocol("WM_DELETE_WINDOW", self.kill)
         self.initiateVariables()
 
+    def help(self):
+
+        helpWindow = Toplevel(self)
+        helpWindow.title('Refrapick - Help')
+        helpWindow.configure(bg = "#F0F0F0")
+        helpWindow.resizable(0,0)
+        helpWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+
+        Label(helpWindow, text = """Refrapy - Refrainv v2.0.0
+
+
+
+Refrainv provides tools for seismic refraction data inversion.
+
+If you use Refrapy in your work, please consider citing the following paper:
+
+Guedes, V.J.C.B., Maciel, S.T.R., Rocha, M.P., 2022. Refrapy: A Python program for seismic refraction data analysis,
+Computers and Geosciences. https://doi.org/10.1016/j.cageo.2021.105020.
+
+To report a bug and for more information, please visit github.com/viictorjs/Refrapy.
+
+
+
+Author: Victor Guedes, MSc
+E-mail: vjs279@hotmail.com
+""",font=("Arial", 11)).pack()
+        helpWindow.tkraise()
+
+    
+    def reset(self):
+
+        if messagebox.askyesno("Refrainv", "Clear all?"):
+
+            self.frame_plots.destroy()
+            self.frame_data.destroy()
+            self.frame_timeterms.destroy()
+            self.frame_tomography.destroy()
+            self.initiateVariables()
+            self.statusLabel.configure(text="Create or load a project to start",font=("Arial", 11))
+            messagebox.showinfo(title="Refrainv", message="All cleared successfully!")
+        
     def initiateVariables(self):
 
         self.projReady = False
@@ -177,9 +225,7 @@ class Refrainv(Tk):
         self.layer1_color = "r"
         self.layer2_color = "g"
         self.layer3_color = "b"
-        self.tomography_grid = True
-        self.timeterms_grid = True
-        self.data_grid = True
+        self.showGrid = True
         self.data_color = "k"
         self.tomography_geohpones = False
         self.tomography_sources = False
@@ -193,6 +239,12 @@ class Refrainv(Tk):
         self.sourcesPlot_timeterms = False
         self.sourcesPlot_tomography = False
         self.sourcesPlot_data = False
+        self.dataLines = []
+        self.new_x_tomography, self.new_y_tomography = False, False
+        self.new_x_timeterms, self.new_y_timeterms = False, False
+        self.tomography_3d_ready = False
+        self.timeterms_3d_ready = False
+        self.showMerged = False
     
     def kill(self):
 
@@ -221,6 +273,30 @@ class Refrainv(Tk):
             self.layer2interpretate = 3   
             self.statusLabel.configure(text = 'Layer %d interpratation enabled!'%self.layer2interpretate)
 
+    def mergeResults(self):
+
+        if self.tomoPlot and self.timetermsPlot:
+
+            if self.showMerged == False:
+                
+                if messagebox.askyesno("Refrainv", "Show layer(s) (from time-terms) over tomography model?"):
+
+                    if self.layer2: self.merged_layer2, = self.ax_tomography.plot(self.gx_timeterms,self.z_layer2, c = "k")
+                    if self.layer3: self.merged_layer3, = self.ax_tomography.plot(self.gx_timeterms,self.z_layer3, c = "k")
+                    self.fig_tomography.canvas.draw()
+                    self.showMerged = True
+                    messagebox.showinfo(title="Refrainv", message="Layers displayed!")
+
+            else:
+
+                if messagebox.askyesno("Refrainv", "Remove layer(s) (from time-terms) over tomography model?"):
+
+                    if self.layer2: self.merged_layer2.remove()
+                    if self.layer3: self.merged_layer3.remove()
+                    self.fig_tomography.canvas.draw()
+                    self.showMerged = False
+                    messagebox.showinfo(title="Refrainv", message="Layers removed!")
+
     def clearLayerAssignment(self):
 
         if messagebox.askyesno("Refrainv", "Clear layer interpretation?"):
@@ -237,7 +313,7 @@ class Refrainv(Tk):
                     b.set_edgecolor("k")
 
             self.fig_data.canvas.draw()
-            messagebox.showinfo(title="Refrapick", message="Layer assignment was cleared!")
+            messagebox.showinfo(title="Refrainv", message="Layer assignment was cleared!")
         
     def createPanels(self):
 
@@ -257,12 +333,13 @@ class Refrainv(Tk):
         self.ax_data.set_title("Observed data")
         self.ax_data.set_xlabel("POSITION [m]")
         self.ax_data.set_ylabel("TIME [s]")
-        self.ax_data.grid(lw = .5, alpha = .5)
+        
+        if self.showGrid: self.ax_data.grid(lw = .5, alpha = .5)
+        
         self.ax_data.spines['right'].set_visible(False)
         self.ax_data.spines['top'].set_visible(False)
         self.ax_data.yaxis.set_ticks_position('left')
         self.ax_data.xaxis.set_ticks_position('bottom')
-        
         
         self.frame_timeterms = Frame(self.frame_plots)
         self.frame_timeterms.grid(row = 0, column = 1, sticky = "NSWE")
@@ -278,7 +355,7 @@ class Refrainv(Tk):
         self.ax_timeterms.set_xlabel("POSITION [m]")
         self.ax_timeterms.set_ylabel("DEPTH [m]")
         
-        if self.timeterms_grid: self.ax_timeterms.grid(lw = .5, alpha = .5)
+        if self.showGrid: self.ax_timeterms.grid(lw = .5, alpha = .5)
         else: self.ax_timeterms.grid(False)
         
         self.ax_timeterms.set_aspect("equal")
@@ -301,7 +378,7 @@ class Refrainv(Tk):
         self.ax_tomography.set_xlabel("POSITION [m]")
         self.ax_tomography.set_ylabel("DEPTH [m]")
         
-        if self.tomography_grid: self.ax_tomography.grid(lw = .5, alpha = .5)
+        if self.showGrid: self.ax_tomography.grid(lw = .5, alpha = .5)
         else: self.ax_tomography.grid(False)
 
         self.ax_tomography.set_aspect("equal")
@@ -318,7 +395,7 @@ class Refrainv(Tk):
         
         if self.projPath:
             
-            projName = simpledialog.askstring("Refrapick","Enter the name of the project to be created:")
+            projName = simpledialog.askstring("Refrainv","Enter the name of the project to be created:")
             
             if not path.exists(self.projPath+"/"+projName):
                 
@@ -335,12 +412,12 @@ class Refrainv(Tk):
                 self.projPath = local
                 self.projReady = True
                 self.createPanels()
-                messagebox.showinfo(title="Refrapick", message="Successfully created the project!")
+                messagebox.showinfo(title="Refrainv", message="Successfully created the project!")
                 self.statusLabel.configure(text="Project path ready!",font=("Arial", 11))
                 
             else:
                 
-                messagebox.showinfo(title="Refrapick", message="A project was detected, please choose another name or directory!")
+                messagebox.showinfo(title="Refrainv", message="A project was detected, please choose another name or directory!")
 
     def loadProject(self):
 
@@ -359,10 +436,10 @@ class Refrainv(Tk):
                 self.p_gps = self.projPath+"/"+"gps/"
                 self.projReady = True
                 self.createPanels()
-                messagebox.showinfo(title="Refrapick", message="Successfully loaded the project path!")
+                messagebox.showinfo(title="Refrainv", message="Successfully loaded the project path!")
                 self.statusLabel.configure(text="Project path ready!",font=("Arial", 11))
                 
-            else: messagebox.showerror(title="Refrapick", message="Not all folders were detected!\nPlease, check the structure of the selected project.")
+            else: messagebox.showerror(title="Refrainv", message="Not all folders were detected!\nPlease, check the structure of the selected project.")
 
     def loadPick(self):
         
@@ -423,7 +500,8 @@ class Refrainv(Tk):
                                 dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=self.dx*10,edgecolor=self.data_color,picker=self.dx,zorder=99)
                                 self.dataArts[i][src].append(dataPlot)
                             
-                        self.ax_data.plot(self.xdata[i][src], self.tdata[i][src], c = self.data_color)
+                        dataLine, = self.ax_data.plot(self.xdata[i][src], self.tdata[i][src], c = self.data_color)
+                        self.dataLines.append(dataLine)
 
                     self.fig_data.canvas.draw()
 
@@ -438,7 +516,9 @@ class Refrainv(Tk):
             if regw == None: regw = 0.1
 
             gx = list(set(self.gx))
+            self.gx_timeterms = gx
             gz = self.gz[:len(gx)]
+            self.gz_timeterms = gz
             
             def solve(layer, G, d, w):
                 
@@ -677,7 +757,7 @@ class Refrainv(Tk):
                                 
                                 if self.layer2interpretate == 1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1:
                                     
-                                    b.set_color("r")
+                                    b.set_color(self.layer1_color)
                                     self.layer1.append((bx,bt,arts,abs(arts-bx),iS, iG))#geophone_position , arrival_time , source_poisition , offset , index_source , index_geophone
 
                                     if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer2:
@@ -686,7 +766,7 @@ class Refrainv(Tk):
                                         
                                 elif self.layer2interpretate == 2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2:
                                     
-                                    b.set_color("g")
+                                    b.set_color(self.layer2_color)
                                     self.layer2.append((bx,bt,arts,abs(arts-bx),iS, iG))
                                     
                                     if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer3:
@@ -695,7 +775,7 @@ class Refrainv(Tk):
                                         
                                 elif self.layer2interpretate == 3 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer3:
 
-                                    b.set_color("b")
+                                    b.set_color(self.layer3_color)
                                     self.layer3.append((bx,bt,arts,abs(arts-bx),iS, iG))
                                     
                     elif artx <= arts:
@@ -711,7 +791,7 @@ class Refrainv(Tk):
                                 
                                 if self.layer2interpretate == 1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1:
                                     
-                                    b.set_color("r")
+                                    b.set_color(self.layer1_color)
                                     self.layer1.append((bx,bt,arts,abs(arts-bx),iS, iG))
                                     
                                     if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer2:
@@ -720,7 +800,7 @@ class Refrainv(Tk):
                                         
                                 elif self.layer2interpretate == 2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2:
                                     
-                                    b.set_color("g")
+                                    b.set_color(self.layer2_color)
                                     self.layer2.append((bx,bt,arts,abs(arts-bx),iS, iG))
                                     
                                     if (bx,bt,arts,abs(arts-bx),iS, iG) in self.layer3:
@@ -729,7 +809,7 @@ class Refrainv(Tk):
                                         
                                 elif self.layer2interpretate == 3 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer2 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer1 and (bx,bt,arts,abs(arts-bx),iS, iG) not in self.layer3:
 
-                                    b.set_color("b")
+                                    b.set_color(self.layer3_color)
                                     self.layer3.append((bx,bt,arts,abs(arts-bx),iS, iG))
                     
                     self.fig_data.canvas.draw()
@@ -780,8 +860,14 @@ class Refrainv(Tk):
         self.ax_tomography.set_xlabel("POSITION [m]")
         self.ax_tomography.set_ylabel("DEPTH [m]")
 
-        if self.tomography_grid: self.ax_tomography.grid(lw = .5, alpha = .5)
+        if self.showGrid: self.ax_tomography.grid(lw = .5, alpha = .5)
         else: self.ax_tomography.grid(False)
+
+        if self.showMerged:
+
+            if self.layer2: self.merged_layer2.remove()
+            if self.layer3: self.merged_layer3.remove()
+            self.showMerged = False
         
         self.ax_tomography.set_aspect("equal")
         self.ax_tomography.spines['right'].set_visible(False)
@@ -800,8 +886,14 @@ class Refrainv(Tk):
         self.ax_timeterms.set_xlabel("POSITION [m]")
         self.ax_timeterms.set_ylabel("DEPTH [m]")
 
-        if self.timeterms_grid: self.ax_timeterms.grid(lw = .5, alpha = .5)
+        if self.showGrid: self.ax_timeterms.grid(lw = .5, alpha = .5)
         else: self.ax_timeterms.grid(False)
+
+        if self.showMerged:
+
+            if self.layer2: self.merged_layer2.remove()
+            if self.layer3: self.merged_layer3.remove()
+            self.showMerged = False
         
         self.ax_timeterms.set_aspect("equal")
         self.ax_timeterms.spines['right'].set_visible(False)
@@ -851,7 +943,7 @@ class Refrainv(Tk):
                 ax = fig.add_subplot(111)
                 ax.set_ylabel("POSITION [m]")
                 ax.set_xlabel("DEPTH [m]")
-                ax.grid(lw = .5, alpha = .5)
+                if self.showGrid: ax.grid(lw = .5, alpha = .5)
 
                 #vel = ra.paraModel()
                 pg.show(self.tomoMesh, ax = ax)
@@ -996,7 +1088,7 @@ class Refrainv(Tk):
             Label(tomoWindow, text = "Maximum depth (max offset = %.2f m)"%max(offsets)).grid(row=1,column=0,pady=5,sticky="E")
             maxDepth_entry = Entry(tomoWindow,width=6)
             maxDepth_entry.grid(row=1,column=1,pady=5)
-            maxDepth_entry.insert(0, str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
+            maxDepth_entry.insert(0, str(max(offsets)/5))#str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
 
             Label(tomoWindow, text = "# of nodes between receivers").grid(row=2,column=0,pady=5,sticky="E")
             paraDX_entry = Entry(tomoWindow,width=6)
@@ -1067,7 +1159,7 @@ class Refrainv(Tk):
             Label(tomoWindow, text = "# of contour levels").grid(row=17,column=0,pady=5,sticky="E")
             nlevels_entry = Entry(tomoWindow,width=6)
             nlevels_entry.grid(row=17,column=1,pady=5)
-            nlevels_entry.insert(0,"20")
+            nlevels_entry.insert(0,"30")
             
             button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=18,column=0,columnspan=2,pady=5,sticky="E")
 
@@ -1083,7 +1175,7 @@ class Refrainv(Tk):
             savetxt(self.projPath+"/models/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
             savetxt(self.projPath+"/models/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
 
-            if self.coords_3d: savetxt(self.projPath+"/models/%s_tomography_xyzv.txt"%(self.lineName),c_[self.new_x,self.new_y,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
+            if self.tomography_3d_ready: savetxt(self.projPath+"/models/%s_tomography_xyzv.txt"%(self.lineName),c_[self.new_x_tomography,self.new_y_tomography,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
 
             with open(self.projPath+"/models/%s_tomography_parameters.txt"%(self.lineName),"w") as outFile:
 
@@ -1112,6 +1204,24 @@ class Refrainv(Tk):
 
         if self.timetermsPlot:
 
+            if self.layer1:
+
+                savetxt(self.projPath+"/models/%s_timeterms_layer1.txt"%(self.lineName),c_[self.gx_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x z",comments="")
+                
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer1_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x y z",comments="")
+                
+            if self.layer2:
+
+                savetxt(self.projPath+"/models/%s_timeterms_layer2.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer2], fmt = "%.2f", header = "x z",comments="")
+
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer2_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer2], fmt = "%.2f", header = "x y z",comments="")
+                    
+            if self.layer3:
+
+                savetxt(self.projPath+"/models/%s_timeterms_layer3.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer3], fmt = "%.2f", header = "x z",comments="")
+
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer3_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer3], fmt = "%.2f", header = "x y z",comments="")
+            
             self.fig_data.savefig(self.projPath+"/models/%s_layers_assignment.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
             self.fig_timetermsFit.savefig(self.projPath+"/models/%s_timeterms_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
             self.fig_timeterms.savefig(self.projPath+"/models/%s_timeterms_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
@@ -1151,7 +1261,7 @@ class Refrainv(Tk):
             ax_fitTimeterms = fig1.add_subplot(111)
             ax_fitTimeterms.set_ylabel("TRAVELTIME [s]")
             ax_fitTimeterms.set_xlabel("POSITION [m]")
-            ax_fitTimeterms.grid(lw = .5, alpha = .5)
+            if self.showGrid: ax_fitTimeterms.grid(lw = .5, alpha = .5)
             ax_fitTimeterms.set_title("Time-terms inversion fit")
 
             ax_fitTomography = fig2.add_subplot(111)
@@ -1164,10 +1274,10 @@ class Refrainv(Tk):
                 ax_fitTomography.set_title("Observed traveltimes (tomography panel)")
                 ax_fitTimeterms.set_ylabel("TRAVELTIME [s]")
                 ax_fitTimeterms.set_xlabel("POSITION [m]")
-                ax_fitTimeterms.grid(lw = .5, alpha = .5)
+                if self.showGrid: ax_fitTimeterms.grid(lw = .5, alpha = .5)
                 ax_fitTomography.set_ylabel("TRAVELTIME [s]")
                 ax_fitTomography.set_xlabel("POSITION [m]")
-                ax_fitTomography.grid(lw = .5, alpha = .5)
+                if self.showGrid: ax_fitTomography.grid(lw = .5, alpha = .5)
             
             if self.timetermsPlot:
             
@@ -1229,7 +1339,7 @@ class Refrainv(Tk):
 
             ax_pg.set_ylabel("DEPTH [m]")
             ax_pg.set_xlabel("DISTANCE [m]")
-            ax_pg.grid(lw = .5, alpha = .5)
+            if self.showGrid: ax_pg.grid(lw = .5, alpha = .5)
             ax_pg.set_title("Tomography velocity model")
             
             fig.canvas.draw()
@@ -1237,7 +1347,7 @@ class Refrainv(Tk):
 
     def build3d(self):
             
-        if self.tomoPlot:
+        if self.tomoPlot or self.timetermsPlot:
 
             if not self.coords_3d:
 
@@ -1270,12 +1380,20 @@ class Refrainv(Tk):
 
                 def save3dtomo():
 
-                    tomo3dfile_out = filedialog.asksaveasfilename(title='Save',initialdir = self.projPath+"/models/",filetypes=[('Text file', '*.txt')])
+                    if self.tomoPlot:
 
-                    if tomo3dfile_out:
+                        savetxt(self.projPath+"/models/%s_tomography_xyzv.txt"%(self.lineName),c_[self.new_x_tomography,self.new_y_tomography,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
+                        messagebox.showinfo(title="Refrainv", message="File saved in %s"%(self.projPath+"/models/"))
+                        plot3dwindow.tkraise()
 
-                        savetxt(tomo3dfile_out+".txt",c_[self.new_x,self.new_y,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
-                        messagebox.showinfo(title="Refrainv", message="File saved!")
+                def save3dtimeterms():
+
+                    if self.timetermsPlot:
+                        
+                        if self.layer1: savetxt(self.projPath+"/models/%s_timeterms_layer1_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x y z",comments="")
+                        if self.layer2: savetxt(self.projPath+"/models/%s_timeterms_layer2_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer2], fmt = "%.2f", header = "x y z",comments="")
+                        if self.layer3: savetxt(self.projPath+"/models/%s_timeterms_layer3_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer3], fmt = "%.2f", header = "x y z",comments="")
+                        messagebox.showinfo(title="Refrainv", message="Files saved in %s"%(self.projPath+"/models/"))
                         plot3dwindow.tkraise()
 
                 plot3dwindow = Toplevel(self)
@@ -1288,7 +1406,7 @@ class Refrainv(Tk):
                 frame_buttons = Frame(plot3dwindow)
                 frame_buttons.grid(row = 0, column = 0, columnspan=100,sticky="W")
 
-                Button(frame_buttons,text="Save time-terms model 3D file",command=save3dtomo).grid(row=0,column=0,sticky="W")
+                Button(frame_buttons,text="Save time-terms model 3D file",command=save3dtimeterms).grid(row=0,column=0,sticky="W")
                 Button(frame_buttons,text="Save tomography model 3D file",command=save3dtomo).grid(row=0,column=1,sticky="W")
                 
                 frame1 = Frame(plot3dwindow)
@@ -1325,7 +1443,7 @@ class Refrainv(Tk):
                 ax_coords = fig1.add_subplot(111, aspect = "equal")
                 ax_coords.set_ylabel("Y [m]")
                 ax_coords.set_xlabel("X [m]")
-                ax_coords.grid(lw = .5, alpha = .5)
+                if self.showGrid:ax_coords.grid(lw = .5, alpha = .5)
                 ax_coords.set_title("Survey coordinates")
                 ax_coords.set_facecolor('#F0F0F0')
                 
@@ -1338,14 +1456,14 @@ class Refrainv(Tk):
                 ax_3d_timeterms.set_ylabel("Y [m]")
                 ax_3d_timeterms.set_xlabel("X [m]")
                 ax_3d_timeterms.set_zlabel("ELEVATION [m]")
-                ax_3d_timeterms.grid(lw = .5, alpha = .5)
+                if self.showGrid:ax_3d_timeterms.grid(lw = .5, alpha = .5)
                 ax_3d_timeterms.set_title("Time-terms velocity model")
                 ax_3d_timeterms.set_facecolor('#F0F0F0')
                 
                 ax_3d_tomo.set_ylabel("Y [m]")
                 ax_3d_tomo.set_xlabel("X [m]")
                 ax_3d_tomo.set_zlabel("ELEVATION [m]")
-                ax_3d_tomo.grid(lw = .5, alpha = .5)
+                if self.showGrid:ax_3d_tomo.grid(lw = .5, alpha = .5)
                 ax_3d_tomo.set_title("Tomography velocity model")
                 ax_3d_tomo.set_facecolor('#F0F0F0')
 
@@ -1357,12 +1475,30 @@ class Refrainv(Tk):
                 fig2.canvas.draw()
                 fig3.canvas.draw()
 
-                fx = interp1d(self.coords_3d[0],self.coords_3d[1], kind = "linear", fill_value = "extrapolate")
-                fy = interp1d(self.coords_3d[0],self.coords_3d[2], kind = "linear", fill_value = "extrapolate")
-                self.new_x = fx(self.tomoModel_x)
-                self.new_y = fy(self.tomoModel_x)
-                ax_coords.plot(self.coords_3d[1],self.coords_3d[2],c="k")
-                cm = ax_3d_tomo.scatter(self.new_x,self.new_y,self.tomoModel_z,c = self.tomoModel_v, cmap = self.colormap, s = self.dx)
+                if self.timetermsPlot:
+                    
+                    fx = interp1d(self.coords_3d[0],self.coords_3d[1], kind = "linear", fill_value = "extrapolate")
+                    fy = interp1d(self.coords_3d[0],self.coords_3d[2], kind = "linear", fill_value = "extrapolate")
+                    self.new_x_timeterms = fx(self.gx_timeterms)
+                    self.new_y_timeterms = fy(self.gx_timeterms)
+                    ax_coords.plot(self.coords_3d[1],self.coords_3d[2],c="k")
+                    
+                    if self.layer1: ax_3d_timeterms.plot(self.new_x_timeterms,self.new_y_timeterms,self.gz_timeterms,c = self.layer1_color)
+                    if self.layer2: ax_3d_timeterms.plot(self.new_x_timeterms,self.new_y_timeterms,self.z_layer2,c = self.layer2_color)
+                    if self.layer3: ax_3d_timeterms.plot(self.new_x_timeterms,self.new_y_timeterms,self.z_layer3,c = self.layer3_color)
+
+                    self.timeterms_3d_ready = True
+
+                if self.tomoPlot:
+
+                    fx = interp1d(self.coords_3d[0],self.coords_3d[1], kind = "linear", fill_value = "extrapolate")
+                    fy = interp1d(self.coords_3d[0],self.coords_3d[2], kind = "linear", fill_value = "extrapolate")
+                    self.new_x_tomography = fx(self.tomoModel_x)
+                    self.new_y_tomography = fy(self.tomoModel_x)
+                    ax_coords.plot(self.coords_3d[1],self.coords_3d[2],c="k")
+                    cm = ax_3d_tomo.scatter(self.new_x_tomography,self.new_y_tomography,self.tomoModel_z,c = self.tomoModel_v, cmap = self.colormap, s = self.dx)
+
+                    self.tomography_3d_ready = True
                 
                 fig1.canvas.draw()
                 fig2.canvas.draw()
@@ -1459,8 +1595,9 @@ class Refrainv(Tk):
                     self.fill_layer1.set_color(self.layer1_color)
                     self.ax_timeterms.legend(loc="best")
                     self.fig_timeterms.canvas.draw()
-                    messagebox.showinfo(title="Refrainv", message="The layer 1 color has been changed!")
-                    plotOptionsWindow.tkraise()
+
+                messagebox.showinfo(title="Refrainv", message="The layer 1 color has been changed!")
+                plotOptionsWindow.tkraise()
 
             else: messagebox.showerror(title="Refrainv", message="Invalid color!"); plotOptionsWindow.tkraise()
 
@@ -1477,8 +1614,9 @@ class Refrainv(Tk):
                     self.fill_layer2.set_color(self.layer2_color)
                     self.ax_timeterms.legend(loc="best")
                     self.fig_timeterms.canvas.draw()
-                    messagebox.showinfo(title="Refrainv", message="The layer 2 color has been changed!")
-                    plotOptionsWindow.tkraise()
+
+                messagebox.showinfo(title="Refrainv", message="The layer 2 color has been changed!")
+                plotOptionsWindow.tkraise()
 
             else: messagebox.showerror(title="Refrainv", message="Invalid color!"); plotOptionsWindow.tkraise()
 
@@ -1495,8 +1633,28 @@ class Refrainv(Tk):
                     self.fill_layer3.set_color(self.layer3_color)
                     self.ax_timeterms.legend(loc="best")
                     self.fig_timeterms.canvas.draw()
-                    messagebox.showinfo(title="Refrainv", message="The layer 3 color has been changed!")
-                    plotOptionsWindow.tkraise()
+                    
+                messagebox.showinfo(title="Refrainv", message="The layer 3 color has been changed!")
+                plotOptionsWindow.tkraise()
+
+            else: messagebox.showerror(title="Refrainv", message="Invalid color!"); plotOptionsWindow.tkraise()
+
+        def dataLinesColor():
+
+            new_color = simpledialog.askstring("Refrainv","Enter the new traveltimes line color (must be accepted by matplotlib):")
+
+            if is_color_like(new_color):
+
+                self.data_color = new_color
+                
+                if self.data_pg:
+
+                    for line in self.dataLines: line.set_color(self.data_color)
+                    
+                    self.fig_data.canvas.draw()
+                    
+                messagebox.showinfo(title="Refrainv", message="The traveltimes line color has been changed!")
+                plotOptionsWindow.tkraise()
 
             else: messagebox.showerror(title="Refrainv", message="Invalid color!"); plotOptionsWindow.tkraise()
 
@@ -1579,30 +1737,62 @@ class Refrainv(Tk):
 
                     messagebox.showinfo(title="Refrainv", message="Sources location removed from velocity models!")
                     plotOptionsWindow.tkraise()
+
+        def gridLines():
+    
+            if self.projReady:
+
+                if self.showGrid == False:
+                
+                    show = messagebox.askyesno("Refrainv", "Show grid lines?")
+        
+                    if show:
+
+                        self.showGrid = True
+                        self.ax_data.grid(lw = .5, alpha = .5)
+                        self.ax_timeterms.grid(lw = .5, alpha = .5)
+                        self.ax_tomography.grid(lw = .5, alpha = .5)
+                        self.fig_data.canvas.draw()
+                        self.fig_timeterms.canvas.draw()
+                        self.fig_tomography.canvas.draw()
+                        messagebox.showinfo(title="Refrainv", message="Grid lines have been enabled!")
+                        plotOptionsWindow.tkraise()
+
+                else:
+
+                    hide = messagebox.askyesno("Refrainv", "Hide grid lines?")
+        
+                    if hide:
+
+                        self.showGrid = False
+                        self.ax_data.grid(False)
+                        self.ax_timeterms.grid(False)
+                        self.ax_tomography.grid(False)
+                        self.fig_data.canvas.draw()
+                        self.fig_timeterms.canvas.draw()
+                        self.fig_tomography.canvas.draw()
+                        messagebox.showinfo(title="Refrainv", message="Grid lines have been disabled!")
+                        plotOptionsWindow.tkraise()
         
         plotOptionsWindow = Toplevel(self)
         plotOptionsWindow.title('Refrainv - Plot options')
         plotOptionsWindow.configure(bg = "#F0F0F0")
-        plotOptionsWindow.geometry("350x520")
+        plotOptionsWindow.geometry("350x450")
         plotOptionsWindow.resizable(0,0)
         plotOptionsWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
         Label(plotOptionsWindow, text = "Plot options",font=("Arial", 11)).grid(row=0,column=0,sticky="EW",pady=5,padx=65)
-        Label(plotOptionsWindow, text = "Tomography velocity model",bg="white",font=("Arial", 11)).grid(row=1,column=0,sticky="EW",pady=5,padx=65)
-        Button(plotOptionsWindow,text="Show/hide ray path", command = rayPath, width = 30).grid(row = 2, column = 0,pady=5,padx=65)
-        Button(plotOptionsWindow,text="Change ray path line color", command = rayPathLineColor, width = 30).grid(row = 3, column = 0,pady=5,padx=65)
-        Button(plotOptionsWindow,text="Change colormap", command = colormap, width = 30).grid(row = 4, column = 0,pady=5,padx=65)
-        Label(plotOptionsWindow, text = "Time-terms velocity model",bg="white",font=("Arial", 11)).grid(row=5,column=0,sticky="EW",pady=5,padx=65)
-        Button(plotOptionsWindow,text="Change layer 1 color", command = layer1_color, width = 30).grid(row = 6, column = 0,pady=5,padx=65)
-        Button(plotOptionsWindow,text="Change layer 2 color", command = layer2_color, width = 30).grid(row = 7, column = 0,pady=5,padx=65)
-        Button(plotOptionsWindow,text="Change layer 3 color", command = layer3_color, width = 30).grid(row = 8, column = 0,pady=5,padx=65)
-        Button(plotOptionsWindow,text="Show/hide receiver positions", command = geophonePosition, width = 30).grid(row = 9, column = 0,pady=5,padx=65)
-        Button(plotOptionsWindow,text="Show/hide source positions", command = sourcePosition, width = 30).grid(row = 10, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Show/hide ray path", command = rayPath, width = 30).grid(row = 1, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change ray path line color", command = rayPathLineColor, width = 30).grid(row = 2, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change colormap", command = colormap, width = 30).grid(row = 3, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change layer 1 color", command = layer1_color, width = 30).grid(row = 4, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change layer 2 color", command = layer2_color, width = 30).grid(row = 5, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change layer 3 color", command = layer3_color, width = 30).grid(row = 6, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Show/hide receiver positions", command = geophonePosition, width = 30).grid(row = 7, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Show/hide source positions", command = sourcePosition, width = 30).grid(row = 8, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Show/hide grid lines", command = gridLines, width = 30).grid(row = 9, column = 0,pady=5,padx=65)
+        Button(plotOptionsWindow,text="Change traveltimes line color", command = dataLinesColor, width = 30).grid(row = 10, column = 0,pady=5,padx=65)
         
         plotOptionsWindow.tkraise()
         
 app = Refrainv()
 app.mainloop()
-
-
-
-
