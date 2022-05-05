@@ -245,6 +245,7 @@ E-mail: vjs279@hotmail.com
         self.tomography_3d_ready = False
         self.timeterms_3d_ready = False
         self.showMerged = False
+        self.z2elev = False
     
     def kill(self):
 
@@ -445,65 +446,80 @@ E-mail: vjs279@hotmail.com
         
         if self.projReady:
 
-            pickFile = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/picks/", filetypes=[('Pick file', '*.sgt')])
-            self.lineName = path.basename(pickFile)[:-4]
+            if self.data_pg:
 
-            if pickFile:
+                if messagebox.askyesno("Refrainv", "Load new data? (all current analysis have to be cleared)"): self.reset();
 
-                self.data_pg = pg.DataContainer(pickFile, 's g')
+            if self.data_pg == False:    
+                
+                pickFile = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/picks/", filetypes=[('Pick file', '*.sgt')])
+                self.lineName = path.basename(pickFile)[:-4]
 
-                with open(pickFile, "r") as file:
+                if pickFile:
 
-                    lines = file.readlines()
-                    npoints = int(lines[0].split()[0])
-                    sgx = [float(i.split()[0]) for i in lines[2:2+npoints]]
-                    sgz = [float(i.split()[1]) for i in lines[2:2+npoints]]
-                    sgtindx = lines.index("#s g t\n")
-                    s = [int(i.split()[0]) for i in lines[sgtindx+1:]]
-                    g = [int(i.split()[1]) for i in lines[sgtindx+1:]]
-                    t = [float(i.split()[2]) for i in lines[sgtindx+1:]]
-                    sx = [sgx[i-1] for i in s]
-                    gx = [sgx[i-1] for i in g]
-                    gz = [sgz[i-1] for i in g]                    
-                    self.gx = gx
-                    self.gz = gz
-                    self.sgx = sgx
-                    self.sgz = sgz
-                    self.dx = self.gx[1]-self.gx[0]
-                    self.sx, self.sz = [], []
-                    
-                    for i in list(set(s)):
+                    self.data_pg = pg.DataContainer(pickFile, 's g')
 
-                        self.sx.append(sgx[i-1])
-                        self.sz.append(sgz[i-1])
+                    with open(pickFile, "r") as file:
 
-                    for i,src in enumerate(list(set(sx))):
-    
-                        self.sources.append(src)
-                        self.xdata.append({src:[]})
-                        self.tdata.append({src:[]})
-                        self.dataArts.append({src:[]})
+                        lines = file.readlines()
+                        npoints = int(lines[0].split()[0])
+                        sgx = [float(i.split()[0]) for i in lines[2:2+npoints]]
+                        sgz = [float(i.split()[1]) for i in lines[2:2+npoints]]
+                        sgtindx = lines.index("#s g t\n")
+                        s = [int(i.split()[0]) for i in lines[sgtindx+1:]]
+                        g = [int(i.split()[1]) for i in lines[sgtindx+1:]]
+                        t = [float(i.split()[2]) for i in lines[sgtindx+1:]]
+                        sx = [sgx[i-1] for i in s]
+                        gx = [sgx[i-1] for i in g]
+                        gz = [sgz[i-1] for i in g]                    
+                        self.gx = gx
+                        self.gz = gz
+                        self.sgx = sgx
+                        self.sgz = sgz
+                        self.dx = self.gx[1]-self.gx[0]
+                        self.sx, self.sz = [], []
                         
-                        if self.data_sources:
+                        for i in list(set(s)):
 
-                            if self.showSources:
+                            self.sx.append(sgx[i-1])
+                            self.sz.append(sgz[i-1])
 
-                                sourcePlot = self.ax_data.scatter(src,0,c="y",edgecolor="k",s=100,marker="*",zorder=99)
-                                self.data_sourcesArts.append(sourcePlot)
+                        if any(z > 0 for z in gz): self.z2elev = True
 
-                        for j,x in enumerate(gx):
+                        if self.z2elev:
 
-                            if sx[j] == src:
+                            self.ax_timeterms.set_ylabel("ELEVATION [m]")
+                            self.ax_tomography.set_ylabel("ELEVATION [m]")
+                            self.fig_timeterms.canvas.draw()
+                            self.fig_tomography.canvas.draw()
 
-                                self.xdata[i][src].append(x)
-                                self.tdata[i][src].append(t[j])
-                                dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=self.dx*10,edgecolor=self.data_color,picker=self.dx,zorder=99)
-                                self.dataArts[i][src].append(dataPlot)
+                        for i,src in enumerate(list(set(sx))):
+        
+                            self.sources.append(src)
+                            self.xdata.append({src:[]})
+                            self.tdata.append({src:[]})
+                            self.dataArts.append({src:[]})
                             
-                        dataLine, = self.ax_data.plot(self.xdata[i][src], self.tdata[i][src], c = self.data_color)
-                        self.dataLines.append(dataLine)
+                            if self.data_sources:
 
-                    self.fig_data.canvas.draw()
+                                if self.showSources:
+
+                                    sourcePlot = self.ax_data.scatter(src,0,c="y",edgecolor="k",s=100,marker="*",zorder=99)
+                                    self.data_sourcesArts.append(sourcePlot)
+
+                            for j,x in enumerate(gx):
+
+                                if sx[j] == src:
+
+                                    self.xdata[i][src].append(x)
+                                    self.tdata[i][src].append(t[j])
+                                    dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=self.dx*4,edgecolor=self.data_color,picker=self.dx,zorder=99)
+                                    self.dataArts[i][src].append(dataPlot)
+                                
+                            dataLine, = self.ax_data.plot(self.xdata[i][src], self.tdata[i][src], c = self.data_color)
+                            self.dataLines.append(dataLine)
+
+                        self.fig_data.canvas.draw()
 
     def runTimeTerms(self):
 
@@ -713,7 +729,7 @@ E-mail: vjs279@hotmail.com
                     self.fill_layer3 = self.ax_timeterms.fill_between(gx, z_layer3, min(z_layer3)*0.99, color = self.layer3_color,alpha = 1,edgecolor = "k",label = "%d m/s"%v3)
      
                 self.ax_timeterms.legend(loc="best")
-                self.timetermsPlot = True
+                self.timetermsPlot = True                
                 self.fig_timeterms.canvas.draw()
                 
                 self.timeterms_rmse = sqrt(mean((array(self.timeterms_response)-array(timeterms_observed))**2))
@@ -858,7 +874,9 @@ E-mail: vjs279@hotmail.com
         self.fig_tomography.patch.set_facecolor('#F0F0F0')
         self.ax_tomography.set_title("Tomography velocity model")
         self.ax_tomography.set_xlabel("POSITION [m]")
-        self.ax_tomography.set_ylabel("DEPTH [m]")
+        
+        if self.z2elev: self.ax_tomography.set_ylabel("ELEVATION [m]")
+        else: self.ax_tomography.set_ylabel("DEPTH [m]")
 
         if self.showGrid: self.ax_tomography.grid(lw = .5, alpha = .5)
         else: self.ax_tomography.grid(False)
@@ -884,7 +902,9 @@ E-mail: vjs279@hotmail.com
         self.fig_timeterms.patch.set_facecolor('#F0F0F0')
         self.ax_timeterms.set_title("Time-terms velocity model")
         self.ax_timeterms.set_xlabel("POSITION [m]")
-        self.ax_timeterms.set_ylabel("DEPTH [m]")
+
+        if self.z2elev: self.ax_timeterms.set_ylabel("ELEVATION [m]")
+        else: self.ax_timeterms.set_ylabel("DEPTH [m]")
 
         if self.showGrid: self.ax_timeterms.grid(lw = .5, alpha = .5)
         else: self.ax_timeterms.grid(False)
@@ -1072,6 +1092,7 @@ E-mail: vjs279@hotmail.com
                 self.ax_tomography.set_xlim(min(x2min),max(x2max))
                 self.fig_tomography.canvas.draw()
                 self.tomoPlot = True
+                
                 self.showFit()
                 tomoWindow.destroy()
 
@@ -1088,7 +1109,7 @@ E-mail: vjs279@hotmail.com
             Label(tomoWindow, text = "Maximum depth (max offset = %.2f m)"%max(offsets)).grid(row=1,column=0,pady=5,sticky="E")
             maxDepth_entry = Entry(tomoWindow,width=6)
             maxDepth_entry.grid(row=1,column=1,pady=5)
-            maxDepth_entry.insert(0, str(max(offsets)/5))#str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
+            maxDepth_entry.insert(0, str(max(offsets)/3))#str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
 
             Label(tomoWindow, text = "# of nodes between receivers").grid(row=2,column=0,pady=5,sticky="E")
             paraDX_entry = Entry(tomoWindow,width=6)
@@ -1107,7 +1128,7 @@ E-mail: vjs279@hotmail.com
             Label(tomoWindow, text = "Smoothing (lam)").grid(row=6,column=0,pady=5,sticky="E")
             lam_entry = Entry(tomoWindow,width=6)
             lam_entry.grid(row=6,column=1,pady=5)
-            lam_entry.insert(0,"50")
+            lam_entry.insert(0,"100")
 
             Label(tomoWindow, text = "Vertical to horizontal smoothing (zweigh)").grid(row=7,column=0,pady=5,sticky="E")
             zWeigh_entry = Entry(tomoWindow,width=6)

@@ -1625,8 +1625,9 @@ E-mail: vjs279@hotmail.com
                 if self.xpicks[self.currentSt]:
 
                     if self.pickLineArts[self.currentSt]:
-                        
-                        self.drawPicksLine()
+
+                        self.pickLineArts[self.currentSt].remove()
+                        self.pickLineArts[self.currentSt] = False
 
                     for pickArt in self.picksArts[self.currentSt]: pickArt.remove()
                     del self.picksArts[self.currentSt][:]
