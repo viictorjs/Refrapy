@@ -28,10 +28,10 @@ All main dependencies are listed below:
    ```
 
 It is recommended the use of Anaconda (https://www.anaconda.com/), because it simplifies package management.
-Once it is installed, run the following commands on the Anaconda prompt (tested on Windows):
+Once it is installed, run the following commands on the Anaconda prompt (**tested on Windows 10 system, with Python 3.8.13**):
 
    ```
-   conda create -n refrapy python==3.8
+   conda create -n refrapy python=3.8
    conda activate refrapy
    conda install obspy
    conda install -c gimli -c conda-forge pygimli
