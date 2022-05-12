@@ -520,6 +520,7 @@ E-mail: vjs279@hotmail.com
                             self.dataLines.append(dataLine)
 
                         self.fig_data.canvas.draw()
+                        messagebox.showinfo(title="Refrainv", message="Traveltimes data have been loaded successfully!")
 
     def runTimeTerms(self):
 
@@ -715,7 +716,7 @@ E-mail: vjs279@hotmail.com
                 if self.layer1 and self.layer2 and not self.layer3: 
 
                     self.fill_layer1 = self.ax_timeterms.fill_between(gx, z_layer2, gz, color = self.layer1_color, alpha = 1,edgecolor = "k", label = "%d m/s"%v1)
-                    self.fill_layer2 = self.ax_timeterms.fill_between(gx, z_layer2, min(z_layer2)*0.99, color = self.layer2_color,alpha = 1,edgecolor = "k", label = "%d m/s"%v2)
+                    self.fill_layer2 = self.ax_timeterms.fill_between(gx, z_layer2, min(z_layer2)*1.5, color = self.layer2_color,alpha = 1,edgecolor = "k", label = "%d m/s"%v2)
         
                 elif self.layer1 and self.layer2 and self.layer3:
 
@@ -1047,12 +1048,12 @@ E-mail: vjs279@hotmail.com
                 cbar = self.fig_tomography.colorbar(cm,orientation="vertical", label = "[m/s]",
                              format='%d',cax=cax)
 
-                x2max = [max(self.sources)]
-                x2min = [min(self.sources)]
+                x2max = [max(self.sgx)]
+                x2min = [min(self.sgx)]
                 
                 for i in range(len(self.sources)): x2max.append(max(self.xdata[i])); x2min.append(min(self.xdata[i]))
                 
-                xlim = self.sgx+[max(x2max),min(x2min)]
+                xlim = sorted(self.sgx)+[max(x2max),min(x2min)]
                 zlim = self.sgz+[self.tomoMesh.yMin(),self.tomoMesh.yMin()]
 
                 self.topographyx, self.topographyz = [], []
@@ -1065,7 +1066,15 @@ E-mail: vjs279@hotmail.com
 
                 for i in range(len(xlim)):
 
-                    if xlim[i] <= max(x2max) and xlim[i] >= min(x2min): xblank.append(xlim[i]); zblank.append(zlim[i])
+                    if xlim[i] <= max(x2max) and xlim[i] >= min(x2min):
+
+                        if xlim[i] not in xblank: xblank.append(xlim[i]); zblank.append(zlim[i])
+
+                xblank = xlim
+                zblank = zlim
+
+                print(xblank)
+                print(zblank)
                 
                 self.xbln = xblank
                 self.zbln = zblank
@@ -1119,7 +1128,7 @@ E-mail: vjs279@hotmail.com
             Label(tomoWindow, text = "Maximum cell size").grid(row=3,column=0,pady=5,sticky="E")
             paraMaxCellSize_entry = Entry(tomoWindow,width=6)
             paraMaxCellSize_entry.grid(row=3,column=1,pady=5)
-            paraMaxCellSize_entry.insert(0,str((self.gx[1]-self.gx[0])))
+            paraMaxCellSize_entry.insert(0,str(3*(self.gx[1]-self.gx[0])))
             
             button = Button(tomoWindow, text="View mesh", command=viewMesh).grid(row=4,column=0,columnspan=2,pady=5,sticky="E")
 
@@ -1367,7 +1376,7 @@ E-mail: vjs279@hotmail.com
             pgWindow.tkraise()
 
     def build3d(self):
-            
+
         if self.tomoPlot or self.timetermsPlot:
 
             if not self.coords_3d:
@@ -1518,7 +1527,6 @@ E-mail: vjs279@hotmail.com
                     self.new_y_tomography = fy(self.tomoModel_x)
                     ax_coords.plot(self.coords_3d[1],self.coords_3d[2],c="k")
                     cm = ax_3d_tomo.scatter(self.new_x_tomography,self.new_y_tomography,self.tomoModel_z,c = self.tomoModel_v, cmap = self.colormap, s = self.dx)
-
                     self.tomography_3d_ready = True
                 
                 fig1.canvas.draw()
