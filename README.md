@@ -21,7 +21,7 @@ It is based on two modules: Refrapick and Refrainv.
 All main dependencies are listed below:
    ```
    obspy=1.3.0
-   pygimli=1.2.4
+   pygimli=1.2.6
    numpy=1.19.5
    scipy=1.8.0
    matplotlib=3.5.1
@@ -43,7 +43,7 @@ Once all the necessary packages are installed, extract Refrapick.py, Refrainv.py
 ### Instalation through Environment and Miniconda
 
 You can install a bare minimum conda version by installing miniconda from (https://docs.conda.io/en/latest/miniconda.html) 
-In the Anaconda console yu can then clone the working conda environment for this versipon of Refrapy by executing 
+In the Anaconda console you can then clone the working conda environment for this version of Refrapy by executing 
 
    ```
    conda env create -f refrapy_environment.yml
