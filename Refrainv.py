@@ -23,6 +23,11 @@ from Pmw import initialise, Balloon
 import pygimli as pg
 from pygimli.physics import TravelTimeManager
 
+from tqdm import tqdm
+
+import numpy as np
+
+
 class Refrainv(Tk):
     
     def __init__(self):
@@ -483,8 +488,9 @@ E-mail: vjs279@hotmail.com
 
                             self.sx.append(sgx[i-1])
                             self.sz.append(sgz[i-1])
-
-                        if any(z > 0 for z in gz): self.z2elev = True
+                        print("what")
+                        if any(z > 0 for z in gz): 
+                            self.z2elev = True
 
                         if self.z2elev:
 
@@ -492,10 +498,14 @@ E-mail: vjs279@hotmail.com
                             self.ax_tomography.set_ylabel("ELEVATION [m]")
                             self.fig_timeterms.canvas.draw()
                             self.fig_tomography.canvas.draw()
-
-                        for i,src in enumerate(list(set(sx))):
+                        #saving computing time by setting sme apras outside of loop:
+                        seize=self.dx*4
+                        #taking out some appends from below as append is slow
+                        
+                        self.sources=list(set(sx))
+                        for i,src in enumerate(tqdm(list(set(sx)))):
         
-                            self.sources.append(src)
+                         #   self.sources.append(src)
                             self.xdata.append({src:[]})
                             self.tdata.append({src:[]})
                             self.dataArts.append({src:[]})
@@ -503,7 +513,7 @@ E-mail: vjs279@hotmail.com
                             if self.data_sources:
 
                                 if self.showSources:
-
+                                    #plots the source points
                                     sourcePlot = self.ax_data.scatter(src,0,c="y",edgecolor="k",s=100,marker="*",zorder=99)
                                     self.data_sourcesArts.append(sourcePlot)
 
@@ -513,8 +523,18 @@ E-mail: vjs279@hotmail.com
 
                                     self.xdata[i][src].append(x)
                                     self.tdata[i][src].append(t[j])
-                                    dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=self.dx*4,edgecolor=self.data_color,picker=self.dx,zorder=99)
-                                    self.dataArts[i][src].append(dataPlot)
+                                    #dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=seize,edgecolor=self.data_color,picker=self.dx,zorder=99)
+                                    #self.dataArts[i][src].append(dataPlot)
+                             #replace that awful loop: 
+                            sxarray=np.array(sx)
+                            gxarray=np.array(gx)
+                            tarray=np.array(t)
+                            all_src_occurence_indexes=np.where(sxarray==src)[0]
+                            
+                            all_x_occurences=gxarray[ all_src_occurence_indexes]
+                            all_t_occurences=tarray[ all_src_occurence_indexes]
+                            dataPlot=self.ax_data.scatter(all_x_occurences,all_t_occurences,facecolors='w',s=seize,edgecolor=self.data_color,picker=self.dx,zorder=99)
+                            self.dataArts[i][src].append(dataPlot)                                
                                 
                             dataLine, = self.ax_data.plot(self.xdata[i][src], self.tdata[i][src], c = self.data_color)
                             self.dataLines.append(dataLine)
@@ -933,8 +953,8 @@ E-mail: vjs279@hotmail.com
             tomoWindow = Toplevel(self)
             tomoWindow.title('Refrainv - Tomography')
             tomoWindow.configure(bg = "#F0F0F0")
-            tomoWindow.geometry("300x640")
-            tomoWindow.resizable(0,0)
+            tomoWindow.geometry("300x680")
+            tomoWindow.resizable(0,True)
             tomoWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
             def viewMesh():
@@ -942,7 +962,9 @@ E-mail: vjs279@hotmail.com
                 maxDepth = float(maxDepth_entry.get())
                 paraDX = float(paraDX_entry.get())
                 paraMaxCellSize = float(paraMaxCellSize_entry.get())
-                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize)
+                paraQuality =float(paraQuality_entry.get())
+                
+                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize,quality=paraQuality)
 
                 meshWindow = Toplevel(self)
                 meshWindow.title('Refrainv - Mesh')
@@ -1130,68 +1152,75 @@ E-mail: vjs279@hotmail.com
             paraMaxCellSize_entry.grid(row=3,column=1,pady=5)
             paraMaxCellSize_entry.insert(0,str(3*(self.gx[1]-self.gx[0])))
             
-            button = Button(tomoWindow, text="View mesh", command=viewMesh).grid(row=4,column=0,columnspan=2,pady=5,sticky="E")
-
-            Label(tomoWindow, text="Inversion options", font=("Arial", 11)).grid(row=5,column=0,columnspan=2,pady=10,sticky="E")
+            Label(tomoWindow, text = "Quality Parameter").grid(row=4,column=0,pady=5,sticky="E")
+            paraQuality_entry = Entry(tomoWindow,width=6)
+            paraQuality_entry.grid(row=4,column=1,pady=5)
+            paraQuality_entry.insert(0,"32")            
             
-            Label(tomoWindow, text = "Smoothing (lam)").grid(row=6,column=0,pady=5,sticky="E")
+            
+            
+            button = Button(tomoWindow, text="View mesh", command=viewMesh).grid(row=5,column=0,columnspan=2,pady=5,sticky="E")
+
+            Label(tomoWindow, text="Inversion options", font=("Arial", 11)).grid(row=6,column=0,columnspan=2,pady=10,sticky="E")
+            
+            Label(tomoWindow, text = "Smoothing (lam)").grid(row=7,column=0,pady=5,sticky="E")
             lam_entry = Entry(tomoWindow,width=6)
-            lam_entry.grid(row=6,column=1,pady=5)
+            lam_entry.grid(row=7,column=1,pady=5)
             lam_entry.insert(0,"100")
 
-            Label(tomoWindow, text = "Vertical to horizontal smoothing (zweigh)").grid(row=7,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Vertical to horizontal smoothing (zweigh)").grid(row=8,column=0,pady=5,sticky="E")
             zWeigh_entry = Entry(tomoWindow,width=6)
-            zWeigh_entry.grid(row=7,column=1,pady=5)
+            zWeigh_entry.grid(row=8,column=1,pady=5)
             zWeigh_entry.insert(0,"0.2")
 
-            Label(tomoWindow, text = "Velocity at the top of the model").grid(row=8,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Velocity at the top of the model").grid(row=9,column=0,pady=5,sticky="E")
             vTop_entry = Entry(tomoWindow,width=6)
-            vTop_entry.grid(row=8,column=1,pady=5)
+            vTop_entry.grid(row=9,column=1,pady=5)
             vTop_entry.insert(0,"300")
             
-            Label(tomoWindow, text = "Velocity at the bottom of the model").grid(row=9,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Velocity at the bottom of the model").grid(row=10,column=0,pady=5,sticky="E")
             vBottom_entry = Entry(tomoWindow,width=6)
-            vBottom_entry.grid(row=9,column=1,pady=5)
+            vBottom_entry.grid(row=10,column=1,pady=5)
             vBottom_entry.insert(0,"3000")
 
-            Label(tomoWindow, text = "Minimum velocity limit").grid(row=10,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Minimum velocity limit").grid(row=11,column=0,pady=5,sticky="E")
             minVelLimit_entry = Entry(tomoWindow,width=6)
-            minVelLimit_entry.grid(row=10,column=1,pady=5)
+            minVelLimit_entry.grid(row=11,column=1,pady=5)
             minVelLimit_entry.insert(0,"100")
 
-            Label(tomoWindow, text = "Maximum velocity limit").grid(row=11,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Maximum velocity limit").grid(row=12,column=0,pady=5,sticky="E")
             maxVelLimit_entry = Entry(tomoWindow,width=6)
-            maxVelLimit_entry.grid(row=11,column=1,pady=5)
+            maxVelLimit_entry.grid(row=12,column=1,pady=5)
             maxVelLimit_entry.insert(0,"4000")
 
-            Label(tomoWindow, text = "# of secondary nodes").grid(row=12,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of secondary nodes").grid(row=13,column=0,pady=5,sticky="E")
             secNodes_entry = Entry(tomoWindow,width=6)
-            secNodes_entry.grid(row=12,column=1,pady=5)
+            secNodes_entry.grid(row=13,column=1,pady=5)
             secNodes_entry.insert(0,"3")
 
-            Label(tomoWindow, text = "Maximum # of iterations").grid(row=13,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Maximum # of iterations").grid(row=14,column=0,pady=5,sticky="E")
             maxIter_entry = Entry(tomoWindow,width=6)
-            maxIter_entry.grid(row=13,column=1,pady=5)
+            maxIter_entry.grid(row=14,column=1,pady=5)
             maxIter_entry.insert(0,"20")
 
-            Label(tomoWindow, text="Contour plot options", font=("Arial", 11)).grid(row=14,column=0,columnspan=2,pady=10,sticky="E")
+            Label(tomoWindow, text="Contour plot options", font=("Arial", 11)).grid(row=15,column=0,columnspan=2,pady=10,sticky="E")
             
-            Label(tomoWindow, text = "# of nodes for gridding (x)").grid(row=15,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of nodes for gridding (x)").grid(row=16,column=0,pady=5,sticky="E")
             xngrid_entry = Entry(tomoWindow,width=6)
-            xngrid_entry.grid(row=15,column=1,pady=5)
+            xngrid_entry.grid(row=16,column=1,pady=5)
             xngrid_entry.insert(0,"1000")
 
-            Label(tomoWindow, text = "# of nodes for gridding (y)").grid(row=16,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of nodes for gridding (y)").grid(row=17,column=0,pady=5,sticky="E")
             yngrid_entry = Entry(tomoWindow,width=6)
-            yngrid_entry.grid(row=16,column=1,pady=5)
+            yngrid_entry.grid(row=17,column=1,pady=5)
             yngrid_entry.insert(0,"1000")
 
-            Label(tomoWindow, text = "# of contour levels").grid(row=17,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of contour levels").grid(row=18,column=0,pady=5,sticky="E")
             nlevels_entry = Entry(tomoWindow,width=6)
-            nlevels_entry.grid(row=17,column=1,pady=5)
+            nlevels_entry.grid(row=18,column=1,pady=5)
             nlevels_entry.insert(0,"30")
             
-            button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=18,column=0,columnspan=2,pady=5,sticky="E")
+            button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=19,column=0,columnspan=2,pady=5,sticky="E")
 
             tomoWindow.tkraise()
 
