@@ -26,6 +26,8 @@ from pygimli.physics import TravelTimeManager
 from tqdm import tqdm
 
 import numpy as np
+#own modules
+from dtreader import dtreader
 
 
 class Refrainv(Tk):
@@ -457,9 +459,12 @@ E-mail: vjs279@hotmail.com
 
             if self.data_pg == False:    
                 
-                pickFile = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/picks/", filetypes=[('Pick file', '*.sgt')])
+                pickFile = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/picks/", filetypes=[('Pick file', '*.sgt'),('Protomo Tools','*.#dt')])
                 self.lineName = path.basename(pickFile)[:-4]
-
+            
+                if path.basename(pickFile)[-4:]=='.#dt': 
+                    dtreader( pickFile,self.lineName)
+                    pickFile=pickFile[:-4]+'.sgt'
                 if pickFile:
 
                     self.data_pg = pg.DataContainer(pickFile, 's g')
