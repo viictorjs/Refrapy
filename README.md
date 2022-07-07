@@ -40,6 +40,15 @@ Once it is installed, run the following commands on the Anaconda prompt (**teste
     
 Once all the necessary packages are installed, extract Refrapick.py, Refrainv.py and the images folder to a directory on your computer. Sample data are also available for download.
 
+### Instalation through Environment and Miniconda
+
+You can install a bare minimum conda version by installing miniconda from (https://docs.conda.io/en/latest/miniconda.html) 
+In the Anaconda console yu can then clone the working conda environment for this versipon of Refrapy by executing 
+
+   ```
+   conda env create -f refrapy_environment.yml
+   ```
+   
 You can execute the Python files by running:
 
    ```
