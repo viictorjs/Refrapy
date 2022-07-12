@@ -486,7 +486,8 @@ E-mail: vjs279@hotmail.com
                         self.gz = gz
                         self.sgx = sgx
                         self.sgz = sgz
-                        self.dx = self.gx[1]-self.gx[0]
+                        #self.dx = self.gx[1]-self.gx[0]
+                        self.dx=np.median(np.abs(np.diff(self.gx)))
                         self.sx, self.sz = [], []
                         
                         for i in list(set(s)):
@@ -504,7 +505,8 @@ E-mail: vjs279@hotmail.com
                             self.fig_timeterms.canvas.draw()
                             self.fig_tomography.canvas.draw()
                         #saving computing time by setting sme apras outside of loop:
-                        seize=self.dx*4
+                        #seize=self.dx*4
+                        seize=self.dx
                         #taking out some appends from below as append is slow
                         
                         self.sources=list(set(sx))
@@ -1036,24 +1038,34 @@ E-mail: vjs279@hotmail.com
                 secNodes = int(secNodes_entry.get())
                 maxIter = int(maxIter_entry.get())
    
-                vest = self.mgr.invert(data=self.data_pg,mesh=self.tomoMesh,verbose=False,lam=lam,zWeight=zWeigh,useGradient=True,
+                vest = self.mgr.invert(data=self.data_pg,mesh=self.tomoMesh,verbose=True,lam=lam,zWeight=zWeigh,useGradient=True,
                                vTop=vTop,vBottom=vBottom,maxIter=maxIter,limits=[minVelLimit,maxVelLimit],secNodes=secNodes)
                 
                 self.parameters_tomo = [maxDepth,paraDX,paraMaxCellSize,lam,zWeigh,vTop,vBottom,minVelLimit,maxVelLimit,secNodes,maxIter,
                                         int(xngrid_entry.get()),int(yngrid_entry.get()),int(nlevels_entry.get()),
                                         self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2()]
+                #regular pigimli save
+                self.mgr.saveResult(self.projPath)
                 plotContourModel()
+                
 
             def plotContourModel():
    
-                xzv = column_stack((self.mgr.paraDomain.cellCenters(), self.mgr.model))
-                x = (xzv[:,0])
-                z = (xzv[:,1])
-                v = (xzv[:,3])
+                xzvcs = column_stack((self.mgr.paraDomain.cellCenters(),
+                                     self.mgr.model,
+                                     self.mgr.coverage(),
+                                     self.mgr.standardizedCoverage()))
+                x = (xzvcs[:,0])
+                z = (xzvcs[:,1])
+                v = (xzvcs[:,3])
+                c = (xzvcs[:,4])
+                s = (xzvcs[:,5])
 
                 self.tomoModel_x = x
                 self.tomoModel_z = z
                 self.tomoModel_v = v
+                self.tomoModel_c = c
+                self.tomoModel_s = s
                 
                 nx = int(xngrid_entry.get())
                 ny = int(yngrid_entry.get())
