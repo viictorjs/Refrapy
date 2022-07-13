@@ -26,6 +26,7 @@ from pygimli.physics import TravelTimeManager
 from tqdm import tqdm
 
 import numpy as np
+import pandas as pd
 #own modules
 from dtreader import dtreader
 
@@ -38,7 +39,7 @@ class Refrainv(Tk):
         self.geometry("1600x900")
         self.title('Refrapy - Refrainv v2.0.0')
         self.configure(bg = "#F0F0F0")
-        self.resizable(0,0)
+        self.resizable(1,1)
         self.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
         frame_toolbar = Frame(self)
@@ -1131,7 +1132,7 @@ E-mail: vjs279@hotmail.com
 
                 for c in cm.collections: c.set_clip_path(patch)
 
-                if self.showRayPath: self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
+                if self.showRayPath: self.RayPaths=avelf.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
 
                 if self.showSources: self.sourcesPlot_tomography = self.ax_tomography.scatter(self.sx,self.sz, marker="*",c="y",edgecolor="k",s=self.dx*20,zorder=99)
 
@@ -1250,7 +1251,22 @@ E-mail: vjs279@hotmail.com
             self.fig_tomography.savefig(self.projPath+"/models/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
             savetxt(self.projPath+"/models/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
             savetxt(self.projPath+"/models/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
-
+            
+            #get the paths:
+            if self.RayPaths:
+                pathcount=len(self.RayPaths.get_paths())
+                
+                with open(self.projPath+"//paths.bln",mode='w+') as f:
+                    for i in range(pathcount):
+                       patharray=self.RayPaths.get_paths()[i].vertices
+                       n=len(patharray)
+                       f.write(str(n)+',-1\n')
+                       pd.DataFrame(patharray).to_csv(path_or_buf=f,sep=',',header=False,index=False,line_terminator='\n')
+                       f.write('\n')
+                       
+                       
+                    
+            
             if self.tomography_3d_ready: savetxt(self.projPath+"/models/%s_tomography_xyzv.txt"%(self.lineName),c_[self.new_x_tomography,self.new_y_tomography,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
 
             with open(self.projPath+"/models/%s_tomography_parameters.txt"%(self.lineName),"w") as outFile:
@@ -1594,7 +1610,7 @@ E-mail: vjs279@hotmail.com
 
                     if self.tomoPlot:
 
-                        self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
+                        self.RayPaths=self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
                         self.fig_tomography.canvas.draw()
 
                     messagebox.showinfo(title="Refrainv", message="The ray path view has been enabled!")
