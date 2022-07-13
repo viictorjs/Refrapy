@@ -1132,7 +1132,7 @@ E-mail: vjs279@hotmail.com
 
                 for c in cm.collections: c.set_clip_path(patch)
 
-                if self.showRayPath: self.RayPaths=avelf.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
+                if self.showRayPath: self.RayPaths=self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
 
                 if self.showSources: self.sourcesPlot_tomography = self.ax_tomography.scatter(self.sx,self.sz, marker="*",c="y",edgecolor="k",s=self.dx*20,zorder=99)
 
@@ -1256,7 +1256,7 @@ E-mail: vjs279@hotmail.com
             if self.RayPaths:
                 pathcount=len(self.RayPaths.get_paths())
                 
-                with open(self.projPath+"//paths.bln",mode='w+') as f:
+                with open(self.projPath+"/models/%s_raypaths.txt"%(self.lineName),mode='w+') as f:
                     for i in range(pathcount):
                        patharray=self.RayPaths.get_paths()[i].vertices
                        n=len(patharray)
