@@ -47,6 +47,7 @@ In the Anaconda console you can then clone the working conda environment for thi
 
    ```
    conda env create -f refrapy_environment.yml
+   git clone https://github.com/GGDRriedel/Refrapy.git
    ```
    
 You can execute the Python files by running:
