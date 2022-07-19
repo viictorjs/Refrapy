@@ -43,6 +43,8 @@ Once all the necessary packages are installed, extract Refrapick.py, Refrainv.py
 ### Instalation through Environment and Miniconda
 
 You can install a bare minimum conda version by installing miniconda from (https://docs.conda.io/en/latest/miniconda.html) 
+while chosing your appropriate installer. Refrapy is Windows only for now. 
+
 In the Anaconda console you can then clone the working conda environment for this version of Refrapy by executing 
 
    ```
