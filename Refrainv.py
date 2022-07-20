@@ -1047,8 +1047,10 @@ E-mail: vjs279@hotmail.com
                                         self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2(),self.mgr.inv.inv.iter()]
                 #regular pigimli save
                 self.mgr.saveResult(self.projPath)
-                plotContourModel()
+                                
                 
+                plotContourModel()
+                if self.showRayPath: self.RayPaths=self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)                
 
             def plotContourModel():
    
