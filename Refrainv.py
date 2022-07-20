@@ -1379,7 +1379,7 @@ E-mail: vjs279@hotmail.com
                 ax_fitTimeterms.set_title("Time-terms model response\nRRMSE = %.2f%%"%self.timeterms_relrmse) #mgr.absrms() mgr.chi2()
             
             if self.tomoPlot:
-                
+                #
                 ax_fitTomography.set_title("Tomography model response\n%d iterations | RRMSE = %.2f%%"%(self.mgr.inv.inv.iter(),self.mgr.inv.relrms())) #mgr.absrms() mgr.chi2()
                 pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, marker="o", lw = 0)
                 #pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, tt= self.mgr.inv.response, marker="", linestyle = "--")
