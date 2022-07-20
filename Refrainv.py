@@ -1044,7 +1044,7 @@ E-mail: vjs279@hotmail.com
                 
                 self.parameters_tomo = [maxDepth,paraDX,paraMaxCellSize,lam,zWeigh,vTop,vBottom,minVelLimit,maxVelLimit,secNodes,maxIter,
                                         int(xngrid_entry.get()),int(yngrid_entry.get()),int(nlevels_entry.get()),
-                                        self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2()]
+                                        self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2(),self.mgr.inv.inv.iter()]
                 #regular pigimli save
                 self.mgr.saveResult(self.projPath)
                 plotContourModel()
@@ -1253,7 +1253,8 @@ E-mail: vjs279@hotmail.com
             savetxt(self.projPath+"/models/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
             
             #get the paths:
-            if self.RayPaths:
+                
+            if hasattr(self, 'RayPaths'):
                 pathcount=len(self.RayPaths.get_paths())
                 
                 with open(self.projPath+"/models/%s_raypaths.txt"%(self.lineName),mode='w+') as f:
@@ -1284,7 +1285,8 @@ E-mail: vjs279@hotmail.com
                 outFile.write("Minimum velocity limit %.2f\n"%(self.parameters_tomo[7]))
                 outFile.write("Maximum velocity limit %.2f\n"%(self.parameters_tomo[8]))
                 outFile.write("# of secondary nodes %d\n"%(self.parameters_tomo[9]))
-                outFile.write("Maximum # of iterations %d\n\n"%(self.parameters_tomo[10]))
+                outFile.write("Maximum # of iterations %d\n"%(self.parameters_tomo[10]))
+                outFile.write("Actually done # of iterations %d\n\•n"%(self.parameters_tomo[17]))
                 outFile.write("Contour plot options\n")
                 outFile.write("# of nodes for gridding (x) %d\n"%(self.parameters_tomo[11]))
                 outFile.write("# of nodes for gridding (y) %d\n"%(self.parameters_tomo[12]))
@@ -1380,7 +1382,7 @@ E-mail: vjs279@hotmail.com
             
             if self.tomoPlot:
                 
-                ax_fitTomography.set_title("Tomography model response\n%d iterations | RRMSE = %.2f%%"%(self.mgr.inv.inv.iter(),self.mgr.inv.relrms())) #mgr.absrms() mgr.chi2()
+                ax_fitTomography.set_title("Tomography model response\n%d iterations | RRMSE = %.2f%% | Chi^2 = %.2f%%"%(self.mgr.inv.inv.iter(),self.mgr.inv.relrms(),self.mgr.inv.chi2())) #mgr.absrms() mgr.chi2()
                 pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, marker="o", lw = 0)
                 #pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, tt= self.mgr.inv.response, marker="", linestyle = "--")
                 ax_fitTomography.scatter(self.gx,self.mgr.inv.response,marker="x",c="r",zorder=99,s=self.dx*10)
