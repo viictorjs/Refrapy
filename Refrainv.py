@@ -24,7 +24,8 @@ import pygimli as pg
 from pygimli.physics import TravelTimeManager
 
 from tqdm import tqdm
-
+import os
+from datetime import datetime
 import numpy as np
 import pandas as pd
 #own modules
@@ -1247,19 +1248,23 @@ E-mail: vjs279@hotmail.com
     def saveResults(self):
 
         if self.tomoPlot:
+              
+            now=datetime.now()
+            nowstring=now.strftime("%Y%m%d-%H%M%S")
+            os.mkdir(self.projPath+"/models/"+nowstring+"/")
 
-            savetxt(self.projPath+"/models/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s], fmt = "%.2f", header = "x z velocity converage standardized coverage",comments="")
-            self.fig_tomoFit.savefig(self.projPath+"/models/%s_tomography_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            self.fig_tomography.savefig(self.projPath+"/models/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            savetxt(self.projPath+"/models/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
-            savetxt(self.projPath+"/models/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
-            
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s], fmt = "%.2f", header = "x z velocity converage standardized coverage",comments="")
+            self.fig_tomoFit.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_tomography.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
+          
             #get the paths:
                 
             if hasattr(self, 'RayPaths'):
                 pathcount=len(self.RayPaths.get_paths())
                 
-                with open(self.projPath+"/models/%s_raypaths.bln"%(self.lineName),mode='w+') as f:
+                with open(self.projPath+"/models/"+nowstring+"/%s_raypaths.bln"%(self.lineName),mode='w+') as f:
                     for i in range(pathcount):
                        patharray=self.RayPaths.get_paths()[i].vertices
                        n=len(patharray)
@@ -1272,7 +1277,7 @@ E-mail: vjs279@hotmail.com
             
             if self.tomography_3d_ready: savetxt(self.projPath+"/models/%s_tomography_xyzv.txt"%(self.lineName),c_[self.new_x_tomography,self.new_y_tomography,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
 
-            with open(self.projPath+"/models/%s_tomography_parameters.txt"%(self.lineName),"w") as outFile:
+            with open(self.projPath+"/models/"+nowstring+"/%s_tomography_parameters.txt"%(self.lineName),"w") as outFile:
 
                 outFile.write("%s - Traveltimes tomography parameters\n\n"%self.lineName)
                 outFile.write("Mesh options\n")
@@ -1302,25 +1307,25 @@ E-mail: vjs279@hotmail.com
 
             if self.layer1:
 
-                savetxt(self.projPath+"/models/%s_timeterms_layer1.txt"%(self.lineName),c_[self.gx_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x z",comments="")
+                savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer1.txt"%(self.lineName),c_[self.gx_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x z",comments="")
                 
-                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer1_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x y z",comments="")
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer1_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x y z",comments="")
                 
             if self.layer2:
 
-                savetxt(self.projPath+"/models/%s_timeterms_layer2.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer2], fmt = "%.2f", header = "x z",comments="")
+                savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer2.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer2], fmt = "%.2f", header = "x z",comments="")
 
-                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer2_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer2], fmt = "%.2f", header = "x y z",comments="")
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer2_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer2], fmt = "%.2f", header = "x y z",comments="")
                     
             if self.layer3:
 
-                savetxt(self.projPath+"/models/%s_timeterms_layer3.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer3], fmt = "%.2f", header = "x z",comments="")
+                savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer3.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer3], fmt = "%.2f", header = "x z",comments="")
 
-                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer3_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer3], fmt = "%.2f", header = "x y z",comments="")
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer3_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer3], fmt = "%.2f", header = "x y z",comments="")
             
-            self.fig_data.savefig(self.projPath+"/models/%s_layers_assignment.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            self.fig_timetermsFit.savefig(self.projPath+"/models/%s_timeterms_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            self.fig_timeterms.savefig(self.projPath+"/models/%s_timeterms_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_data.savefig(self.projPath+"/models/"+nowstring+"/%s_layers_assignment.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_timetermsFit.savefig(self.projPath+"/models/"+nowstring+"/%s_timeterms_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_timeterms.savefig(self.projPath+"/models/"+nowstring+"/%s_timeterms_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
 
         if self.timetermsPlot or self.tomoPlot: messagebox.showinfo(title="Refrainv", message="All results saved in %s"%(self.projPath+"/models/"))
     
