@@ -1259,7 +1259,7 @@ E-mail: vjs279@hotmail.com
             if hasattr(self, 'RayPaths'):
                 pathcount=len(self.RayPaths.get_paths())
                 
-                with open(self.projPath+"/models/%s_raypaths.txt"%(self.lineName),mode='w+') as f:
+                with open(self.projPath+"/models/%s_raypaths.bln"%(self.lineName),mode='w+') as f:
                     for i in range(pathcount):
                        patharray=self.RayPaths.get_paths()[i].vertices
                        n=len(patharray)
