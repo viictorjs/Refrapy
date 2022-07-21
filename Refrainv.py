@@ -260,7 +260,7 @@ E-mail: vjs279@hotmail.com
 
         out = messagebox.askyesno("Refrainv", "Do you want to close the software?")
 
-        if out: self.destroy(); self.quit()
+        if out: plt.close('all');self.destroy(); self.quit()
 
     def assignLayer1(self):
 
@@ -398,6 +398,9 @@ E-mail: vjs279@hotmail.com
         self.ax_tomography.xaxis.set_ticks_position('bottom')
 
         self.frame_plots.tkraise()
+        plt.close(self.fig_data)
+        plt.close(self.fig_tomography)
+        plt.close(self.fig_timeterms)
       
     def createProject(self):
 
