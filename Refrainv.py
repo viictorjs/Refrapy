@@ -1024,13 +1024,16 @@ E-mail: vjs279@hotmail.com
                 if self.tomoPlot:
 
                     self.clearTomoPlot()
+                #save current window parameters
+        
                     
                 #if self.tomoMesh == False:
 
                 maxDepth = float(maxDepth_entry.get())
                 paraDX = float(paraDX_entry.get())
                 paraMaxCellSize = float(paraMaxCellSize_entry.get())
-                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize)
+                paraQuality =float(paraQuality_entry.get())
+                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize,quality=paraQuality)
 
                 lam = float(lam_entry.get())
                 zWeigh = float(zWeigh_entry.get())
@@ -1042,9 +1045,31 @@ E-mail: vjs279@hotmail.com
                 self.maxVelLimit = maxVelLimit
                 secNodes = int(secNodes_entry.get())
                 maxIter = int(maxIter_entry.get())
-   
+                
+                xngrid=xngrid_entry.get()
+                yngrid=yngrid_entry.get()
+                nlevels=nlevels_entry.get()
+                
                 vest = self.mgr.invert(data=self.data_pg,mesh=self.tomoMesh,verbose=True,lam=lam,zWeight=zWeigh,useGradient=True,
                                vTop=vTop,vBottom=vBottom,maxIter=maxIter,limits=[minVelLimit,maxVelLimit],secNodes=secNodes)
+                             
+                #keep entered options
+                 
+                self.tomostandards["depth"]=maxDepth
+                self.tomostandards["dx"]=paraDX
+                self.tomostandards["cellseize"]=paraMaxCellSize
+                self.tomostandards["quality"]=paraQuality
+                self.tomostandards["lamda"]=lam
+                self.tomostandards["zweight"]=zWeigh
+                self.tomostandards["vtop"]=vTop
+                self.tomostandards["vbottom"]=vBottom
+                self.tomostandards["minvel"]=minVelLimit
+                self.tomostandards["maxvel"]=maxVelLimit
+                self.tomostandards["secnodes"]=secNodes
+                self.tomostandards["maxiter"]=maxIter
+                self.tomostandards["gridx"]=xngrid
+                self.tomostandards["gridy"]=yngrid
+                self.tomostandards["nlevels"]=nlevels
                 
                 self.parameters_tomo = [maxDepth,paraDX,paraMaxCellSize,lam,zWeigh,vTop,vBottom,minVelLimit,maxVelLimit,secNodes,maxIter,
                                         int(xngrid_entry.get()),int(yngrid_entry.get()),int(nlevels_entry.get()),
@@ -1158,28 +1183,45 @@ E-mail: vjs279@hotmail.com
                 for x in self.xdata[i][self.sources[i]]:
 
                     offsets.append(abs(self.sources[i]-x))
+            #set standards, if conditions in case we are in second run during execution
+            if not hasattr(self,"tomostandards"):
+                self.tomostandards={"depth":str(max(offsets)/3),
+                               "dx":"0.33",
+                               "cellseize":str(3*(self.gx[1]-self.gx[0])),
+                               "quality":"32",
+                               "lamda":"100",
+                               "zweight":"0.2",
+                               "vtop":"300",
+                               "vbottom":"3000",
+                               "minvel":"100",
+                               "maxvel":"4000",
+                               "secnodes":"3",
+                               "maxiter":"10",
+                               "gridx":"1000",
+                               "gridy":"1000",
+                               "nlevels":"20"}
             
             Label(tomoWindow, text="Mesh options", font=("Arial", 11)).grid(row=0,column=0,columnspan=2,pady=10,sticky="E")
             
             Label(tomoWindow, text = "Maximum depth (max offset = %.2f m)"%max(offsets)).grid(row=1,column=0,pady=5,sticky="E")
             maxDepth_entry = Entry(tomoWindow,width=6)
             maxDepth_entry.grid(row=1,column=1,pady=5)
-            maxDepth_entry.insert(0, str(max(offsets)/3))#str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
+            maxDepth_entry.insert(0, self.tomostandards["depth"])#str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
 
             Label(tomoWindow, text = "# of nodes between receivers").grid(row=2,column=0,pady=5,sticky="E")
             paraDX_entry = Entry(tomoWindow,width=6)
             paraDX_entry.grid(row=2,column=1,pady=5)
-            paraDX_entry.insert(0,"0.33")
+            paraDX_entry.insert(0,self.tomostandards["dx"])
 
             Label(tomoWindow, text = "Maximum cell size").grid(row=3,column=0,pady=5,sticky="E")
             paraMaxCellSize_entry = Entry(tomoWindow,width=6)
             paraMaxCellSize_entry.grid(row=3,column=1,pady=5)
-            paraMaxCellSize_entry.insert(0,str(3*(self.gx[1]-self.gx[0])))
+            paraMaxCellSize_entry.insert(0,self.tomostandards["cellseize"])
             
             Label(tomoWindow, text = "Quality Parameter").grid(row=4,column=0,pady=5,sticky="E")
             paraQuality_entry = Entry(tomoWindow,width=6)
             paraQuality_entry.grid(row=4,column=1,pady=5)
-            paraQuality_entry.insert(0,"32")            
+            paraQuality_entry.insert(0,self.tomostandards["quality"])            
             
             
             
@@ -1190,59 +1232,59 @@ E-mail: vjs279@hotmail.com
             Label(tomoWindow, text = "Smoothing (lam)").grid(row=7,column=0,pady=5,sticky="E")
             lam_entry = Entry(tomoWindow,width=6)
             lam_entry.grid(row=7,column=1,pady=5)
-            lam_entry.insert(0,"100")
+            lam_entry.insert(0,self.tomostandards["lamda"])
 
             Label(tomoWindow, text = "Vertical to horizontal smoothing (zweigh)").grid(row=8,column=0,pady=5,sticky="E")
             zWeigh_entry = Entry(tomoWindow,width=6)
             zWeigh_entry.grid(row=8,column=1,pady=5)
-            zWeigh_entry.insert(0,"0.2")
+            zWeigh_entry.insert(0,self.tomostandards["zweight"])
 
             Label(tomoWindow, text = "Velocity at the top of the model").grid(row=9,column=0,pady=5,sticky="E")
             vTop_entry = Entry(tomoWindow,width=6)
             vTop_entry.grid(row=9,column=1,pady=5)
-            vTop_entry.insert(0,"300")
+            vTop_entry.insert(0,self.tomostandards["vtop"])
             
             Label(tomoWindow, text = "Velocity at the bottom of the model").grid(row=10,column=0,pady=5,sticky="E")
             vBottom_entry = Entry(tomoWindow,width=6)
             vBottom_entry.grid(row=10,column=1,pady=5)
-            vBottom_entry.insert(0,"3000")
+            vBottom_entry.insert(0,self.tomostandards["vbottom"])
 
             Label(tomoWindow, text = "Minimum velocity limit").grid(row=11,column=0,pady=5,sticky="E")
             minVelLimit_entry = Entry(tomoWindow,width=6)
             minVelLimit_entry.grid(row=11,column=1,pady=5)
-            minVelLimit_entry.insert(0,"100")
+            minVelLimit_entry.insert(0,self.tomostandards["minvel"])
 
             Label(tomoWindow, text = "Maximum velocity limit").grid(row=12,column=0,pady=5,sticky="E")
             maxVelLimit_entry = Entry(tomoWindow,width=6)
             maxVelLimit_entry.grid(row=12,column=1,pady=5)
-            maxVelLimit_entry.insert(0,"4000")
+            maxVelLimit_entry.insert(0,self.tomostandards["maxvel"])
 
             Label(tomoWindow, text = "# of secondary nodes").grid(row=13,column=0,pady=5,sticky="E")
             secNodes_entry = Entry(tomoWindow,width=6)
             secNodes_entry.grid(row=13,column=1,pady=5)
-            secNodes_entry.insert(0,"3")
+            secNodes_entry.insert(0,self.tomostandards["secnodes"])
 
             Label(tomoWindow, text = "Maximum # of iterations").grid(row=14,column=0,pady=5,sticky="E")
             maxIter_entry = Entry(tomoWindow,width=6)
             maxIter_entry.grid(row=14,column=1,pady=5)
-            maxIter_entry.insert(0,"20")
+            maxIter_entry.insert(0,self.tomostandards["maxiter"])
 
             Label(tomoWindow, text="Contour plot options", font=("Arial", 11)).grid(row=15,column=0,columnspan=2,pady=10,sticky="E")
             
             Label(tomoWindow, text = "# of nodes for gridding (x)").grid(row=16,column=0,pady=5,sticky="E")
             xngrid_entry = Entry(tomoWindow,width=6)
             xngrid_entry.grid(row=16,column=1,pady=5)
-            xngrid_entry.insert(0,"1000")
+            xngrid_entry.insert(0,self.tomostandards["gridx"])
 
             Label(tomoWindow, text = "# of nodes for gridding (y)").grid(row=17,column=0,pady=5,sticky="E")
             yngrid_entry = Entry(tomoWindow,width=6)
             yngrid_entry.grid(row=17,column=1,pady=5)
-            yngrid_entry.insert(0,"1000")
+            yngrid_entry.insert(0,self.tomostandards["gridy"])
 
             Label(tomoWindow, text = "# of contour levels").grid(row=18,column=0,pady=5,sticky="E")
             nlevels_entry = Entry(tomoWindow,width=6)
             nlevels_entry.grid(row=18,column=1,pady=5)
-            nlevels_entry.insert(0,"30")
+            nlevels_entry.insert(0,self.tomostandards["nlevels"])
             
             button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=19,column=0,columnspan=2,pady=5,sticky="E")
 
@@ -1256,7 +1298,7 @@ E-mail: vjs279@hotmail.com
             nowstring=now.strftime("%Y%m%d-%H%M%S")
             os.mkdir(self.projPath+"/models/"+nowstring+"/")
 
-            savetxt(self.projPath+"/models/"+nowstring+"/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s], fmt = "%.2f", header = "x z velocity converage standardized coverage",comments="")
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s,self.tomoModel_s*self.tomoModel_v], fmt = "%.2f", header = "x z velocity converage standardized coverage sc_v",comments="")
             self.fig_tomoFit.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
             self.fig_tomography.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
             savetxt(self.projPath+"/models/"+nowstring+"/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
