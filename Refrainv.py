@@ -1297,8 +1297,11 @@ E-mail: vjs279@hotmail.com
             now=datetime.now()
             nowstring=now.strftime("%Y%m%d-%H%M%S")
             os.mkdir(self.projPath+"/models/"+nowstring+"/")
-
-            savetxt(self.projPath+"/models/"+nowstring+"/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s,self.tomoModel_s*self.tomoModel_v], fmt = "%.2f", header = "x z velocity converage standardized coverage sc_v",comments="")
+            velwithdummy=self.tomoModel_s*self.tomoModel_v
+            for i,sv in velwithdummy:
+                if self.tomoModel_c[i]==np.inf*-1: 
+                    velwithdummy[i]=0
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s,velwithdummy], fmt = "%.2f", header = "x z velocity converage standardized coverage sc_v",comments="")
             self.fig_tomoFit.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
             self.fig_tomography.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
             savetxt(self.projPath+"/models/"+nowstring+"/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
