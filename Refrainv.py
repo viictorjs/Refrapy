@@ -1298,7 +1298,7 @@ E-mail: vjs279@hotmail.com
             nowstring=now.strftime("%Y%m%d-%H%M%S")
             os.mkdir(self.projPath+"/models/"+nowstring+"/")
             velwithdummy=self.tomoModel_s*self.tomoModel_v
-            for i,sv in velwithdummy:
+            for i,sv in enumerate(velwithdummy):
                 if self.tomoModel_c[i]==np.inf*-1: 
                     velwithdummy[i]=0
             savetxt(self.projPath+"/models/"+nowstring+"/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s,velwithdummy], fmt = "%.2f", header = "x z velocity converage standardized coverage sc_v",comments="")
