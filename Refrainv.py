@@ -189,7 +189,6 @@ Computers and Geosciences. https://doi.org/10.1016/j.cageo.2021.105020.
 To report a bug and for more information, please visit github.com/viictorjs/Refrapy.
 
 
-
 Author: Victor Guedes, MSc
 E-mail: vjs279@hotmail.com
 """,font=("Arial", 11)).pack()
@@ -1026,7 +1025,7 @@ E-mail: vjs279@hotmail.com
                     self.clearTomoPlot()
                 #save current window parameters
         
-                    
+                start_timing=datetime.now()    
                 #if self.tomoMesh == False:
 
                 maxDepth = float(maxDepth_entry.get())
@@ -1074,6 +1073,8 @@ E-mail: vjs279@hotmail.com
                 self.parameters_tomo = [maxDepth,paraDX,paraMaxCellSize,lam,zWeigh,vTop,vBottom,minVelLimit,maxVelLimit,secNodes,maxIter,
                                         int(xngrid_entry.get()),int(yngrid_entry.get()),int(nlevels_entry.get()),
                                         self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2(),self.mgr.inv.inv.iter()]
+                end_timing=datetime.now()
+                self.tomotiming=end_timing-start_timing
                 #regular pigimli save
                 self.mgr.saveResult(self.projPath)
                                 
@@ -1350,6 +1351,7 @@ E-mail: vjs279@hotmail.com
                 outFile.write("Final iteration %d\n"%(self.parameters_tomo[14]))
                 outFile.write("Relative RMSE %.2f\n"%(self.parameters_tomo[15]))
                 outFile.write("Chi² %.2f\n"%(self.parameters_tomo[16]))
+                outFile.write("Calculation Time: "+ str(self.tomotiming))
 
         if self.timetermsPlot:
 
