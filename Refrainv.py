@@ -1348,7 +1348,7 @@ E-mail: vjs279@hotmail.com
                 outFile.write("# of nodes for gridding (y) %d\n"%(self.parameters_tomo[12]))
                 outFile.write("# of contour levels %d\n\n"%(self.parameters_tomo[13]))
                 outFile.write("Model response\n")
-                outFile.write("Final iteration %d\n"%(self.parameters_tomo[14]))
+                outFile.write("Final iteration %d\n"%(self.parameters_tomo[17]))
                 outFile.write("Relative RMSE %.2f\n"%(self.parameters_tomo[15]))
                 outFile.write("Chi² %.2f\n"%(self.parameters_tomo[16]))
                 outFile.write("Calculation Time: "+ str(self.tomotiming))
