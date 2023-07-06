@@ -265,6 +265,7 @@ E-mail: vjs279@hotmail.com
         self.timeterms_3d_ready = False
         self.showMerged = False
         self.z2elev = False
+        self.__dict__.pop('tomostandards',None)
     
     def kill(self):
 
