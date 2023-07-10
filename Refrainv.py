@@ -12,7 +12,7 @@ from matplotlib.colors import is_color_like
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from tkinter import Tk, Toplevel, Frame, Button, Label, filedialog, messagebox, PhotoImage, simpledialog, Entry
-from os import path, makedirs, getcwd
+from os import path, makedirs, getcwd, name
 from obspy import read
 from obspy.signal.filter import lowpass, highpass
 from scipy.signal import resample
@@ -23,6 +23,15 @@ from Pmw import initialise, Balloon
 import pygimli as pg
 from pygimli.physics import TravelTimeManager
 
+from tqdm import tqdm
+import os
+from datetime import datetime
+import numpy as np
+import pandas as pd
+#own modules
+from dtreader import dtreader
+
+
 class Refrainv(Tk):
     
     def __init__(self):
@@ -31,8 +40,13 @@ class Refrainv(Tk):
         self.geometry("1600x900")
         self.title('Refrapy - Refrainv v2.0.0')
         self.configure(bg = "#F0F0F0")
-        self.resizable(0,0)
-        self.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        self.resizable(1,1)
+        #check if on windows with nt kernel:
+        if "nt" in name:
+            self.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        # if not, use unix formats
+        else:
+            self.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
 
         frame_toolbar = Frame(self)
         frame_toolbar.grid(row=0,column=0,sticky="EW")
@@ -164,7 +178,13 @@ class Refrainv(Tk):
         helpWindow.title('Refrapick - Help')
         helpWindow.configure(bg = "#F0F0F0")
         helpWindow.resizable(0,0)
-        helpWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        #check if on windows with nt kernel:
+        if "nt" in name:
+            helpWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        # if not, use unix formats
+        else:
+            helpWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+        #helpWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
         Label(helpWindow, text = """Refrapy - Refrainv v2.0.0
 
@@ -178,7 +198,6 @@ Guedes, V.J.C.B., Maciel, S.T.R., Rocha, M.P., 2022. Refrapy: A Python program f
 Computers and Geosciences. https://doi.org/10.1016/j.cageo.2021.105020.
 
 To report a bug and for more information, please visit github.com/viictorjs/Refrapy.
-
 
 
 Author: Victor Guedes, MSc
@@ -246,12 +265,13 @@ E-mail: vjs279@hotmail.com
         self.timeterms_3d_ready = False
         self.showMerged = False
         self.z2elev = False
+        self.__dict__.pop('tomostandards',None)
     
     def kill(self):
 
         out = messagebox.askyesno("Refrainv", "Do you want to close the software?")
 
-        if out: self.destroy(); self.quit()
+        if out: plt.close('all');self.destroy(); self.quit()
 
     def assignLayer1(self):
 
@@ -389,6 +409,9 @@ E-mail: vjs279@hotmail.com
         self.ax_tomography.xaxis.set_ticks_position('bottom')
 
         self.frame_plots.tkraise()
+        plt.close(self.fig_data)
+        plt.close(self.fig_tomography)
+        plt.close(self.fig_timeterms)
       
     def createProject(self):
 
@@ -452,9 +475,12 @@ E-mail: vjs279@hotmail.com
 
             if self.data_pg == False:    
                 
-                pickFile = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/picks/", filetypes=[('Pick file', '*.sgt')])
+                pickFile = filedialog.askopenfilename(title='Open', initialdir = self.projPath+"/picks/", filetypes=[('Pick file', '*.sgt'),('Protomo Tools','*.#dt')])
                 self.lineName = path.basename(pickFile)[:-4]
-
+            
+                if path.basename(pickFile)[-4:]=='.#dt': 
+                    dtreader( pickFile,self.lineName)
+                    pickFile=pickFile[:-4]+'.sgt'
                 if pickFile:
 
                     self.data_pg = pg.DataContainer(pickFile, 's g')
@@ -476,15 +502,17 @@ E-mail: vjs279@hotmail.com
                         self.gz = gz
                         self.sgx = sgx
                         self.sgz = sgz
-                        self.dx = self.gx[1]-self.gx[0]
+                        #self.dx = self.gx[1]-self.gx[0]
+                        self.dx=np.median(np.abs(np.diff(self.gx)))
                         self.sx, self.sz = [], []
                         
                         for i in list(set(s)):
 
                             self.sx.append(sgx[i-1])
                             self.sz.append(sgz[i-1])
-
-                        if any(z > 0 for z in gz): self.z2elev = True
+                        print("what")
+                        if any(z > 0 for z in gz): 
+                            self.z2elev = True
 
                         if self.z2elev:
 
@@ -492,10 +520,15 @@ E-mail: vjs279@hotmail.com
                             self.ax_tomography.set_ylabel("ELEVATION [m]")
                             self.fig_timeterms.canvas.draw()
                             self.fig_tomography.canvas.draw()
-
-                        for i,src in enumerate(list(set(sx))):
+                        #saving computing time by setting sme apras outside of loop:
+                        #seize=self.dx*4
+                        seize=self.dx
+                        #taking out some appends from below as append is slow
+                        
+                        self.sources=list(set(sx))
+                        for i,src in enumerate(tqdm(list(set(sx)))):
         
-                            self.sources.append(src)
+                         #   self.sources.append(src)
                             self.xdata.append({src:[]})
                             self.tdata.append({src:[]})
                             self.dataArts.append({src:[]})
@@ -503,7 +536,7 @@ E-mail: vjs279@hotmail.com
                             if self.data_sources:
 
                                 if self.showSources:
-
+                                    #plots the source points
                                     sourcePlot = self.ax_data.scatter(src,0,c="y",edgecolor="k",s=100,marker="*",zorder=99)
                                     self.data_sourcesArts.append(sourcePlot)
 
@@ -513,8 +546,18 @@ E-mail: vjs279@hotmail.com
 
                                     self.xdata[i][src].append(x)
                                     self.tdata[i][src].append(t[j])
-                                    dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=self.dx*4,edgecolor=self.data_color,picker=self.dx,zorder=99)
-                                    self.dataArts[i][src].append(dataPlot)
+                                    #dataPlot = self.ax_data.scatter(x,t[j],facecolors='w',s=seize,edgecolor=self.data_color,picker=self.dx,zorder=99)
+                                    #self.dataArts[i][src].append(dataPlot)
+                             #replace that awful loop: 
+                            sxarray=np.array(sx)
+                            gxarray=np.array(gx)
+                            tarray=np.array(t)
+                            all_src_occurence_indexes=np.where(sxarray==src)[0]
+                            
+                            all_x_occurences=gxarray[ all_src_occurence_indexes]
+                            all_t_occurences=tarray[ all_src_occurence_indexes]
+                            dataPlot=self.ax_data.scatter(all_x_occurences,all_t_occurences,facecolors='w',s=seize,edgecolor=self.data_color,picker=self.dx,zorder=99)
+                            self.dataArts[i][src].append(dataPlot)                                
                                 
                             dataLine, = self.ax_data.plot(self.xdata[i][src], self.tdata[i][src], c = self.data_color)
                             self.dataLines.append(dataLine)
@@ -933,23 +976,37 @@ E-mail: vjs279@hotmail.com
             tomoWindow = Toplevel(self)
             tomoWindow.title('Refrainv - Tomography')
             tomoWindow.configure(bg = "#F0F0F0")
-            tomoWindow.geometry("300x640")
-            tomoWindow.resizable(0,0)
-            tomoWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+            tomoWindow.geometry("300x680")
+            tomoWindow.resizable(0,True)
+            #check if on windows with nt kernel:
+            if "nt" in name:
+                tomoWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+            # if not, use unix formats
+            else:
+                tomoWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+            #tomoWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
             def viewMesh():
 
                 maxDepth = float(maxDepth_entry.get())
                 paraDX = float(paraDX_entry.get())
                 paraMaxCellSize = float(paraMaxCellSize_entry.get())
-                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize)
+                paraQuality =float(paraQuality_entry.get())
+                
+                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize,quality=paraQuality)
 
                 meshWindow = Toplevel(self)
                 meshWindow.title('Refrainv - Mesh')
                 meshWindow.configure(bg = "#F0F0F0")
                 #meshWindow.geometry("1024x768")
                 meshWindow.resizable(0,0)
-                meshWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+                #check if on windows with nt kernel:
+                if "nt" in name:
+                    meshWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+                # if not, use unix formats
+                else:
+                    meshWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+                #meshWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
                 frame = Frame(meshWindow)
                 frame.grid(row = 0, column = 0)
@@ -990,13 +1047,16 @@ E-mail: vjs279@hotmail.com
                 if self.tomoPlot:
 
                     self.clearTomoPlot()
-                    
+                #save current window parameters
+        
+                start_timing=datetime.now()    
                 #if self.tomoMesh == False:
 
                 maxDepth = float(maxDepth_entry.get())
                 paraDX = float(paraDX_entry.get())
                 paraMaxCellSize = float(paraMaxCellSize_entry.get())
-                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize)
+                paraQuality =float(paraQuality_entry.get())
+                self.tomoMesh = self.mgr.createMesh(data=self.data_pg,paraDepth=maxDepth,paraDX=paraDX,paraMaxCellSize=paraMaxCellSize,quality=paraQuality)
 
                 lam = float(lam_entry.get())
                 zWeigh = float(zWeigh_entry.get())
@@ -1008,25 +1068,61 @@ E-mail: vjs279@hotmail.com
                 self.maxVelLimit = maxVelLimit
                 secNodes = int(secNodes_entry.get())
                 maxIter = int(maxIter_entry.get())
-   
-                vest = self.mgr.invert(data=self.data_pg,mesh=self.tomoMesh,verbose=False,lam=lam,zWeight=zWeigh,useGradient=True,
+                
+                xngrid=xngrid_entry.get()
+                yngrid=yngrid_entry.get()
+                nlevels=nlevels_entry.get()
+                
+                vest = self.mgr.invert(data=self.data_pg,mesh=self.tomoMesh,verbose=True,lam=lam,zWeight=zWeigh,useGradient=True,
                                vTop=vTop,vBottom=vBottom,maxIter=maxIter,limits=[minVelLimit,maxVelLimit],secNodes=secNodes)
+                             
+                #keep entered options
+                 
+                self.tomostandards["depth"]=maxDepth
+                self.tomostandards["dx"]=paraDX
+                self.tomostandards["cellseize"]=paraMaxCellSize
+                self.tomostandards["quality"]=paraQuality
+                self.tomostandards["lamda"]=lam
+                self.tomostandards["zweight"]=zWeigh
+                self.tomostandards["vtop"]=vTop
+                self.tomostandards["vbottom"]=vBottom
+                self.tomostandards["minvel"]=minVelLimit
+                self.tomostandards["maxvel"]=maxVelLimit
+                self.tomostandards["secnodes"]=secNodes
+                self.tomostandards["maxiter"]=maxIter
+                self.tomostandards["gridx"]=xngrid
+                self.tomostandards["gridy"]=yngrid
+                self.tomostandards["nlevels"]=nlevels
                 
                 self.parameters_tomo = [maxDepth,paraDX,paraMaxCellSize,lam,zWeigh,vTop,vBottom,minVelLimit,maxVelLimit,secNodes,maxIter,
                                         int(xngrid_entry.get()),int(yngrid_entry.get()),int(nlevels_entry.get()),
-                                        self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2()]
+                                        self.mgr.inv.maxIter,self.mgr.inv.relrms(),self.mgr.inv.chi2(),self.mgr.inv.inv.iter()]
+                end_timing=datetime.now()
+                self.tomotiming=end_timing-start_timing
+                #regular pigimli save
+                self.mgr.saveResult(self.projPath)
+                                
+                
                 plotContourModel()
+                if self.showRayPath: self.RayPaths=self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)                
 
             def plotContourModel():
    
-                xzv = column_stack((self.mgr.paraDomain.cellCenters(), self.mgr.model))
-                x = (xzv[:,0])
-                z = (xzv[:,1])
-                v = (xzv[:,3])
+                xzvcs = column_stack((self.mgr.paraDomain.cellCenters(),
+                                     self.mgr.model,
+                                     self.mgr.coverage(),
+                                     self.mgr.standardizedCoverage()))
+                x = (xzvcs[:,0])
+                z = (xzvcs[:,1])
+                v = (xzvcs[:,3])
+                c = (xzvcs[:,4])
+                s = (xzvcs[:,5])
 
                 self.tomoModel_x = x
                 self.tomoModel_z = z
                 self.tomoModel_v = v
+                self.tomoModel_c = c
+                self.tomoModel_s = s
                 
                 nx = int(xngrid_entry.get())
                 ny = int(yngrid_entry.get())
@@ -1092,7 +1188,7 @@ E-mail: vjs279@hotmail.com
 
                 for c in cm.collections: c.set_clip_path(patch)
 
-                if self.showRayPath: self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
+                if self.showRayPath: self.RayPaths=self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
 
                 if self.showSources: self.sourcesPlot_tomography = self.ax_tomography.scatter(self.sx,self.sz, marker="*",c="y",edgecolor="k",s=self.dx*20,zorder=99)
 
@@ -1112,102 +1208,149 @@ E-mail: vjs279@hotmail.com
                 for x in self.xdata[i][self.sources[i]]:
 
                     offsets.append(abs(self.sources[i]-x))
+            #set standards, if conditions in case we are in second run during execution
+            if not hasattr(self,"tomostandards"):
+                self.tomostandards={"depth":str(max(offsets)/3),
+                               "dx":"0.33",
+                               "cellseize":str(3*(self.gx[1]-self.gx[0])),
+                               "quality":"32",
+                               "lamda":"100",
+                               "zweight":"0.2",
+                               "vtop":"300",
+                               "vbottom":"3000",
+                               "minvel":"100",
+                               "maxvel":"4000",
+                               "secnodes":"3",
+                               "maxiter":"10",
+                               "gridx":"1000",
+                               "gridy":"1000",
+                               "nlevels":"20"}
             
             Label(tomoWindow, text="Mesh options", font=("Arial", 11)).grid(row=0,column=0,columnspan=2,pady=10,sticky="E")
             
             Label(tomoWindow, text = "Maximum depth (max offset = %.2f m)"%max(offsets)).grid(row=1,column=0,pady=5,sticky="E")
             maxDepth_entry = Entry(tomoWindow,width=6)
             maxDepth_entry.grid(row=1,column=1,pady=5)
-            maxDepth_entry.insert(0, str(max(offsets)/3))#str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
+            maxDepth_entry.insert(0, self.tomostandards["depth"])#str(max(offsets)*0.4))#str(int((self.gx[-1]-self.gx[0])*0.4)))
 
             Label(tomoWindow, text = "# of nodes between receivers").grid(row=2,column=0,pady=5,sticky="E")
             paraDX_entry = Entry(tomoWindow,width=6)
             paraDX_entry.grid(row=2,column=1,pady=5)
-            paraDX_entry.insert(0,"0.33")
+            paraDX_entry.insert(0,self.tomostandards["dx"])
 
             Label(tomoWindow, text = "Maximum cell size").grid(row=3,column=0,pady=5,sticky="E")
             paraMaxCellSize_entry = Entry(tomoWindow,width=6)
             paraMaxCellSize_entry.grid(row=3,column=1,pady=5)
-            paraMaxCellSize_entry.insert(0,str(3*(self.gx[1]-self.gx[0])))
+            paraMaxCellSize_entry.insert(0,self.tomostandards["cellseize"])
             
-            button = Button(tomoWindow, text="View mesh", command=viewMesh).grid(row=4,column=0,columnspan=2,pady=5,sticky="E")
+            Label(tomoWindow, text = "Quality Parameter").grid(row=4,column=0,pady=5,sticky="E")
+            paraQuality_entry = Entry(tomoWindow,width=6)
+            paraQuality_entry.grid(row=4,column=1,pady=5)
+            paraQuality_entry.insert(0,self.tomostandards["quality"])            
+            
+            
+            
+            button = Button(tomoWindow, text="View mesh", command=viewMesh).grid(row=5,column=0,columnspan=2,pady=5,sticky="E")
 
-            Label(tomoWindow, text="Inversion options", font=("Arial", 11)).grid(row=5,column=0,columnspan=2,pady=10,sticky="E")
+            Label(tomoWindow, text="Inversion options", font=("Arial", 11)).grid(row=6,column=0,columnspan=2,pady=10,sticky="E")
             
-            Label(tomoWindow, text = "Smoothing (lam)").grid(row=6,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Smoothing (lam)").grid(row=7,column=0,pady=5,sticky="E")
             lam_entry = Entry(tomoWindow,width=6)
-            lam_entry.grid(row=6,column=1,pady=5)
-            lam_entry.insert(0,"100")
+            lam_entry.grid(row=7,column=1,pady=5)
+            lam_entry.insert(0,self.tomostandards["lamda"])
 
-            Label(tomoWindow, text = "Vertical to horizontal smoothing (zweigh)").grid(row=7,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Vertical to horizontal smoothing (zweigh)").grid(row=8,column=0,pady=5,sticky="E")
             zWeigh_entry = Entry(tomoWindow,width=6)
-            zWeigh_entry.grid(row=7,column=1,pady=5)
-            zWeigh_entry.insert(0,"0.2")
+            zWeigh_entry.grid(row=8,column=1,pady=5)
+            zWeigh_entry.insert(0,self.tomostandards["zweight"])
 
-            Label(tomoWindow, text = "Velocity at the top of the model").grid(row=8,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Velocity at the top of the model").grid(row=9,column=0,pady=5,sticky="E")
             vTop_entry = Entry(tomoWindow,width=6)
-            vTop_entry.grid(row=8,column=1,pady=5)
-            vTop_entry.insert(0,"300")
+            vTop_entry.grid(row=9,column=1,pady=5)
+            vTop_entry.insert(0,self.tomostandards["vtop"])
             
-            Label(tomoWindow, text = "Velocity at the bottom of the model").grid(row=9,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Velocity at the bottom of the model").grid(row=10,column=0,pady=5,sticky="E")
             vBottom_entry = Entry(tomoWindow,width=6)
-            vBottom_entry.grid(row=9,column=1,pady=5)
-            vBottom_entry.insert(0,"3000")
+            vBottom_entry.grid(row=10,column=1,pady=5)
+            vBottom_entry.insert(0,self.tomostandards["vbottom"])
 
-            Label(tomoWindow, text = "Minimum velocity limit").grid(row=10,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Minimum velocity limit").grid(row=11,column=0,pady=5,sticky="E")
             minVelLimit_entry = Entry(tomoWindow,width=6)
-            minVelLimit_entry.grid(row=10,column=1,pady=5)
-            minVelLimit_entry.insert(0,"100")
+            minVelLimit_entry.grid(row=11,column=1,pady=5)
+            minVelLimit_entry.insert(0,self.tomostandards["minvel"])
 
-            Label(tomoWindow, text = "Maximum velocity limit").grid(row=11,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Maximum velocity limit").grid(row=12,column=0,pady=5,sticky="E")
             maxVelLimit_entry = Entry(tomoWindow,width=6)
-            maxVelLimit_entry.grid(row=11,column=1,pady=5)
-            maxVelLimit_entry.insert(0,"4000")
+            maxVelLimit_entry.grid(row=12,column=1,pady=5)
+            maxVelLimit_entry.insert(0,self.tomostandards["maxvel"])
 
-            Label(tomoWindow, text = "# of secondary nodes").grid(row=12,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of secondary nodes").grid(row=13,column=0,pady=5,sticky="E")
             secNodes_entry = Entry(tomoWindow,width=6)
-            secNodes_entry.grid(row=12,column=1,pady=5)
-            secNodes_entry.insert(0,"3")
+            secNodes_entry.grid(row=13,column=1,pady=5)
+            secNodes_entry.insert(0,self.tomostandards["secnodes"])
 
-            Label(tomoWindow, text = "Maximum # of iterations").grid(row=13,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "Maximum # of iterations").grid(row=14,column=0,pady=5,sticky="E")
             maxIter_entry = Entry(tomoWindow,width=6)
-            maxIter_entry.grid(row=13,column=1,pady=5)
-            maxIter_entry.insert(0,"20")
+            maxIter_entry.grid(row=14,column=1,pady=5)
+            maxIter_entry.insert(0,self.tomostandards["maxiter"])
 
-            Label(tomoWindow, text="Contour plot options", font=("Arial", 11)).grid(row=14,column=0,columnspan=2,pady=10,sticky="E")
+            Label(tomoWindow, text="Contour plot options", font=("Arial", 11)).grid(row=15,column=0,columnspan=2,pady=10,sticky="E")
             
-            Label(tomoWindow, text = "# of nodes for gridding (x)").grid(row=15,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of nodes for gridding (x)").grid(row=16,column=0,pady=5,sticky="E")
             xngrid_entry = Entry(tomoWindow,width=6)
-            xngrid_entry.grid(row=15,column=1,pady=5)
-            xngrid_entry.insert(0,"1000")
+            xngrid_entry.grid(row=16,column=1,pady=5)
+            xngrid_entry.insert(0,self.tomostandards["gridx"])
 
-            Label(tomoWindow, text = "# of nodes for gridding (y)").grid(row=16,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of nodes for gridding (y)").grid(row=17,column=0,pady=5,sticky="E")
             yngrid_entry = Entry(tomoWindow,width=6)
-            yngrid_entry.grid(row=16,column=1,pady=5)
-            yngrid_entry.insert(0,"1000")
+            yngrid_entry.grid(row=17,column=1,pady=5)
+            yngrid_entry.insert(0,self.tomostandards["gridy"])
 
-            Label(tomoWindow, text = "# of contour levels").grid(row=17,column=0,pady=5,sticky="E")
+            Label(tomoWindow, text = "# of contour levels").grid(row=18,column=0,pady=5,sticky="E")
             nlevels_entry = Entry(tomoWindow,width=6)
-            nlevels_entry.grid(row=17,column=1,pady=5)
-            nlevels_entry.insert(0,"30")
+            nlevels_entry.grid(row=18,column=1,pady=5)
+            nlevels_entry.insert(0,self.tomostandards["nlevels"])
             
-            button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=18,column=0,columnspan=2,pady=5,sticky="E")
+            button = Button(tomoWindow, text="Run inversion", command=runInversion).grid(row=19,column=0,columnspan=2,pady=5,sticky="E")
 
             tomoWindow.tkraise()
 
     def saveResults(self):
 
         if self.tomoPlot:
-
-            savetxt(self.projPath+"/models/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x z velocity",comments="")
-            self.fig_tomoFit.savefig(self.projPath+"/models/%s_tomography_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            self.fig_tomography.savefig(self.projPath+"/models/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            savetxt(self.projPath+"/models/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
-            savetxt(self.projPath+"/models/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
-
+              
+            now=datetime.now()
+            nowstring=now.strftime("%Y%m%d-%H%M%S")
+            os.mkdir(self.projPath+"/models/"+nowstring+"/")
+            velwithdummy=self.tomoModel_s*self.tomoModel_v
+            for i,sv in enumerate(velwithdummy):
+                if self.tomoModel_c[i]==np.inf*-1: 
+                    velwithdummy[i]=0
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_xzv.txt"%(self.lineName),c_[self.tomoModel_x,self.tomoModel_z,self.tomoModel_v, self.tomoModel_c, self.tomoModel_s,velwithdummy], fmt = "%.2f", header = "x z velocity converage standardized coverage sc_v",comments="")
+            self.fig_tomoFit.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_tomography.savefig(self.projPath+"/models/"+nowstring+"/%s_tomography_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_topography.txt"%(self.lineName),c_[self.topographyx,self.topographyz], fmt = "%.2f", header = "x z",comments="")
+            savetxt(self.projPath+"/models/"+nowstring+"/%s_tomography_limits.bln"%(self.lineName),c_[self.xbln,self.zbln], fmt = "%.2f", header = "%d,1"%len(self.xbln),comments="")
+          
+            #get the paths:
+                
+            if hasattr(self, 'RayPaths'):
+                pathcount=len(self.RayPaths.get_paths())
+                
+                with open(self.projPath+"/models/"+nowstring+"/%s_raypaths.bln"%(self.lineName),mode='w+') as f:
+                    for i in range(pathcount):
+                       patharray=self.RayPaths.get_paths()[i].vertices
+                       n=len(patharray)
+                       f.write(str(n)+',-1\n')
+                       pd.DataFrame(patharray).to_csv(path_or_buf=f,sep=',',header=False,index=False,line_terminator='\n')
+                       f.write('\n')
+                       
+                       
+                    
+            
             if self.tomography_3d_ready: savetxt(self.projPath+"/models/%s_tomography_xyzv.txt"%(self.lineName),c_[self.new_x_tomography,self.new_y_tomography,self.tomoModel_z,self.tomoModel_v], fmt = "%.2f", header = "x y z velocity",comments="")
 
-            with open(self.projPath+"/models/%s_tomography_parameters.txt"%(self.lineName),"w") as outFile:
+            with open(self.projPath+"/models/"+nowstring+"/%s_tomography_parameters.txt"%(self.lineName),"w") as outFile:
 
                 outFile.write("%s - Traveltimes tomography parameters\n\n"%self.lineName)
                 outFile.write("Mesh options\n")
@@ -1222,39 +1365,41 @@ E-mail: vjs279@hotmail.com
                 outFile.write("Minimum velocity limit %.2f\n"%(self.parameters_tomo[7]))
                 outFile.write("Maximum velocity limit %.2f\n"%(self.parameters_tomo[8]))
                 outFile.write("# of secondary nodes %d\n"%(self.parameters_tomo[9]))
-                outFile.write("Maximum # of iterations %d\n\n"%(self.parameters_tomo[10]))
+                outFile.write("Maximum # of iterations %d\n"%(self.parameters_tomo[10]))
+                outFile.write("Actually done # of iterations %d\n\•n"%(self.parameters_tomo[17]))
                 outFile.write("Contour plot options\n")
                 outFile.write("# of nodes for gridding (x) %d\n"%(self.parameters_tomo[11]))
                 outFile.write("# of nodes for gridding (y) %d\n"%(self.parameters_tomo[12]))
                 outFile.write("# of contour levels %d\n\n"%(self.parameters_tomo[13]))
                 outFile.write("Model response\n")
-                outFile.write("Final iteration %d\n"%(self.parameters_tomo[14]))
+                outFile.write("Final iteration %d\n"%(self.parameters_tomo[17]))
                 outFile.write("Relative RMSE %.2f\n"%(self.parameters_tomo[15]))
                 outFile.write("Chi² %.2f\n"%(self.parameters_tomo[16]))
+                outFile.write("Calculation Time: "+ str(self.tomotiming))
 
         if self.timetermsPlot:
 
             if self.layer1:
 
-                savetxt(self.projPath+"/models/%s_timeterms_layer1.txt"%(self.lineName),c_[self.gx_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x z",comments="")
+                savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer1.txt"%(self.lineName),c_[self.gx_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x z",comments="")
                 
-                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer1_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x y z",comments="")
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer1_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.gz_timeterms], fmt = "%.2f", header = "x y z",comments="")
                 
             if self.layer2:
 
-                savetxt(self.projPath+"/models/%s_timeterms_layer2.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer2], fmt = "%.2f", header = "x z",comments="")
+                savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer2.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer2], fmt = "%.2f", header = "x z",comments="")
 
-                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer2_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer2], fmt = "%.2f", header = "x y z",comments="")
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer2_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer2], fmt = "%.2f", header = "x y z",comments="")
                     
             if self.layer3:
 
-                savetxt(self.projPath+"/models/%s_timeterms_layer3.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer3], fmt = "%.2f", header = "x z",comments="")
+                savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer3.txt"%(self.lineName),c_[self.gx_timeterms,self.z_layer3], fmt = "%.2f", header = "x z",comments="")
 
-                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/%s_timeterms_layer3_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer3], fmt = "%.2f", header = "x y z",comments="")
+                if self.timeterms_3d_ready: savetxt(self.projPath+"/models/"+nowstring+"/%s_timeterms_layer3_xyz.txt"%(self.lineName),c_[self.new_x_timeterms,self.new_y_timeterms,self.z_layer3], fmt = "%.2f", header = "x y z",comments="")
             
-            self.fig_data.savefig(self.projPath+"/models/%s_layers_assignment.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            self.fig_timetermsFit.savefig(self.projPath+"/models/%s_timeterms_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
-            self.fig_timeterms.savefig(self.projPath+"/models/%s_timeterms_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_data.savefig(self.projPath+"/models/"+nowstring+"/%s_layers_assignment.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_timetermsFit.savefig(self.projPath+"/models/"+nowstring+"/%s_timeterms_response.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
+            self.fig_timeterms.savefig(self.projPath+"/models/"+nowstring+"/%s_timeterms_model.jpeg"%(self.lineName), format="jpeg",dpi = 300,transparent=True)
 
         if self.timetermsPlot or self.tomoPlot: messagebox.showinfo(title="Refrainv", message="All results saved in %s"%(self.projPath+"/models/"))
     
@@ -1266,7 +1411,13 @@ E-mail: vjs279@hotmail.com
             fitWindow.title('Refrainv - Fit')
             fitWindow.configure(bg = "#F0F0F0")
             fitWindow.resizable(0,0)
-            fitWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+            #check if on windows with nt kernel:
+            if "nt" in name:
+                fitWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+            # if not, use unix formats
+            else:
+                fitWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+          #  fitWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
             frame1 = Frame(fitWindow)
             frame1.grid(row = 0, column = 0)
@@ -1318,7 +1469,7 @@ E-mail: vjs279@hotmail.com
             
             if self.tomoPlot:
                 
-                ax_fitTomography.set_title("Tomography model response\n%d iterations | RRMSE = %.2f%%"%(self.mgr.inv.maxIter,self.mgr.inv.relrms())) #mgr.absrms() mgr.chi2()
+                ax_fitTomography.set_title("Tomography model response\n%d iterations | RRMSE = %.2f%% | Chi^2 = %.2f%%"%(self.mgr.inv.inv.iter(),self.mgr.inv.relrms(),self.mgr.inv.chi2())) #mgr.absrms() mgr.chi2()
                 pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, marker="o", lw = 0)
                 #pg.physics.traveltime.drawFirstPicks(ax_fitTomography, self.data_pg, tt= self.mgr.inv.response, marker="", linestyle = "--")
                 ax_fitTomography.scatter(self.gx,self.mgr.inv.response,marker="x",c="r",zorder=99,s=self.dx*10)
@@ -1349,7 +1500,13 @@ E-mail: vjs279@hotmail.com
             pgWindow.title('Refrainv - Velocity model with mesh')
             pgWindow.configure(bg = "#F0F0F0")
             pgWindow.resizable(0,0)
-            pgWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+            #check if on windows with nt kernel:
+            if "nt" in name:
+                pgWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+            # if not, use unix formats
+            else:
+                pgWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+            #pgWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
             frame = Frame(pgWindow)
             frame.grid(row = 0, column = 0)
@@ -1431,7 +1588,13 @@ E-mail: vjs279@hotmail.com
                 plot3dwindow.configure(bg = "#F0F0F0")
                 plot3dwindow.geometry("1600x900")
                 plot3dwindow.resizable(0,0)
-                plot3dwindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+                #check if on windows with nt kernel:
+                if "nt" in name:
+                    plot3dWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+                # if not, use unix formats
+                else:
+                    plot3dWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+               # plot3dwindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
 
                 frame_buttons = Frame(plot3dwindow)
                 frame_buttons.grid(row = 0, column = 0, columnspan=100,sticky="W")
@@ -1548,7 +1711,7 @@ E-mail: vjs279@hotmail.com
 
                     if self.tomoPlot:
 
-                        self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
+                        self.RayPaths=self.mgr.drawRayPaths(self.ax_tomography,color=self.rayPathColor)
                         self.fig_tomography.canvas.draw()
 
                     messagebox.showinfo(title="Refrainv", message="The ray path view has been enabled!")
@@ -1808,7 +1971,13 @@ E-mail: vjs279@hotmail.com
         plotOptionsWindow.configure(bg = "#F0F0F0")
         plotOptionsWindow.geometry("350x450")
         plotOptionsWindow.resizable(0,0)
-        plotOptionsWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        #check if on windows with nt kernel:
+        if "nt" in name:
+            plotOptionsWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
+        # if not, use unix formats
+        else:
+            plotOptionsWindow.iconbitmap("@"+getcwd()+"/images/ico_refrapy.xbm")
+       # plotOptionsWindow.iconbitmap("%s/images/ico_refrapy.ico"%getcwd())
         Label(plotOptionsWindow, text = "Plot options",font=("Arial", 11)).grid(row=0,column=0,sticky="EW",pady=5,padx=65)
         Button(plotOptionsWindow,text="Show/hide ray path", command = rayPath, width = 30).grid(row = 1, column = 0,pady=5,padx=65)
         Button(plotOptionsWindow,text="Change ray path line color", command = rayPathLineColor, width = 30).grid(row = 2, column = 0,pady=5,padx=65)
